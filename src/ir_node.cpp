@@ -1,6 +1,6 @@
 #include "ros/ros.h"
 #include "finderbot/Ir.h"
-#include "finderbot/ir_sensor.h"
+#include "finderbot/IR_Sensor.h"
 
 int main(int argc, char** argv)
 {
@@ -20,9 +20,13 @@ int main(int argc, char** argv)
        // define msg here 
         finderbot::Ir msg;
         msg.id = 0;
-        msg.value = ir_1.get_data();
+        msg.value = ir_1.get_distance_mm();
+
         ir_pub.publish(msg);
-        
+
+        //so I don't really get what this does
+        //seems kinda important though. 
+        ros::spinOnce();
         loop_rate.sleep();
         ++count;
     }
