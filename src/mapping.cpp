@@ -117,18 +117,22 @@ namespace mapping
         }
     void MiniMapper::buildMap(const sensor_msgs::LaserScan& scan)
     {
+        ROS_INFO("buildMap Called");
         if (!has_frame_id_)
         {
         // Wait for a parent.
+            ROS_INFO("NO FRAME ID");
             std::string parent;
             bool has_parent = tf_listener_.getParent(scan.header.frame_id, ros::Time(0), parent);
             if (!has_parent)
             {
+              ROS_INFO_STREAM("No worldframe");
               ROS_DEBUG_STREAM("Frame " << scan.header.frame_id << " has no parent");
               return;
             }
             world_frame_id_ = getWorldFrame(tf_listener_, scan.header.frame_id);
             ROS_INFO_STREAM("Found world frame " << world_frame_id_);
+            ROS_INFO("world_frame_id_ = %s", world_frame_id_.c_str());
             has_frame_id_ = true;
 
             // Initialize saved positions.
@@ -142,6 +146,7 @@ namespace mapping
             }
             catch (tf::TransformException ex)
             {
+                ROS_INFO("BADBADBAD1");
                 ROS_ERROR("%s", ex.what());
                 has_frame_id_ = false;
             }
@@ -155,7 +160,7 @@ namespace mapping
             map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
             map_transform.setRotation(tf::Quaternion(1, 0, 0, 0));
             tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform,
-              scan.header.stamp, scan.header.frame_id, map_frame_id_));
+            scan.header.stamp, scan.header.frame_id, map_frame_id_));
         }
 
         // Get the displacement.
@@ -169,6 +174,7 @@ namespace mapping
         }
         catch (tf::TransformException ex)
         {
+            ROS_INFO("BADBADBAD2");
             ROS_ERROR("%s", ex.what());
             return;
         }

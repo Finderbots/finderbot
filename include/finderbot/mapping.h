@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <angles/angles.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h> 

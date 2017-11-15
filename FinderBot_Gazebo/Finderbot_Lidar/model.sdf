@@ -731,6 +731,7 @@
           <plugin name="gazebo_hokuyo" filename="libgazebo_ros_laser.so">
             <topicName>/hokuyo_data</topicName>
             <robotNamespace>hokuyo</robotNamespace>
+            <frameName>hokuyo_frame</frameName>
           </plugin>
           <update_rate>30</update_rate>
           <visualize>1</visualize>

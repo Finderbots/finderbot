@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <finderbot/mapping.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -9,6 +10,7 @@ mapping::MiniMapper* mini_map_builder;
 void handleLaserScan(const sensor_msgs::LaserScan laser_msg)
 {
     //grow map data based on scan
+    ROS_INFO("Handling Data from Lidar");
     mini_map_builder->buildMap(laser_msg);
     //publish map data
     map_publisher.publish(mini_map_builder->getMap());
@@ -17,7 +19,7 @@ void handleLaserScan(const sensor_msgs::LaserScan laser_msg)
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "mini_mapping");
-    ros::NodeHandle nh("~");
+    ros::NodeHandle nh;
 
     double map_width;
     double map_height;
@@ -28,8 +30,9 @@ int main(int argc, char** argv)
   
     mini_map_builder = new mapping::MiniMapper(map_width, map_height, map_resolution);
 
+    ROS_INFO("HEllo");
     ros::Subscriber laserHandler = nh.subscribe<sensor_msgs::LaserScan>(
-                                                            "hokuyo_data",
+                                                            "/hokuyo_data",
                                                             1,
                                                             handleLaserScan
                                                             );
