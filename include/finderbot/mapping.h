@@ -47,6 +47,7 @@ class MiniMapper
     tf::TransformListener tf_listener_;
     tf::TransformBroadcaster tf_broadcaster_;
     std::string world_frame_id_;
+    std::string local_frame_id_;
     std::string map_frame_id_;
     long int prev_map_x_;
     long int prev_map_y_;
@@ -57,7 +58,7 @@ class MiniMapper
 
 
 public:
-    MiniMapper(int width, int height, double resolution);
+    MiniMapper(int width, int height, double resolution, std::string local_frame_id);
 
     void buildMap(const sensor_msgs::LaserScan& scan);
 

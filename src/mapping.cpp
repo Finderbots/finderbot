@@ -83,7 +83,7 @@ namespace mapping
         }
     }
 
-    MiniMapper::MiniMapper(int width, int height, double resolution) :
+    MiniMapper::MiniMapper(int width, int height, double resolution, std::string local_frame_id) :
         angle_resolution_(M_PI/720),
         p_occupied_laser_(default_p_occupied_laser),
         p_occupied_no_laser_(default_p_occupied_no_laser),
@@ -99,6 +99,9 @@ namespace mapping
             map_.data.assign(width*height, -1);
 
             log_odds_.assign(width*height, 0);
+
+            local_frame_id_ = local_frame_id;
+            map_frame_id_ = "map_frame_id";
 
             ros::NodeHandle private_nh("~");
             private_nh.getParam("angle_resolution", angle_resolution_);
@@ -117,32 +120,32 @@ namespace mapping
         }
     void MiniMapper::buildMap(const sensor_msgs::LaserScan& scan)
     {
-        ROS_INFO("buildMap Called");
         if (!has_frame_id_)
         {
         // Wait for a parent.
-            ROS_INFO("NO FRAME ID");
+            // ROS_INFO("enter no frame_id block");
             std::string parent;
-            bool has_parent = tf_listener_.getParent(scan.header.frame_id, ros::Time(0), parent);
+            bool has_parent = tf_listener_.getParent(local_frame_id_, ros::Time(0), parent);  
             if (!has_parent)
             {
               ROS_INFO_STREAM("No worldframe");
-              ROS_DEBUG_STREAM("Frame " << scan.header.frame_id << " has no parent");
+              ROS_DEBUG_STREAM("Frame " << local_frame_id_ << " has no parent");
               return;
             }
-            world_frame_id_ = getWorldFrame(tf_listener_, scan.header.frame_id);
-            ROS_INFO_STREAM("Found world frame " << world_frame_id_);
-            ROS_INFO("world_frame_id_ = %s", world_frame_id_.c_str());
+            // ROS_INFO("parent is %s", parent.c_str());
+            world_frame_id_ = getWorldFrame(tf_listener_, local_frame_id_);
+            // ROS_INFO_STREAM("Found world frame " << world_frame_id_);
+            // ROS_INFO("world_frame_id_ = %s", world_frame_id_.c_str());
             has_frame_id_ = true;
 
             // Initialize saved positions.
             tf::StampedTransform transform;
             try
             {
-                tf_listener_.waitForTransform(world_frame_id_, scan.header.frame_id,
-                  scan.header.stamp, ros::Duration(1.0));
-                tf_listener_.lookupTransform(world_frame_id_, scan.header.frame_id,
-                  scan.header.stamp, transform);
+                // tf_listener_.waitForTransform(world_frame_id_, local_frame_id_,
+                //   ros::Time(0), ros::Duration(1.0));
+                tf_listener_.lookupTransform(world_frame_id_, local_frame_id_,
+                  ros::Time(0), transform);
             }
             catch (tf::TransformException ex)
             {
@@ -160,17 +163,17 @@ namespace mapping
             map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
             map_transform.setRotation(tf::Quaternion(1, 0, 0, 0));
             tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform,
-            scan.header.stamp, scan.header.frame_id, map_frame_id_));
+            ros::Time::now(), local_frame_id_, map_frame_id_));
         }
 
         // Get the displacement.
         tf::StampedTransform new_tr;
         try
         {
-            tf_listener_.waitForTransform(world_frame_id_, scan.header.frame_id,
-                scan.header.stamp, ros::Duration(0.2));
-            tf_listener_.lookupTransform(world_frame_id_, scan.header.frame_id,
-                scan.header.stamp, new_tr);
+            // tf_listener_.waitForTransform(world_frame_id_, local_frame_id_,
+            //     ros::Time::now(), ros::Duration(0.2));
+            tf_listener_.lookupTransform(world_frame_id_, local_frame_id_,
+                ros::Time(0), new_tr);
         }
         catch (tf::TransformException ex)
         {
@@ -199,14 +202,13 @@ namespace mapping
             prev_map_x_ = xmap;
             prev_map_y_ = ymap;
         }
-
         // Update the map frame, so that it's oriented like frame named "world_frame_id_".
         tf::Transform map_transform;
         map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
         tf::Quaternion q;
         q.setRPY(0, 0, -theta);
         map_transform.setRotation(q);
-        tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform, scan.header.stamp, scan.header.frame_id, map_frame_id_));
+        // tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform, ros::Time(0), local_frame_id_, map_frame_id_));
     }
 
     bool MiniMapper::castRayToObstacle(const nav_msgs::OccupancyGrid& map, double angle, double range, std::vector<size_t>& raycast)
@@ -214,19 +216,34 @@ namespace mapping
         //TODO actual minimum range
         if (range < 1e-10)
         {
+            ROS_INFO("YA RAY AINT SHIT");
             raycast.clear();
             return false;
         }
 
         const std::vector<size_t>& ray_to_border = ray_caster_.getRayCastToMapBorder(
                                                 angle, map.info.height, map.info.width, 1.1*angle_resolution_);
-        
-        size_t dir = std::max(abs(std::cos(angle)), abs(std::sin(angle)));
-        const size_t pixel_range = lround(range* dir/ map.info.resolution);
-        if (pixel_range > ray_to_border.size()) return false;
 
+        
+        const size_t pixel_range = lround(range * std::max(fabs(std::cos(angle)), fabs(std::sin(angle))) / map.info.resolution);
+
+        // ROS_INFO("angle = %f", angle);
+        // ROS_INFO("resolution = %f", map.info.resolution);
+        // ROS_INFO("pixel range = %zd", pixel_range);
+        // ROS_INFO("range_to_border = %zd", ray_to_border.size());
+        
         raycast.clear();
         raycast.reserve(pixel_range);
+
+        if (pixel_range > ray_to_border.size())
+        {
+            for (size_t i = 0; i < ray_to_border.size(); i++)
+            {
+                raycast.push_back(ray_to_border[i]);
+            }
+            return false;
+        }
+        
         for (size_t i = 0; i < pixel_range; i++)
         {
             raycast.push_back(ray_to_border[i]);
@@ -256,11 +273,13 @@ namespace mapping
 
     bool MiniMapper::updateMap(const sensor_msgs::LaserScan& scan, long int dx, long int dy, double theta)
     {
+        // ROS_INFO("UPDATE Map");
         const bool has_moved = (dx != 0 || dy != 0);
         const int ncol = map_.info.width;
         if (has_moved)
         {
         // Move the map and log_odds_.
+            // ROS_INFO("Map moved");
             adjustMapForMovement(-1, dx, dy, ncol, map_.data);
             adjustMapForMovement(0, dx, dy, ncol, log_odds_);
         }
@@ -270,15 +289,20 @@ namespace mapping
         {
             const double angle = angles::normalize_angle(scan.angle_min + i * scan.angle_increment + theta);
             std::vector<size_t> pts;
+            // ROS_INFO("range = %f", scan.ranges[i]);
             const bool obstacle_in_map = castRayToObstacle(map_, angle, scan.ranges[i], pts);
             if (pts.empty())
             {
+                ROS_INFO("obstacle outside map");
                 continue;
             }
             if (obstacle_in_map)
             {
                 // The last point is the point with obstacle.
                 updateOccupancyVal(true, pts.back(), map_.data, log_odds_);
+                // ROS_INFO("occupancy val at (%zd,%zd) = %d", ray_caster::rowFromOffset(pts.back(), ncol),
+                //                                     ray_caster::colFromOffset(pts.back(), ncol), 
+                //                                     map_.data[pts.back()]);
                 pts.pop_back();
             }
             // The remaining points are in free space.

@@ -141,6 +141,8 @@ include_directories(
 #add_executable(finderbot src/ir_node.cpp src/IR_Sensor.cpp)
 add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
 
+add_executable(transform_node src/transform_node.cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -154,6 +156,11 @@ add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_ca
 ### Specify libraries to link a library or executable target against
 target_link_libraries(
    mini_mapping_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(
+   transform_node
    ${catkin_LIBRARIES}
 )
 
