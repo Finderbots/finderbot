@@ -142,6 +142,8 @@ include_directories(
 add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
 
 add_executable(transform_node src/transform_node.cpp)
+add_executable(simple_motion_node src/simple_motion_node.cpp)
+add_executable(global_map_node src/global_map_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -162,6 +164,16 @@ target_link_libraries(
 target_link_libraries(
    transform_node
    ${catkin_LIBRARIES}
+)
+
+target_link_libraries(
+  simple_motion_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(
+  global_map_node
+  ${catkin_LIBRARIES}
 )
 
 #############
