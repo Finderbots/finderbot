@@ -1,8 +1,8 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
   <model name='Finderbot_Lidar'>
-    <model name='Untitled'>
-      <link name='link_0'>
+    <model name='Finderbot'>
+      <link name='chassis'>
         <inertial>
           <mass>0.961969</mass>
           <inertia>
@@ -100,7 +100,7 @@
           </surface>
         </collision>
       </link>
-      <link name='link_1'>
+      <link name='back_right_wheel'>
         <inertial>
           <mass>1</mass>
           <inertia>
@@ -200,7 +200,7 @@
           </surface>
         </collision>
       </link>
-      <link name='link_1_clone'>
+      <link name='front_right_wheel'>
         <inertial>
           <mass>1</mass>
           <inertia>
@@ -300,7 +300,7 @@
           </surface>
         </collision>
       </link>
-      <link name='link_1_clone_0'>
+      <link name='back_left_wheel'>
         <inertial>
           <mass>1</mass>
           <inertia>
@@ -400,7 +400,7 @@
           </surface>
         </collision>
       </link>
-      <link name='link_1_clone_1'>
+      <link name='front_left_wheel'>
         <inertial>
           <mass>1</mass>
           <inertia>
@@ -500,9 +500,9 @@
           </surface>
         </collision>
       </link>
-      <joint name='link_0_JOINT_1' type='revolute'>
-        <parent>link_0</parent>
-        <child>link_1</child>
+      <joint name='back_right_joint' type='revolute'>
+        <parent>chassis</parent>
+        <child>back_right_wheel</child>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <axis>
           <xyz>0 0 1</xyz>
@@ -533,9 +533,9 @@
           </ode>
         </physics>
       </joint>
-      <joint name='link_0_JOINT_2' type='revolute'>
-        <parent>link_0</parent>
-        <child>link_1_clone</child>
+      <joint name='front_right_joint' type='revolute'>
+        <parent>chassis</parent>
+        <child>front_right_wheel</child>
         <pose frame=''>0 0 0 0 -0.01 0</pose>
         <axis>
           <xyz>0 0 1</xyz>
@@ -565,9 +565,9 @@
           </ode>
         </physics>
       </joint>
-      <joint name='link_0_JOINT_3' type='revolute'>
-        <parent>link_0</parent>
-        <child>link_1_clone_0</child>
+      <joint name='back_left_joint' type='revolute'>
+        <parent>chassis</parent>
+        <child>back_left_wheel</child>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <axis>
           <xyz>0 0 1</xyz>
@@ -597,9 +597,9 @@
           </ode>
         </physics>
       </joint>
-      <joint name='link_0_JOINT_4' type='revolute'>
-        <parent>link_0</parent>
-        <child>link_1_clone_1</child>
+      <joint name='front_left_joint' type='revolute'>
+        <parent>chassis</parent>
+        <child>front_left_wheel</child>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <axis>
           <xyz>0 0 1</xyz>
@@ -632,6 +632,31 @@
       <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
       <pose frame=''>-0.035457 -0.072805 -0.312323 0 -0 0</pose>
+
+      <plugin name="skid_steer_drive_controller" filename="libgazebo_ros_skid_steer_drive.so">
+        <updateRate>100.0</updateRate>
+        <leftFrontJoint>front_left_joint</leftFrontJoint>
+        <leftRearJoint>back_left_joint</leftRearJoint>
+        <rightFrontJoint>front_right_joint</rightFrontJoint>
+        <rightRearJoint>back_right_joint</rightRearJoint>
+        <wheelDiameter>0.1</wheelDiameter>
+        <wheelSeparation>0.37</wheelSeparation>
+        <robotBaseFrame>chassis</robotBaseFrame>
+        <torque>20</torque>
+        <commandTopic>finderbot_cmd_vel</commandTopic>
+        <odometryTopic>finderbot_odom</odometryTopic>
+        <broadcastTF>False</broadcastTF>
+      
+      </plugin> 
+
+      <plugin name="imu_plugin" filename="libgazebo_ros_imu.so">
+        <alwaysOn>true</alwaysOn>
+        <bodyName>chassis</bodyName>
+        <topicName>finderbot_imu</topicName>
+        <serviceName>imu_service</serviceName>
+        <gaussianNoise>0.0</gaussianNoise>
+        <updateRate>20.0</updateRate>
+      </plugin>
     </model>
     <model name='hokuyo_utm30lx'>
       <pose frame=''>0.035457 0.072805 0.312324 0 -0 1.5892</pose>
@@ -703,7 +728,11 @@
               <stddev>0.004</stddev>
             </noise>
           </ray>
-          <plugin name='gazebo_hokuyo' filename='libRayPlugin.so'/>
+          <plugin name="gazebo_hokuyo" filename="libgazebo_ros_laser.so">
+            <topicName>/hokuyo_data</topicName>
+            <robotNamespace>hokuyo</robotNamespace>
+            <frameName>hokuyo_frame</frameName>
+          </plugin>
           <update_rate>30</update_rate>
           <visualize>1</visualize>
           <always_on>1</always_on>
@@ -713,8 +742,8 @@
         <gravity>1</gravity>
       </link>
     </model>
-    <joint name='link_0_JOINT_0' type='fixed'>
-      <parent>Untitled::link_0</parent>
+    <joint name='lidar_fixed_joint' type='fixed'>
+      <parent>Finderbot::chassis</parent>
       <child>hokuyo_utm30lx::link</child>
       <pose frame=''>0 0 0 0 -0 0</pose>
       <physics>
