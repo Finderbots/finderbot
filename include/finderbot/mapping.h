@@ -42,13 +42,14 @@ class MiniMapper
     double max_log_odds_belief_;
     double x_init_;
     double y_init_;
+    double orientation_;
     bool has_frame_id_;
 
     tf::TransformListener tf_listener_;
     tf::TransformBroadcaster tf_broadcaster_;
     std::string world_frame_id_;
     std::string local_frame_id_;
-    std::string map_frame_id_;
+    // std::string map_frame_id_;
     long int prev_map_x_;
     long int prev_map_y_;
     nav_msgs::OccupancyGrid map_;

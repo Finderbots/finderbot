@@ -37,7 +37,7 @@ int main(int argc, char** argv)
                                                             1,
                                                             handleLaserScan
                                                             );
-    map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("slam_map",1,true);
+    map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("local_map",1,true);
 
     ros::spin();
 }  

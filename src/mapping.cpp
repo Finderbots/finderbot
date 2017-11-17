@@ -101,7 +101,7 @@ namespace mapping
             log_odds_.assign(width*height, 0);
 
             local_frame_id_ = local_frame_id;
-            map_frame_id_ = "map_frame_id";
+            // map_frame_id_ = "map_frame_id";
 
             ros::NodeHandle private_nh("~");
             private_nh.getParam("angle_resolution", angle_resolution_);
@@ -149,7 +149,6 @@ namespace mapping
             }
             catch (tf::TransformException ex)
             {
-                ROS_INFO("BADBADBAD1");
                 ROS_ERROR("%s", ex.what());
                 has_frame_id_ = false;
             }
@@ -159,11 +158,11 @@ namespace mapping
             prev_map_y_ = lround(y_init_ / map_.info.resolution);
 
             // Send a map frame with identity transform.
-            tf::Transform map_transform;
-            map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-            map_transform.setRotation(tf::Quaternion(1, 0, 0, 0));
-            tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform,
-            ros::Time::now(), local_frame_id_, map_frame_id_));
+            // tf::Transform map_transform;
+            // map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+            // map_transform.setRotation(tf::Quaternion(1, 0, 0, 0));
+            // tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform,
+            // ros::Time::now(), local_frame_id_, map_frame_id_));
         }
 
         // Get the displacement.
@@ -177,7 +176,6 @@ namespace mapping
         }
         catch (tf::TransformException ex)
         {
-            ROS_INFO("BADBADBAD2");
             ROS_ERROR("%s", ex.what());
             return;
         }
@@ -203,12 +201,12 @@ namespace mapping
             prev_map_y_ = ymap;
         }
         // Update the map frame, so that it's oriented like frame named "world_frame_id_".
-        tf::Transform map_transform;
-        map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-        tf::Quaternion q;
-        q.setRPY(0, 0, -theta);
-        map_transform.setRotation(q);
-        // tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform, ros::Time(0), local_frame_id_, map_frame_id_));
+        // tf::Transform map_transform;
+        // map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+        // tf::Quaternion q;
+        // q.setRPY(0, 0, -theta);
+        // map_transform.setRotation(q);
+        // tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform, ros::Time::now(), local_frame_id_, map_frame_id_));
     }
 
     bool MiniMapper::castRayToObstacle(const nav_msgs::OccupancyGrid& map, double angle, double range, std::vector<size_t>& raycast)
@@ -233,9 +231,7 @@ namespace mapping
         // ROS_INFO("range_to_border = %zd", ray_to_border.size());
         
         raycast.clear();
-        raycast.reserve(pixel_range);
-
-        if (pixel_range > ray_to_border.size())
+        if(std::abs(pixel_range) > ray_to_border.size())
         {
             for (size_t i = 0; i < ray_to_border.size(); i++)
             {
@@ -244,6 +240,8 @@ namespace mapping
             return false;
         }
         
+        raycast.reserve(pixel_range);
+
         for (size_t i = 0; i < pixel_range; i++)
         {
             raycast.push_back(ray_to_border[i]);
