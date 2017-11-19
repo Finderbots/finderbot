@@ -10,7 +10,7 @@
 
 #include "data_transmission.h"
 #include "wifi_connect.h"
-#include "audio_interface.h"
+#include "../audio/audio_interface.h"
 
 int base_sock_map;
 int robot_sock_map;

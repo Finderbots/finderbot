@@ -147,6 +147,7 @@ void connect_base()
 
 void disconnect_base()
 {
+	char exec_str[256];
 	strcpy(exec_str, kill_wpa_supplicant);
 	system(exec_str);
 	sleep(1);
@@ -239,6 +240,7 @@ void connect_robot()
 
 void disconnect_robot()
 {
+	char exec_str[256];
 	strcpy(exec_str, kill_wpa_supplicant);
 	system(exec_str);
 	sleep(1);

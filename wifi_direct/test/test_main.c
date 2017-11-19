@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#include "wifi_connect.h"
-#include "data_transmission.h"
+#include "../wifi_connect.h"
+#include "../data_transmission.h"
 
 void base_image()
 {
@@ -27,7 +27,7 @@ void robot_image()
 	printf("robot init success\n");
 
 	sleep(3);
-	const char* file_name = "/home/pi/Downloads/keep-calm-and-love-rohit-12.png";
+	const char* file_name = "/home/odroid/Downloads/keep-calm-and-love-rohit-12.png";
 	for (int i = 0; i < 10; ++i) send_image_from_robot(file_name);
 	printf("robot done\n");
 }
@@ -59,7 +59,7 @@ void robot_audio_in()
 int main()
 {
 	// call func for device running on
-	base_image();
+	robot_image();
 
 
     return 0;
