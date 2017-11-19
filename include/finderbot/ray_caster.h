@@ -62,9 +62,7 @@ inline size_t offsetFromRowCol(const size_t row, const size_t col, const size_t 
 
 /* Return true if the point lies in the map
  */
-inline bool pointInMap(const int
- row, const int
- col, const size_t nrow, const size_t ncol)
+inline bool pointInMap(const int row, const int col, const size_t nrow, const size_t ncol)
 {
     return ((0 <= col) && ((size_t) col < ncol) && (0 <= row) && ((size_t) row < nrow));
 }
