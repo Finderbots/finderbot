@@ -2,22 +2,37 @@
 
 namespace global_mapping
 {
+    const double default_p_occupied_laser = 0.9;
+    const double default_p_occupied_no_laser = 0.3;
+    const double default_max_log_odds = 100;
+    const double default_belief_threshold = 20;
+
     GlobalMapBuilder::GlobalMapBuilder(int width, int height, double resolution, std::string laser_frame_id)
+        :
+        p_occupied_laser_(default_p_occupied_laser),
+        p_occupied_no_laser_(default_p_occupied_no_laser),
+        max_log_odds_(default_max_log_odds),
+        belief_threshold_(default_belief_threshold)
     {
-        ROS_INFO("HELLO");
         map_.info.width = width;
         map_.info.height = height;
         map_.info.resolution = resolution;
         map_.info.origin.position.x = resolution * static_cast<double>(width) / 2;
         map_.info.origin.position.y = resolution * static_cast<double>(height) / 2;
-
         map_.info.origin.orientation.w = 1.0;
+
+
         map_.data.assign(width * height, -1);
+        log_odds_map_.assign(width*height, 0);
 
         laser_frame_id_ = laser_frame_id;
         world_frame_id_ = "world";
 
-        //TODO add log_odds stuff
+        ros::NodeHandle private_nh("~");
+        private_nh.getParam("p_occupied_laser", p_occupied_laser_);            
+        private_nh.getParam("p_occupied_when_no_laser", p_occupied_no_laser_);
+        private_nh.getParam("max_log_odds", max_log_odds_);
+        private_nh.getParam("belief_threshold", belief_threshold_);
     }
 
     void GlobalMapBuilder::updatePosition()
@@ -64,6 +79,22 @@ namespace global_mapping
         map_y_ = (dy / map_.info.resolution) + init_map_y_;
 
     }
+
+    void GlobalMapBuilder::updateProbOccupied(bool occupied,  size_t idx)
+    {
+        double p;
+        if (occupied) p  = p_occupied_laser_;
+        else p = p_occupied_no_laser_;
+        log_odds_map_[idx] += std::log(p / (1-p));
+
+        if (log_odds_map_[idx] > max_log_odds_) log_odds_map_[idx] = max_log_odds_;
+        else if (log_odds_map_[idx] < -max_log_odds_) log_odds_map_[idx] = -max_log_odds_;
+    
+        if (log_odds_map_[idx] >= belief_threshold_) map_.data[idx] = 100;
+        else map_.data[idx] = 0;
+
+    }
+
     void GlobalMapBuilder::addLocalMap(const nav_msgs::OccupancyGrid& local_map)
     {
         updatePosition();
@@ -75,8 +106,6 @@ namespace global_mapping
 
         size_t global_start_row = map_x_ - local_nrow/2;
         size_t global_start_col = map_y_ - local_ncol/2;
-        ROS_INFO("start_row = %zd", global_start_row);
-        ROS_INFO("start_col = %zd", global_start_col);
 
         for (size_t i = 0; i < local_nrow; i++)
         {
@@ -86,9 +115,17 @@ namespace global_mapping
                 size_t global_idx = getOffsetRowCol(global_start_col+i, 
                                                     global_start_row+j, 
                                                     map_.info.width);
-                if(local_map.data[local_idx] != -1)
+
+
+                if(local_map.data[local_idx] == 100)
                 {
-                    map_.data[global_idx] = local_map.data[local_idx];
+                    updateProbOccupied(true, global_idx);
+                    // map_.data[global_idx] = local_map.data[local_idx];
+                }
+
+                else if (local_map.data[local_idx] == 0)
+                {
+                    updateProbOccupied(false, global_idx);
                 }
             }   
         }

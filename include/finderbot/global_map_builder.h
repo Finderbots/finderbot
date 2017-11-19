@@ -32,9 +32,15 @@ class GlobalMapBuilder
     size_t map_x_;
     size_t map_y_;
 
+    double p_occupied_laser_;
+    double p_occupied_no_laser_;
+    double max_log_odds_;
+    double belief_threshold_;
+
     bool transform_initialized;
 
     void updatePosition();
+    void updateProbOccupied(bool occupied, size_t idx);
 
 public:
 
