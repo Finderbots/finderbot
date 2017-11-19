@@ -290,11 +290,7 @@ void base_send_audio()
 	
 	while (1)
 	{
-		if ((err = snd_pcm_readi (base_capture_handle, buf, buf_frame)) != buf_frame) {
-			fprintf (stderr, "read from audio interface failed (%s)\n",
-				 snd_strerror (err));
-			exit(1);
-		}
+		base_capture(buf, buf_frame);
 
 		if (sendto(base_sock_audio_out, buf, buf_len, 0, (struct sockaddr *) &robot_audio_in_addr, sizeof(robot_audio_in_addr)) < 0) 
 		{
@@ -323,12 +319,7 @@ void robot_recv_audio()
 			exit(1);
 		}
 
-		// play audio
-		if ((err = snd_pcm_writei (robot_playback_handle, buf, buf_frame)) != buf_frame) {
-			fprintf (stderr, "write to audio interface failed (%s)\n",
-				 snd_strerror (err));
-			exit (1);
-		}
+		robot_playback(buf, buf_frame);
 	}
 }
 
