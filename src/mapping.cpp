@@ -2,6 +2,8 @@
 #include <cmath>
 #include <finderbot/mapping.h>
 
+//TODO :: clean this up so its more readable and take out unused calculations
+
 namespace mapping
 {
     const double default_p_occupied_laser = 0.9;
@@ -13,8 +15,8 @@ namespace mapping
     {
         if(std::fabs(q.x()) > 1e-5 || std::fabs(q.y()) > 1e-5){
             tf::Vector3 axis = q.getAxis();
-            ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
-                axis.x(), axis.y(), axis.z());
+            // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
+                // axis.x(), axis.y(), axis.z());
         }
 
         return 2*std::atan2(q.z(), q.w());
@@ -82,6 +84,8 @@ namespace mapping
             }
         }
     }
+
+
 
     MiniMapper::MiniMapper(int width, int height, double resolution, std::string local_frame_id) :
         angle_resolution_(M_PI/720),
@@ -157,12 +161,7 @@ namespace mapping
             prev_map_x_ = lround(x_init_ / map_.info.resolution);
             prev_map_y_ = lround(y_init_ / map_.info.resolution);
 
-            // Send a map frame with identity transform.
-            // tf::Transform map_transform;
-            // map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-            // map_transform.setRotation(tf::Quaternion(1, 0, 0, 0));
-            // tf_broadcaster_.sendTransform(tf::StampedTransform(map_transform,
-            // ros::Time::now(), local_frame_id_, map_frame_id_));
+            
         }
 
         // Get the displacement.
@@ -192,10 +191,10 @@ namespace mapping
         const long int map_dy = ymap - prev_map_y_;
 
         // Update the map
-        const bool move = updateMap(scan, map_dx, map_dy, theta);
+        const bool move = updateMap(scan, map_dy, map_dx, theta);
         if (move)
         {
-        //ROS_INFO("Displacement: %ld, %ld pixels", map_dx, map_dy);
+            // ROS_INFO("Displacement: %ld, %ld pixels", map_dx, map_dy);
         // Record the position only if the map moves.
             prev_map_x_ = xmap;
             prev_map_y_ = ymap;
@@ -214,7 +213,7 @@ namespace mapping
         //TODO actual minimum range
         if (range < 1e-10)
         {
-            ROS_INFO("YA RAY AINT SHIT");
+            ROS_INFO("ya ray ain't shit");
             raycast.clear();
             return false;
         }
@@ -224,29 +223,31 @@ namespace mapping
 
         
         const size_t pixel_range = lround(range * std::max(fabs(std::cos(angle)), fabs(std::sin(angle))) / map.info.resolution);
-
-        // ROS_INFO("angle = %f", angle);
-        // ROS_INFO("resolution = %f", map.info.resolution);
-        // ROS_INFO("pixel range = %zd", pixel_range);
-        // ROS_INFO("range_to_border = %zd", ray_to_border.size());
-        
-        raycast.clear();
-        if(std::abs(pixel_range) > ray_to_border.size())
+        size_t raycast_size;
+        if(pixel_range < 0)
         {
-            for (size_t i = 0; i < ray_to_border.size(); i++)
-            {
-                raycast.push_back(ray_to_border[i]);
-            }
-            return false;
+            ROS_WARN("Negative pixel range How??");
+        }
+
+        bool obstacle_in_map = std::abs(pixel_range) < ray_to_border.size();
+
+        if (obstacle_in_map)
+        {
+            raycast_size = pixel_range;
+        }
+        else
+        {
+            raycast_size = ray_to_border.size();
         }
         
-        raycast.reserve(pixel_range);
+        raycast.clear();
+        raycast.reserve(raycast_size);
 
-        for (size_t i = 0; i < pixel_range; i++)
+        for (size_t i = 0; i < raycast_size; i++)
         {
             raycast.push_back(ray_to_border[i]);
         }
-        return true;
+        return obstacle_in_map;
         
     }
 
@@ -263,11 +264,30 @@ namespace mapping
         if (log_odds[idx] < -large_log_odds_) log_odds[idx] = -large_log_odds_;
         else if (log_odds[idx] > large_log_odds_) log_odds[idx] = large_log_odds_;
 
-        if (log_odds[idx] < -max_log_odds_belief_) occupancy[idx] = 0;
-        else if (log_odds[idx] > max_log_odds_belief_) occupancy[idx] = 100;
-        else occupancy[idx] = static_cast<int8_t>(lround(1 - 1/ (1 + std::exp(log_odds[idx]))*100));
+        if (log_odds[idx] < max_log_odds_belief_) occupancy[idx] = 0;
+        else  occupancy[idx] = 100;
+        // else occupancy[idx] = static_cast<int8_t>(lround(1 - 1/ (1 + std::exp(log_odds[idx]))*100));
     }
 
+    void fakeupdate(bool occupied, size_t idx, std::vector<int8_t>& occupancy)
+    {
+        if (idx >= occupancy.size()) 
+        {
+            ROS_WARN("IDX > OccupancyGrid");
+            return;
+        }
+
+        if (occupied) occupancy[idx] = 100;
+        else occupancy[idx] = 0;
+    }
+
+    inline void vec_fakeupdate(bool occupied, std::vector<size_t>& ray, std::vector<int8_t>& occupancy)
+    {
+        for (size_t i = 0; i < ray.size(); i++)
+        {
+            fakeupdate(occupied, ray[i], occupancy);
+        }
+    }
 
     bool MiniMapper::updateMap(const sensor_msgs::LaserScan& scan, long int dx, long int dy, double theta)
     {
@@ -276,10 +296,8 @@ namespace mapping
         const int ncol = map_.info.width;
         if (has_moved)
         {
-        // Move the map and log_odds_.
-            // ROS_INFO("Map moved");
-            adjustMapForMovement(-1, dx, dy, ncol, map_.data);
-            adjustMapForMovement(0, dx, dy, ncol, log_odds_);
+            //generate new map
+            map_.data.assign(map_.info.width * map_.info.height, -1);
         }
 
         // Update occupancy.
@@ -297,14 +315,15 @@ namespace mapping
             if (obstacle_in_map)
             {
                 // The last point is the point with obstacle.
-                updateOccupancyVal(true, pts.back(), map_.data, log_odds_);
+                fakeupdate(true, pts.back(), map_.data);
+
                 // ROS_INFO("occupancy val at (%zd,%zd) = %d", ray_caster::rowFromOffset(pts.back(), ncol),
                 //                                     ray_caster::colFromOffset(pts.back(), ncol), 
                 //                                     map_.data[pts.back()]);
                 pts.pop_back();
             }
             // The remaining points are in free space.
-            vec_updateOccupancy(false, pts, map_.data, log_odds_);
+            vec_fakeupdate(false, pts, map_.data);
         }
         return has_moved;
     }

@@ -139,11 +139,11 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/finderbot_node.cpp)
 #add_executable(finderbot src/ir_node.cpp src/IR_Sensor.cpp)
-add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
 
+add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
 add_executable(transform_node src/transform_node.cpp)
 add_executable(simple_motion_node src/simple_motion_node.cpp)
-add_executable(global_map_node src/global_map_node.cpp)
+add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
