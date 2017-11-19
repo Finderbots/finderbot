@@ -23,8 +23,8 @@ const char* robot_interface = "wlan0";
 const char* robot_driver = "nl80211";
 const char* robot_conf = "/etc/eecs473/wpa_supplicant.conf";
 
-int buf_len = 1024;
-char read_buf[1024];
+int buf_len = 4096;
+char read_buf[4096];
 
 const char* p2p_find = "p2p_find\n";
 const char* p2p_peers = "p2p_peers\n";
@@ -34,7 +34,39 @@ const char* p2p_quit = "quit";
 int p2p_freq = 2412; // channel 
 const char* response_end = "OK\n> ";
 
+void strip_kernel_output(char* cli_out)
+{
+    int in_loc = 0;
+    int out_loc = 0;
+    int kernel_out = 0;
 
+    while (cli_out[in_loc] != '\0')
+    {
+        if (kernel_out == 1)
+        {
+            if (cli_out[in_loc] == '\n')
+            {
+                kernel_out = 0;
+            }
+        }
+        if (kernel_out == 0)
+        {
+            if (cli_out[in_loc] == '<')
+            {
+                kernel_out = 1;
+                out_loc = out_loc - 4;
+            }
+            else
+            { 
+                cli_out[out_loc] = cli_out[in_loc];
+                out_loc = out_loc + 1;
+            }
+        }
+
+        in_loc = in_loc + 1;
+    }
+    cli_out[out_loc] = '\0';
+}
 
 int popen2(const char *cmdline, struct popen2 *childinfo) {
     pid_t p;
@@ -96,6 +128,7 @@ void connect_base()
 	sleep(1);
 	memset(read_buf, 0, buf_len);
 	read(wpa_cli.from_child, read_buf, buf_len);
+        strip_kernel_output(read_buf);
 	sleep(1);
 	strcat(exec_str, response_end); // set exec_str to expected output
 	if (strcmp(read_buf, exec_str))
@@ -114,6 +147,7 @@ void connect_base()
 		sleep(1);
 		memset(read_buf, 0, buf_len);
 		read(wpa_cli.from_child, read_buf, buf_len);
+                strip_kernel_output(read_buf);
 		sleep(1);
 		found_robot_mac = find_mac(read_buf, buf_len, robot_mac, strlen(robot_mac));
 	}
@@ -124,6 +158,7 @@ void connect_base()
 	sleep(1);
 	memset(read_buf, 0, buf_len);
 	read(wpa_cli.from_child, read_buf, buf_len);
+        strip_kernel_output(read_buf);
 	sleep(1);
 	strcat(exec_str, response_end); // set exec_str to expected output
 	if (strcmp(read_buf, exec_str))
@@ -187,6 +222,7 @@ void connect_robot()
 	sleep(1);
 	memset(read_buf, 0, buf_len);
 	read(wpa_cli.from_child, read_buf, buf_len);
+        strip_kernel_output(read_buf);
 	sleep(1);
 	strcat(exec_str, response_end); // set exec_str to expected output
 	if (strcmp(read_buf, exec_str))
@@ -205,6 +241,7 @@ void connect_robot()
 		sleep(1);
 		memset(read_buf, 0, buf_len);
 		read(wpa_cli.from_child, read_buf, buf_len);
+                strip_kernel_output(read_buf);
 		sleep(1);
 		found_base_mac = find_mac(read_buf, buf_len, base_mac, strlen(base_mac));
 	}
@@ -217,6 +254,7 @@ void connect_robot()
 	sleep(1);
 	memset(read_buf, 0, buf_len);
 	read(wpa_cli.from_child, read_buf, buf_len);
+        strip_kernel_output(read_buf);
 	sleep(1);
 	strcat(exec_str, response_end); // set exec_str to expected output
 	if (strcmp(read_buf, exec_str))
