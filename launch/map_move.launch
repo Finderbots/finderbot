@@ -8,4 +8,6 @@
 
     <node pkg="finderbot" name="simple_motion" type="simple_motion_node" />
 
+    <node pkg="finderbot" name="global_mapping" type="global_map_node" output="screen" />
+
 </launch>
