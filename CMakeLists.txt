@@ -58,6 +58,7 @@ find_package(gazebo REQUIRED)
 add_message_files(
    FILES
    Ir.msg
+   PF_Input.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -143,7 +144,7 @@ include_directories(
 add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
 add_executable(transform_node src/transform_node.cpp)
 add_executable(simple_motion_node src/simple_motion_node.cpp)
-add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp)
+add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp src/ray_caster.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
