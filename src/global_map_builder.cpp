@@ -185,6 +185,8 @@ namespace global_mapping
 
     void GlobalMapBuilder::createNewLocalMap(const sensor_msgs::LaserScan& scan)
     {
+        local_map_.data.assign(local_map_.info.width* local_map_.info.height, -1);
+
         const int ncol = local_map_.info.width;
         for (size_t i = 0; i < scan.ranges.size(); ++i)
         {
@@ -231,16 +233,14 @@ namespace global_mapping
     {
         assert(global_map_.info.resolution == local_map_.info.resolution);
 
-        pf_.idxs.clear();
-        pf_.probs.clear();
-
-        updatePosition();
-
         size_t local_ncol = local_map_.info.width;
         size_t local_nrow = local_map_.info.height;
 
         size_t global_start_row = map_x_ - local_nrow/2;
         size_t global_start_col = map_y_ - local_ncol/2;
+
+        ROS_INFO("start row = %zd", global_start_row);
+        ROS_INFO("start col = %zd", global_start_col);
 
         for (size_t i = 0; i < local_nrow; i++)
         {
@@ -255,8 +255,8 @@ namespace global_mapping
                 if(local_map_.data[local_idx] == 100)
                 {
                     updateProbOccupied(true, global_idx);
-                    pf_.idxs.push_back(global_idx);
-                    pf_.probs.push_back(global_map_.data[global_idx]);
+                    // pf_.idxs.push_back(global_idx);
+                    // pf_.probs.push_back(global_map_.data[global_idx]);
                 }
 
                 else if (local_map_.data[local_idx] == 0)

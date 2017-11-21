@@ -13,13 +13,6 @@ ros::Publisher global_map_publisher;
 ros::Publisher pf_publisher;
 global_mapping::GlobalMapBuilder* global_map_builder;
 
-// void handleLocalMap(const nav_msgs::OccupancyGrid local_map)
-// {
-
-//     global_map_builder->addLocalMap(local_map);
-//     global_map_publisher.publish(global_map_builder->getMap());
-
-// }
 
 void handleLaserScan(const sensor_msgs::LaserScan scan)
 {
