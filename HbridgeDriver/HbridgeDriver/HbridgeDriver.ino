@@ -1,22 +1,22 @@
 
 int Motor[4][2] = //two dimensional array
 {
-{4 , 5},   //input pin to control Motor1 (front right)--> Motor[0][0]=4, Motor[0][1]=5
+{2 , 4},   //input pin to control Motor1 (front right)--> Motor[0][0]=4, Motor[0][1]=5
 {6 , 7},   //input pin to control Motor2 (back right)--> Motor[1][0]=6, Motor[1][1]=7
-{8 , 9},   //input pin to control Motor3 (front left)--> Motor[2][0]=8, Motor[2][1]=9
-{10, 11},  //input pin to control Motor4 (back left)--> Motor[3][0]=10, Motor[3][1] = 11
+{8 , 10},   //input pin to control Motor3 (front left)--> Motor[2][0]=8, Motor[2][1]=9
+{12, 13},  //input pin to control Motor4 (back left)--> Motor[3][0]=10, Motor[3][1] = 11
 };
 
-#define EN1  9
-#define EN2  3
-#define EN3  12
-#define EN4  13
+#define EN1  3
+#define EN2  5
+#define EN3  9
+#define EN4  11
 
 #define STOP  'S'
 #define FORWARD  'F'
 #define BACKWARD  'B'
-#define FRIGHT 'R'
-#define FLEFT 'L'
+#define RIGHT 'R'
+#define LEFT 'L'
 
 
 const char SoP = 'C';
@@ -28,7 +28,7 @@ unsigned char inByte;
 char message[MESSAGE_MAX_SIZE];
 char command;
 
-int SPEED = 150;
+int SPEED = 100;
 void stop_bot();
 void forwards();
 void backwards();
@@ -69,7 +69,8 @@ void loop(){
     if (message[0] == '1') {
         // Move command
         command = message[1];
-        moveRobot("STOP");
+        moveRobot('S');
+        delay(1000);
         moveRobot(command);
     }
     else if (message[0] == '2') {
@@ -224,3 +225,4 @@ void motor_run(int motor, int enable, int movement) {
       break;   
     }   
   }     
+

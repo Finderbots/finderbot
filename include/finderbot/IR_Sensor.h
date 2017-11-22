@@ -8,13 +8,12 @@
  * 	Total:		-8.7x+688
  *
  */
-#include "Arduino.h"
 
 class InfraredSensor
 {
-	int DATA;
+	int pin;
   public:
-  	InfraredSensor(const int _DATA) : DATA(_DATA) {}
+  	InfraredSensor() {}
 	
 	// enables the infrared sensor and starts measuring distance.
 	void init();
@@ -23,5 +22,5 @@ class InfraredSensor
 	int get_distance_mm();
 	
 	// returns 1 if out of the threshold, else returns 0
-	int out_of_threshold();
+	int out_of_threshold(int dist);
 };

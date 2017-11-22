@@ -1,6 +1,6 @@
-#include "ros/ros.h"
-#include "finderbot/Ir.h"
-#include "finderbot/IR_Sensor.h"
+#include <ros/ros.h>
+#include <finderbot/Ir.h>
+#include <finderbot/IR_Sensor.h>
 
 int main(int argc, char** argv)
 {
@@ -14,8 +14,8 @@ int main(int argc, char** argv)
 
     int count = 0;
     InfraredSensor ir_1;
-    ir_1.set_data(10);
-
+    ir_1.init();
+    
     while(ros::ok()){
        // define msg here 
         finderbot::Ir msg;
