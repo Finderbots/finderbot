@@ -102,7 +102,6 @@ void setup_mic_base()
 
 void setup_speaker_base()
 {
-	const char* base_speaker_device = "hw:0,0";
 	int err;
 	snd_pcm_hw_params_t *hw_params;
 
@@ -252,7 +251,6 @@ void setup_mic_robot()
 
 void setup_speaker_robot()
 {
-	const char* robot_speaker_device = "hw:0,0";
 	int err;
 	snd_pcm_hw_params_t *hw_params;
 
