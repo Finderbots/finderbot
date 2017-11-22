@@ -123,7 +123,7 @@ namespace global_mapping
             tf::StampedTransform transform;
             try
             {
-                tf_listener_.lookupTransform(laser_frame_id_,world_frame_id_, 
+                tf_listener_.lookupTransform(world_frame_id_, laser_frame_id_,
                                 ros::Time(0), transform);
             }
             catch(tf::TransformException ex)
@@ -135,6 +135,7 @@ namespace global_mapping
             x_init_ = transform.getOrigin().x();
             y_init_ = transform.getOrigin().y();
 
+
             transform_initialized = true;
             //robot initialized in center of map
             init_map_x_ = global_map_.info.height/2;
@@ -144,7 +145,7 @@ namespace global_mapping
         tf::StampedTransform new_transform;
         try
         {
-            tf_listener_.lookupTransform(laser_frame_id_,world_frame_id_, 
+            tf_listener_.lookupTransform(world_frame_id_, laser_frame_id_,
                             ros::Time(0), new_transform);
         }
         catch(tf::TransformException ex)
@@ -159,7 +160,8 @@ namespace global_mapping
         map_x_ = (dx / global_map_.info.resolution) + init_map_x_;
         map_y_ = (dy / global_map_.info.resolution) + init_map_y_;
 
-        theta_ = convertQuatToAngle(new_transform.getRotation());
+        theta_ = convertQuatToAngle(new_transform.getRotation()) + M_PI/2;
+
 
     }
 
@@ -232,6 +234,7 @@ namespace global_mapping
     void GlobalMapBuilder::addLocalMapToGlobal()
     {
         assert(global_map_.info.resolution == local_map_.info.resolution);
+        updatePosition();
 
         size_t local_ncol = local_map_.info.width;
         size_t local_nrow = local_map_.info.height;
@@ -239,18 +242,14 @@ namespace global_mapping
         size_t global_start_row = map_x_ - local_nrow/2;
         size_t global_start_col = map_y_ - local_ncol/2;
 
-        ROS_INFO("start row = %zd", global_start_row);
-        ROS_INFO("start col = %zd", global_start_col);
-
         for (size_t i = 0; i < local_nrow; i++)
         {
             for (size_t j = 0; j < local_ncol; j++)
             {
                 size_t local_idx = getOffsetRowCol(i, j, local_ncol);
-                size_t global_idx = getOffsetRowCol(global_start_col+i, 
-                                                    global_start_row+j, 
+                size_t global_idx = getOffsetRowCol(global_start_row+i, 
+                                                    global_start_col+j, 
                                                     global_map_.info.width);
-
 
                 if(local_map_.data[local_idx] == 100)
                 {

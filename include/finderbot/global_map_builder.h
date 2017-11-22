@@ -37,6 +37,7 @@ class GlobalMapBuilder
 
     double x_init_;
     double y_init_;
+    double theta_init_;
 
     size_t init_map_x_;
     size_t init_map_y_;
