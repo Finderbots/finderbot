@@ -233,6 +233,8 @@ int base_init_audio_out()
 		return -1;
 	}
 
+	setup_mic_base();
+
 	return 0;
 }
 
@@ -279,6 +281,7 @@ int robot_init_audio_in()
 		return -1;
 	}
 
+	setup_speaker_robot();
 }
 
 void base_send_audio()
