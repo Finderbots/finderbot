@@ -13,13 +13,12 @@
 #include <string>
 
 
-class SLAMmer
+class SLAM
 {
     double x;
     double y;
 
 public:
-
     
 };
 
