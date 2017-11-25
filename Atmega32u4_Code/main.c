@@ -2,6 +2,26 @@
 #include <util/delay.h>
 #include "Arduino_FreeRTOS.h"
 
+void init_pwm();
+
+void motor_run(int motor, uint8_t speed, int movement);
+
+void stop_bot(void);
+
+void forwards(void);
+
+void backwards(void);
+
+void right(void);
+
+void left(void);
+
+void update_speed(void);
+
+void init_motor_pins(void);
+
+void reset_speeds(void);
+
 void TaskMotorCommand(void *pvParameters);
 
 void TaskIRSensorRead(void *pvParameters);
@@ -15,10 +35,10 @@ void TaskPIDController(void *pvParameters);
 void TaskTestTimers(void *pvParameters);
 
 /* speeds updated by PID and MotorCommand */
-int speedFL = 0;
-int speedFR = 0;
-int speedBL = 0;
-int speedBR = 0;
+volatile int speedFL = 0;
+volatile int speedFR = 0;
+volatile int speedBL = 0;
+volatile int speedBR = 0;
 
 /* values read from IR sensor. Updated by IRSensorRead. Sent via SPI to XU4 */
 int IRleftVal = 0;
@@ -32,24 +52,24 @@ int yaw = 0;
 /* Motor pin array */
 int Motor[4][2] = //two dimensional array
 {
-{4 , 5},   //input pin to control Motor1 (front right)--> Motor[0][0]=4, Motor[0][1]=5
-{6 , 7},   //input pin to control Motor2 (back right)--> Motor[1][0]=6, Motor[1][1]=7
-{8 , 9},   //input pin to control Motor3 (front left)--> Motor[2][0]=8, Motor[2][1]=9
-{10, 11},  //input pin to control Motor4 (back left)--> Motor[3][0]=10, Motor[3][1] = 11
+{PD4 , PD6},   //input pin to control Motor1 (front right)
+{PB4 , PB5},   //input pin to control Motor2 (back right)
+{PF4 , PF5},   //input pin to control Motor3 (front left)
+{PF6 , PF7},  //input pin to control Motor4 (back left)
 };
 
 /* Motor enable pins */
-#define EN1  9
-#define EN2  3
-#define EN3  12
-#define EN4  13
+#define EN1  PD7
+#define EN2  PB6
+#define EN3  PC7
+#define EN4  PF7
 
 /* motor commands */
 #define STOP  'S'
 #define FORWARD  'F'
 #define BACKWARD  'B'
-#define FRIGHT 'R'
-#define FLEFT 'L'
+#define RIGHT 'R'
+#define LEFT 'L'
 
 /* motor command overhead */
 const char SoP = 'C';
@@ -65,21 +85,21 @@ char command;
 int main(void)
 {
 
-    xTaskCreate(
-    TaskTestTimers
-    ,  (const portCHAR *)"TimerTest"  // A name just for humans
-    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    ,  NULL
-    ,  5  // Priority (low num = low priority)
-    ,  NULL );
-
     // xTaskCreate(
-    // TaskMotorCommand
-    // ,  (const portCHAR *)"MotorCommand"  // A name just for humans
+    // TaskTestTimers
+    // ,  (const portCHAR *)"TimerTest"  // A name just for humans
     // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
     // ,  NULL
     // ,  5  // Priority (low num = low priority)
     // ,  NULL );
+
+    xTaskCreate(
+    TaskMotorCommand
+    ,  (const portCHAR *)"MotorCommand"  // A name just for humans
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  5  // Priority (low num = low priority)
+    ,  NULL );
 
     // xTaskCreate(
     // TaskIRSensorRead
@@ -119,10 +139,9 @@ int main(void)
     return 0;               /* never reached */
 }
 
-void TaskTestTimers(void *pvParameters) {
-    
+void init_pwm() {
     DDRC |= _BV(PC7) | _BV(PC6); //set DDC7 = 1 -> PC7 is output pin, DDC6 = 1 ->PC6 is output
-    DDRD |= _BV(PD0) | _BV(PD7); //set DDD0 as output, testing; DDD7 as output -> PD7
+    DDRD |= _BV(PD7); //set DDD0 as output, testing; DDD7 as output -> PD7
     DDRB |= _BV(PB6); //set DDB6 as output -> PB6
 
 
@@ -145,25 +164,154 @@ void TaskTestTimers(void *pvParameters) {
 
     ICR3 = 0xFF; //set TOP value for Timer 3
     
-    for(;;)
-    {
-        OCR3A = 0x7F; //set duty cycle for PC6 - TOP is 0xFF by default. 
-        OCR4A = 0x7F; //set duty cycle for PC7 
-        OCR4B = 0x7F; //set duty cycle for PB6
-        OCR4D = 0x7F; //set duty cycle for PB7
+}
 
-        vTaskDelay(pdMS_TO_TICKS(100));
-        PORTD ^= 1;    /* toggle the LED */
+void motor_run(int motor, uint8_t speed, int movement) {
+    int port = PORTD;
+    switch(motor) {
+        case 0: 
+            speedFR = speed;
+            port = PORTD;
+            break;
+        case 1:
+            speedBR = speed;
+            port = PORTB;
+            break;
+        case 2:
+            speedFL = speed;
+            port = PORTF;
+            break;
+        case 3:
+            speedBL = speed;
+            port = PORTF;
+            break;
     }
+
+  switch (movement) {
+    case FORWARD:  
+      update_speed();
+      port |= _BV(Motor[motor][0]); //high
+      port &= ~(_BV(Motor[motor][1])); //low
+      break;
+    case BACKWARD:   
+      update_speed();
+      port &= ~(_BV(Motor[motor][0])); //low
+      port |= _BV(Motor[motor][1]); //high
+      break; 
+    case STOP:  
+        speedFR = 0; speedBR = 0; speedFL = 0; speedBL = 0;
+        update_speed();
+        port &= ~(_BV(Motor[motor][0])); //low
+        port &= ~(_BV(Motor[motor][1])); //low
+        break;   
+    }   
+  } 
+
+void update_speed(void) {
+    OCR4D = speedFR;
+    OCR4B = speedBR;
+    OCR4A = speedFL;
+    OCR3A = speedBL;
+}
+
+void stop_bot(void) {
+  motor_run(0, speedFR, STOP);
+  motor_run(1, speedBR, STOP);
+  motor_run(2, speedFL, STOP);
+  motor_run(3, speedBL, STOP);
+}
+
+void forwards(void) {
+  motor_run(0, speedFR, FORWARD); 
+  motor_run(1, speedBR, FORWARD); 
+  motor_run(2, speedFL, FORWARD); 
+  motor_run(3, speedBL, FORWARD); 
+}
+
+void backwards(void){
+  motor_run(0, speedFR, BACKWARD);
+  motor_run(1, speedBR, BACKWARD);
+  motor_run(2, speedFL, BACKWARD);
+  motor_run(3, speedBL, BACKWARD); 
+}
+
+void right(void) {
+  motor_run(0, speedFR, BACKWARD); 
+  motor_run(1, speedBR, BACKWARD);    
+  motor_run(2, speedFL, FORWARD);    
+  motor_run(3, speedBL, FORWARD);    
+}
+
+void left(void) {
+  motor_run(0, speedFR, FORWARD);    
+  motor_run(1, speedBR, FORWARD);    
+  motor_run(2, speedFL, BACKWARD);    
+  motor_run(3, speedBL, BACKWARD);
+}
+
+void moveRobot(char command) {
+     switch(command) {
+        case FORWARD:
+            forwards();
+            break;
+        case BACKWARD:
+            backwards();
+            break;
+        case STOP:
+            stop_bot();
+            break;
+        case RIGHT:
+            right();
+            break;
+        case LEFT:
+            left();
+            break;
+        default:
+            stop_bot();
+            break;
+    }
+}
+
+void init_motor_pins(void) {
+    DDRD |= _BV(PD4) | _BV(PD6);
+    DDRB |= _BV(PB4) | _BV(PB5);
+    DDRF |= _BV(PF4) | _BV(PF5) | _BV(PF6) | _BV(PF7);
+}
+
+void reset_speeds(void) {
+    speedFR = 0x7F; //set initial 50% duty cycle 
+    speedBR = 0x7F; //set initial 50% duty cycle
+    speedFL = 0x7F; //set initial 50% duty cycle 
+    speedBL = 0x7F; //set initial 50% duty cycle
+    update_speed();
 }
 
 void TaskMotorCommand( void *pvParameters)  // This is a Task.
 {
-    DDRD = 1;           /* make the D0 pin an output */
+    init_pwm();
+
+    init_motor_pins();
+
+    reset_speeds();
+
     for (;;) // A Task shall never return or exit. 
     {
-        vTaskDelay(pdMS_TO_TICKS(100));
-	    PORTD ^= 1;    /* toggle the LED */
+        moveRobot(FORWARD);
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        moveRobot(STOP);
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        reset_speeds();
+
+        moveRobot(BACKWARD);
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        moveRobot(STOP);
+        vTaskDelay(pdMS_TO_TICKS(500));
+
+        reset_speeds();
+
     }
 }
 
@@ -182,3 +330,28 @@ void TaskSendSPIData(void *pvParameters) {
 void TaskPIDController(void *pvParameters) {
 
 }
+
+
+// void TaskTestTimers(void *pvParameters) {
+    
+//     init_pwm();
+
+//     DDRD |= _BV(PD0); //just for testing
+
+//     speedFR = 0x7F; //set initial 50% duty cycle 
+//     speedBR = 0x7F; //set initial 50% duty cycle
+//     speedFL = 0x7F; //set initial 50% duty cycle 
+//     speedBL = 0x7F; //set initial 50% duty cycle
+//     update_speed();
+
+//     for(;;)
+//     {
+//         // OCR3A = 0x7F; //set duty cycle for PC6 - TOP is 0xFF by default. 
+//         // OCR4A = 0x7F; //set duty cycle for PC7 
+//         // OCR4B = 0x7F; //set duty cycle for PB6
+//         // OCR4D = 0x7F; //set duty cycle for PB7
+
+//         vTaskDelay(pdMS_TO_TICKS(100));
+//         PORTD ^= _BV(PD0);    /* toggle the LED */
+//     }
+// }
