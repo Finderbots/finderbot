@@ -122,22 +122,36 @@ int main(void)
 void TaskTestTimers(void *pvParameters) {
     
     DDRC |= _BV(PC7) | _BV(PC6); //set DDC7 = 1 -> PC7 is output pin, DDC6 = 1 ->PC6 is output
+    DDRD |= _BV(PD0) | _BV(PD7); //set DDD0 as output, testing; DDD7 as output -> PD7
+    DDRB |= _BV(PB6); //set DDB6 as output -> PB6
 
-    DDRD = 1;           /* make the D0 pin an output */   
 
+    TCCR4C = _BV(COM4D1) | _BV(PWM4D); // set timer 4 to clear when counting up, set when counting down for PD7
     
-    PORTC = 0x00;
+    TCCR4A = _BV(PWM4A) | _BV(COM4A1) | _BV(PWM4B)| _BV(COM4B1); 
+                //initiallize Timer 4 in PWM mode for OCR4A and OCR4B, 
+               //clear when counting up, set when counting down for A & B
+    TCCR4B = _BV(CS40) | _BV(CS41) | _BV(CS42); //initialize counter 4 with divide by 64 prescaler -> 490 Hz PWM
+    
+    TCCR4D = _BV(WGM40); //set Timer 4 for phase and freq correct mode
 
-    TCCR4A |= _BV(PWM4A) | _BV(WGM40) | _BV(COM4A1); //initiallize Timer 4 in freq/phase correct PWM mode
-    TCCR4B = _BV(CS40); //initialize counter 4 with no prescaler
+    OCR4C = 0xFF; //set TOP value for Timer 4
 
-    TCCR3A |= _BV(WGM30) | _BV(COM3A1); //initiallize Timer 3 in 8 bit freq/phase correct PWM mode
-    TCCR3B = _BV(CS31) ;//| _BV(CS30); //initialize counter 3 with prescaler 
+
+    TCCR3A =  _BV(COM3A1); //initiallize Timer 3 to clear when counting up, set when coungting down
+
+    TCCR3B = _BV(CS30) | _BV(CS31) | _BV(WGM33); //initialize counter 3 with  divide by 64 prescaler -> 490 Hz PWM
+                                                //set WGM33 to 1 to make freq/phase correct PWM
+
+    ICR3 = 0xFF; //set TOP value for Timer 3
     
     for(;;)
     {
-        OCR3A = 0x7F;
-        OCR4A = 0x7F; //set duty cycle into compare reg. TOP is 0xFF by default. 
+        OCR3A = 0x7F; //set duty cycle for PC6 - TOP is 0xFF by default. 
+        OCR4A = 0x7F; //set duty cycle for PC7 
+        OCR4B = 0x7F; //set duty cycle for PB6
+        OCR4D = 0x7F; //set duty cycle for PB7
+
         vTaskDelay(pdMS_TO_TICKS(100));
         PORTD ^= 1;    /* toggle the LED */
     }
