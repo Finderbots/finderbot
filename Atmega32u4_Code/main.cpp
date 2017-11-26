@@ -2,6 +2,11 @@
 #include <util/delay.h>
 #include "Arduino_FreeRTOS.h"
 
+#include "FIMU_ADXL345.h"
+#include "FIMU_ITG3200.h"
+#include "FreeSixIMU.h"
+
+
 void init_pwm();
 
 void motor_run(int motor, uint8_t speed, int movement);
@@ -16,6 +21,8 @@ void right(void);
 
 void left(void);
 
+void enable_motors(void);
+
 void update_speed(void);
 
 void init_motor_pins(void);
@@ -25,6 +32,8 @@ void reset_speeds(void);
 void TaskMotorCommand(void *pvParameters);
 
 void TaskIRSensorRead(void *pvParameters);
+
+void updateAngle(void);
 
 void TaskIMURead(void *pvParameters);
 
@@ -80,6 +89,42 @@ unsigned char inByte;
 char message[MESSAGE_MAX_SIZE];
 char command;
 
+/*IMU constants & objects*/ 
+
+FreeSixIMU sixDOF = FreeSixIMU();
+
+
+const int AvgAngles = 3;
+ float prevTargetAngle = 0;
+ float targetAngle = 0;
+
+
+float angles[5];
+
+float currAngle, prevAngle;
+float prevAngles[AvgAngles];
+int prevAngleI = 0;
+
+// time vars
+int currTime = 0; 
+int prevTime = 0; 
+
+float errorSum = 0;
+float currError = 0;
+float prevError = 0;
+float iTerm = 0;
+float dTerm = 0;
+float pTerm = 0;
+
+//Location PID CONTROL - These are the PID control for the robot trying to hold its location.
+  float Lp = 0.5;
+  float Li = 0.05;
+  float Ld = 0.4;
+  float offsetLoc = 0;
+  float pT,iT,dT = 0;
+  float errorS = 0;
+  float prevE = 0;
+
 #define F_CPU 16000000
 
 int main(void)
@@ -109,13 +154,13 @@ int main(void)
     // ,  3  // Priority (low num = low priority)
     // ,  NULL );
 
-    // xTaskCreate(
-    // TaskIMURead
-    // ,  (const portCHAR *)"IMURead"  // A name just for humans
-    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  2  // Priority (low num = low priority)
-    // ,  NULL );
+    xTaskCreate(
+    TaskIMURead
+    ,  (const portCHAR *)"IMURead"  // A name just for humans
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  2  // Priority (low num = low priority)
+    ,  NULL );
 
     // xTaskCreate(
     // TaskSendSPIData
@@ -145,21 +190,21 @@ void init_pwm() {
     DDRB |= _BV(PB6); //set DDB6 as output -> PB6
 
 
-    TCCR4C = _BV(COM4D1) | _BV(PWM4D); // set timer 4 to clear when counting up, set when counting down for PD7
+    TCCR4C |= _BV(COM4D1) | _BV(PWM4D); // set timer 4 to clear when counting up, set when counting down for PD7
     
-    TCCR4A = _BV(PWM4A) | _BV(COM4A1) | _BV(PWM4B)| _BV(COM4B1); 
+    TCCR4A |= _BV(PWM4A) | _BV(COM4A1) | _BV(PWM4B)| _BV(COM4B1); 
                 //initiallize Timer 4 in PWM mode for OCR4A and OCR4B, 
                //clear when counting up, set when counting down for A & B
-    TCCR4B = _BV(CS40) | _BV(CS41) | _BV(CS42); //initialize counter 4 with divide by 64 prescaler -> 490 Hz PWM
+    TCCR4B |= _BV(CS40) | _BV(CS41) | _BV(CS42); //initialize counter 4 with divide by 64 prescaler -> 490 Hz PWM
     
-    TCCR4D = _BV(WGM40); //set Timer 4 for phase and freq correct mode
+    TCCR4D |= _BV(WGM40); //set Timer 4 for phase and freq correct mode
 
     OCR4C = 0xFF; //set TOP value for Timer 4
 
 
-    TCCR3A =  _BV(COM3A1); //initiallize Timer 3 to clear when counting up, set when coungting down
+    TCCR3A |=  _BV(COM3A1); //initiallize Timer 3 to clear when counting up, set when coungting down
 
-    TCCR3B = _BV(CS30) | _BV(CS31) | _BV(WGM33); //initialize counter 3 with  divide by 64 prescaler -> 490 Hz PWM
+    TCCR3B |= _BV(CS30) | _BV(CS31) | _BV(WGM33); //initialize counter 3 with  divide by 64 prescaler -> 490 Hz PWM
                                                 //set WGM33 to 1 to make freq/phase correct PWM
 
     ICR3 = 0xFF; //set TOP value for Timer 3
@@ -167,45 +212,80 @@ void init_pwm() {
 }
 
 void motor_run(int motor, uint8_t speed, int movement) {
-    int port = PORTD;
-    switch(motor) {
+    if(movement == STOP) {
+        speedFR = 0; speedBR = 0; speedFL = 0; speedBL = 0;
+        speed = 0;
+        PORTD &= ~(_BV(PD4)) & ~(_BV(PD6)); //low
+        PORTB &= ~(_BV(PB4)) & ~(_BV(PB5));
+        PORTF &= ~(_BV(PF4)) & ~(_BV(PF5)) & ~(_BV(PF6)) & ~(_BV(PF7));
+
+        update_speed();
+    }
+    else {
+        switch(motor) {
         case 0: 
             speedFR = speed;
-            port = PORTD;
+            switch (movement) {
+                case FORWARD:  
+                  PORTD |= _BV(PD4); //high
+                  PORTD &= ~(_BV(PD6)); //low
+                  break;
+                case BACKWARD:   
+                  PORTD &= ~(_BV(PD4)); //low
+                  PORTD |= _BV(PD6); //high
+                  break; 
+            }
             break;
         case 1:
             speedBR = speed;
-            port = PORTB;
+            switch (movement) {
+                case FORWARD:  
+                  PORTB |= _BV(PB4); //high
+                  PORTB &= ~(_BV(PB5)); //low
+                  break;
+                case BACKWARD:   
+                  PORTB &= ~(_BV(PB4)); //low
+                  PORTB |= _BV(PB5); //high
+                  break; 
+            }
             break;
         case 2:
             speedFL = speed;
-            port = PORTF;
+            switch (movement) {
+                case FORWARD:  
+                  PORTF |= _BV(PF4); //high
+                  PORTF &= ~(_BV(PF5)); //low
+                  break;
+                case BACKWARD:   
+                  PORTF &= ~(_BV(PF4)); //low
+                  PORTF |= _BV(PF5); //high
+                  break; 
+            }
             break;
         case 3:
             speedBL = speed;
-            port = PORTF;
+            switch (movement) {
+                case FORWARD:  
+                  PORTF |= _BV(PF6); //high
+                  PORTF &= ~(_BV(PF7)); //low
+                  break;
+                case BACKWARD:   
+                  PORTF &= ~(_BV(PF6)); //low
+                  PORTF |= _BV(PF7); //high
+               
             break;
-    }
-
-  switch (movement) {
-    case FORWARD:  
-      update_speed();
-      port |= _BV(Motor[motor][0]); //high
-      port &= ~(_BV(Motor[motor][1])); //low
-      break;
-    case BACKWARD:   
-      update_speed();
-      port &= ~(_BV(Motor[motor][0])); //low
-      port |= _BV(Motor[motor][1]); //high
-      break; 
-    case STOP:  
-        speedFR = 0; speedBR = 0; speedFL = 0; speedBL = 0;
+        }
         update_speed();
-        port &= ~(_BV(Motor[motor][0])); //low
-        port &= ~(_BV(Motor[motor][1])); //low
-        break;   
-    }   
+    }
+  
   } 
+}
+
+void enable_motors(void) {
+    TCCR4A |= _BV(COM4A1) | _BV(COM4B1);
+    TCCR4C |= _BV(COM4D1);
+    TCCR3A |= _BV(COM3A1);
+}
 
 void update_speed(void) {
     OCR4D = speedFR;
@@ -215,38 +295,46 @@ void update_speed(void) {
 }
 
 void stop_bot(void) {
-  motor_run(0, speedFR, STOP);
-  motor_run(1, speedBR, STOP);
-  motor_run(2, speedFL, STOP);
-  motor_run(3, speedBL, STOP);
+    TCCR4A &= ~(_BV(COM4A1)) & ~(_BV(COM4B1));
+    TCCR4C &= ~(_BV(COM4D1));
+    TCCR3A &=  ~(_BV(COM3A1));
+
+    motor_run(0, speedFR, STOP);
+    motor_run(1, speedBR, STOP);
+    motor_run(2, speedFL, STOP);
+    motor_run(3, speedBL, STOP);
 }
 
 void forwards(void) {
-  motor_run(0, speedFR, FORWARD); 
-  motor_run(1, speedBR, FORWARD); 
-  motor_run(2, speedFL, FORWARD); 
-  motor_run(3, speedBL, FORWARD); 
+    enable_motors();
+    motor_run(0, speedFR, FORWARD); 
+    motor_run(1, speedBR, FORWARD); 
+    motor_run(2, speedFL, FORWARD); 
+    motor_run(3, speedBL, FORWARD); 
 }
 
 void backwards(void){
-  motor_run(0, speedFR, BACKWARD);
-  motor_run(1, speedBR, BACKWARD);
-  motor_run(2, speedFL, BACKWARD);
-  motor_run(3, speedBL, BACKWARD); 
+    enable_motors();
+    motor_run(0, speedFR, BACKWARD);
+    motor_run(1, speedBR, BACKWARD);
+    motor_run(2, speedFL, BACKWARD);
+    motor_run(3, speedBL, BACKWARD); 
 }
 
 void right(void) {
-  motor_run(0, speedFR, BACKWARD); 
-  motor_run(1, speedBR, BACKWARD);    
-  motor_run(2, speedFL, FORWARD);    
-  motor_run(3, speedBL, FORWARD);    
+    enable_motors();
+    motor_run(0, speedFR, BACKWARD); 
+    motor_run(1, speedBR, BACKWARD);    
+    motor_run(2, speedFL, FORWARD);    
+    motor_run(3, speedBL, FORWARD);    
 }
 
 void left(void) {
-  motor_run(0, speedFR, FORWARD);    
-  motor_run(1, speedBR, FORWARD);    
-  motor_run(2, speedFL, BACKWARD);    
-  motor_run(3, speedBL, BACKWARD);
+    enable_motors();
+    motor_run(0, speedFR, FORWARD);    
+    motor_run(1, speedBR, FORWARD);    
+    motor_run(2, speedFL, BACKWARD);    
+    motor_run(3, speedBL, BACKWARD);
 }
 
 void moveRobot(char command) {
@@ -319,8 +407,24 @@ void TaskIRSensorRead(void *pvParameters) {
 
 }
 
-void TaskIMURead(void *pvParameters) {
 
+void updateAngle(void) {
+  sixDOF.getYawPitchRoll(angles);
+  prevAngles[prevAngleI] = angles[1];
+  prevAngleI = (prevAngleI + 1) % AvgAngles;
+  float sum = 0;
+  for (int i = 0; i < AvgAngles; i++)
+      sum += prevAngles[i];
+  currAngle = sum / AvgAngles;
+  prevAngle = currAngle;
+  
+}
+
+void TaskIMURead(void *pvParameters) {
+    sixDOF.init(); //Begin the IMU
+    for(;;) {
+        updateAngle();
+    }
 }
 
 void TaskSendSPIData(void *pvParameters) {
