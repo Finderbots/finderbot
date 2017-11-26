@@ -67,11 +67,11 @@ namespace ray_caster
         const double r = std::sqrt((double) nrow * nrow + ncol*ncol);
 
         //assumption that origin is at map center
-        int x0 = ncol / 2;
-        int y0 = nrow / 2;
+        int x0 = nrow / 2;
+        int y0 = ncol / 2;
 
-        int x1 = (int) round(x0 + r*std::cos(angle));
-        int y1 = (int) round(y0 + r*std::sin(angle));
+        int x1 = (int) round(x0 + r*std::sin(angle));
+        int y1 = (int) round(y0 + r*std::cos(angle));
 
         int dx = x1 - x0;
         int dy = y1 - y0;
