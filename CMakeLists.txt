@@ -135,6 +135,7 @@ include_directories(
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
@@ -145,6 +146,10 @@ add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_ca
 add_executable(transform_node src/transform_node.cpp)
 add_executable(simple_motion_node src/simple_motion_node.cpp)
 add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp src/ray_caster.cpp)
+
+add_dependencies(global_map_node finderbot_generate_messages_cpp)
+add_dependencies(transform_node finderbot_generate_messages_cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

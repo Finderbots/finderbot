@@ -62,13 +62,20 @@ namespace global_mapping
         }
 
         // perimeter of the local map is the max number of obstacles that can be detected.
-        // pf_.idxs.reserve(2*local_height + local_width);
-        // pf_.probs.reserve(2*local_height + local_width);
+        // pf_.probs.reserve(global_height * global_width);
+        pf_.map_width = global_width;
+        pf_.map_height = global_height;
+        pf_.map_resolution = resolution;
+        pf_.log_odds.reserve(2*global_height + 2*global_width);
     }
 
     void GlobalMapBuilder::buildMapFromScan(const sensor_msgs::LaserScan& scan)
     {
         updatePosition();
+
+        pf_.log_odds.clear();
+        pf_.scan_ranges.clear();
+        pf_.scan_angles.clear();
 
         createNewLocalMap(scan);
 
@@ -161,8 +168,6 @@ namespace global_mapping
         map_y_ = (dy / global_map_.info.resolution) + init_map_y_;
 
         theta_ = convertQuatToAngle(new_transform.getRotation()) + M_PI/2;
-
-
     }
 
     void GlobalMapBuilder::updateLocalOccupancy(bool occupied, size_t idx)
@@ -193,6 +198,9 @@ namespace global_mapping
         for (size_t i = 0; i < scan.ranges.size(); ++i)
         {
             const double angle = angles::normalize_angle(scan.angle_min + i * scan.angle_increment + theta_);
+            pf_.scan_ranges.push_back(scan.ranges[i]);
+            pf_.scan_angles.push_back(scan.angle_min + i*scan.angle_increment);
+
             std::vector<size_t> pts;
             // ROS_INFO("range = %f", scan.ranges[i]);
             const bool obstacle_in_map = castRayToObstacle(angle, scan.ranges[i], pts);
@@ -208,6 +216,9 @@ namespace global_mapping
                 // ROS_INFO("occupancy val at (%zd,%zd) = %d", ray_caster::rowFromOffset(pts.back(), ncol),
                 //                                     ray_caster::colFromOffset(pts.back(), ncol), 
                 //                                     map_.data[pts.back()]);
+
+                //this data is used to cast rays to global map in pf
+                
                 pts.pop_back();
             }
             // The remaining points are in free space.
@@ -254,8 +265,6 @@ namespace global_mapping
                 if(local_map_.data[local_idx] == 100)
                 {
                     updateProbOccupied(true, global_idx);
-                    // pf_.idxs.push_back(global_idx);
-                    // pf_.probs.push_back(global_map_.data[global_idx]);
                 }
 
                 else if (local_map_.data[local_idx] == 0)
