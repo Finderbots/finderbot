@@ -32,9 +32,9 @@ namespace global_mapping
         global_map_.info.width = global_width;
         global_map_.info.height = global_height;
         global_map_.info.resolution = resolution;
-        global_map_.info.origin.position.x = resolution * static_cast<double>(global_height) / 2;
-        global_map_.info.origin.position.y = resolution * static_cast<double>(global_width) / 2;
-        global_map_.info.origin.orientation.w = 1.0;
+        // global_map_.info.origin.position.x = resolution * static_cast<double>(global_height) / 2;
+        // global_map_.info.origin.position.y = resolution * static_cast<double>(global_width) / 2;
+        // global_map_.info.origin.orientation.w = 1.0;
 
         global_map_.data.assign(global_width * global_height, -1);
         log_odds_map_.assign(global_width*global_height, 0);

@@ -199,7 +199,7 @@ int main(int argc, char** argv)
     nh.param<std::string>("world_frame_id", world_frame_id, "world");
     nh.param<std::string>("laser_frame_id", laser_frame_id, "laser_frame");
     nh.param<std::string>("model_name", model_name, "Finderbot_Lidar");
-    nh.param<int>("pf_num_particles", num_particles, 100);
+    nh.param<int>("pf_num_particles", num_particles, 1000);
     nh.param<double>("pf_std_dev", std_dev, 0.1);
     
     SLAM slamma_jamma(num_particles, std_dev, world_frame_id, laser_frame_id, model_name);

@@ -55,13 +55,13 @@ int main(int argc, char** argv)
         else if (c == 'a')
         {
             // ROS_INFO("left");
-            cmd.angular.z = -0.03;
+            cmd.angular.z = -0.05;
         }
 
         else if (c == 'd')
         {
             // ROS_INFO("back");
-            cmd.angular.z = 0.03;
+            cmd.angular.z = 0.05;
         }
 
         pub.publish(cmd);
