@@ -5,8 +5,14 @@
 #include <nav_msgs/OccupancyGrid.h>
 
 #include <vector>
+#include <queue>
+#include <stdlib.h>     /* atoi */
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include "std_msgs/Int32MultiArray.h"
+#include "std_msgs/MultiArrayDimension.h"
+// #include <finderbot/global_map_builder.h>
+// #include <finderbot/NewHits.h>
 
 #include <geometry_msgs/Twist.h>
 #include <math.h>
@@ -20,18 +26,21 @@ struct Node
     int dist;
     struct Node * parent;
     bool visited;
-    int g_score = 0;
-    int h_score = INT_MAX;
+    int g_score;
+    int h_score;
     int f_score;
 };
 
 class Planner {
-    nav_msgs::OccupancyGrid global_map;
+    nav_msgs::OccupancyGrid global_map_;
+
+    // Nodes each representing a coordinate in the map
+    std::vector<Node> nodes_;
 
     // A 2-D vector with the coordinates of each point in the map to visit
-    std::vector< std::vector<int> > & path_coordinates;
+    std::vector< std::vector<int> > & path_coordinates_;
     // Output command velocities based on plan
-    ros::Publisher command_velocities;
+    ros::Publisher command_velocities_;
 
     // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
     //          an x,y destination
@@ -39,9 +48,13 @@ class Planner {
     //      geometry_msgs/Twist.h
     //      at any given time you can only rotate or go forward or backward
   public:
-    void aStar(int goal_row, int goal_col, int source_row, int source_col);
+    Planner(nav_msgs::OccupancyGrid global_map,
+            std::vector< std::vector<int> > & path_coordinates,
+            std::vector<Node> nodes);
 
-    int getNeighbors(const Node & node, vector<Node*> & neighbors);
+    Node * aStar(int goal_row, int goal_col, int source_row, int source_col);
+
+    void getNeighbors(const Node & node, std::vector<Node*> & neighbors);
 
     void getPath(Node * goal);
 
@@ -56,7 +69,7 @@ class Compare {
 };
 
 // Pass 2 nodes
-inline int distance(Node & node1, Node & node2) {
+inline int distance(const Node & node1, const Node & node2) {
     // Euclidean distance
     return sqrt(pow(node1.row-node2.row,2) + pow(node1.col-node2.col,2));
 }
