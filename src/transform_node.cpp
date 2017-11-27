@@ -12,7 +12,7 @@
 #include <tf/tf.h>
 #include <tf/transform_broadcaster.h>
 
-// #include <random>
+#include <random>
 #include <string>
 
 //job of SLAM is to make sure that position is correct
@@ -88,22 +88,22 @@ public:
         }
 
         //fill particles vector by sampling from N(pose, std_dev) num_particles times
-        // std::default_random_engine generator;
-        // std::normal_distribution<double> x_distribution(pose_.x, std_dev_);
-        // std::normal_distribution<double> y_distribution(pose_.y, std_dev_);
-        // std::normal_distribution<double> theta_distribution(pose_.theta, std_dev_);
+        std::default_random_engine generator;
+        std::normal_distribution<double> x_distribution(pose_.x, std_dev_);
+        std::normal_distribution<double> y_distribution(pose_.y, std_dev_);
+        std::normal_distribution<double> theta_distribution(pose_.theta, std_dev_);
 
 
-        // for (int i = 0; i < num_particles_; i++)
-        // {
-        //     Pose particle;
+        for (int i = 0; i < num_particles_; i++)
+        {
+            Pose particle;
 
-        //     particle.x = x_distribution(generator);
-        //     particle.y = y_distribution(generator);
-        //     particle.theta = theta_distribution(generator);
+            particle.x = x_distribution(generator);
+            particle.y = y_distribution(generator);
+            particle.theta = theta_distribution(generator);
 
-        //     particles_.push_back(particle);
-        // }
+            particles_.push_back(particle);
+        }
         
 
         //loop through particles
