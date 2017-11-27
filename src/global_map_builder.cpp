@@ -67,13 +67,14 @@ namespace global_mapping
         pf_.map_height = global_height;
         pf_.map_resolution = resolution;
         pf_.log_odds.reserve(2*global_height + 2*global_width);
+        pf_.log_odds.assign(global_width*global_height, 0);
+
     }
 
     void GlobalMapBuilder::buildMapFromScan(const sensor_msgs::LaserScan& scan)
     {
         updatePosition();
 
-        pf_.log_odds.clear();
         pf_.scan_ranges.clear();
         pf_.scan_angles.clear();
 
@@ -127,15 +128,18 @@ namespace global_mapping
     {
         if (!transform_initialized)
         {
+            ROS_INFO("transform uninitialized");
             tf::StampedTransform transform;
             try
             {
+                //gazebo takes a while to startup so dont wait too long for a transform
+                // tf_listener_.waitForTransform(world_frame_id_, laser_frame_id_, ros::Time(0), ros::Duration(1000.0));
                 tf_listener_.lookupTransform(world_frame_id_, laser_frame_id_,
                                 ros::Time(0), transform);
             }
             catch(tf::TransformException ex)
             {
-                ROS_ERROR("%s", ex.what());
+                ROS_ERROR("initial woopsie %s", ex.what());
                 return;
             }
 
@@ -157,7 +161,7 @@ namespace global_mapping
         }
         catch(tf::TransformException ex)
         {
-            ROS_ERROR("%s", ex.what());
+            ROS_ERROR("mapping woopsie %s", ex.what());
             return;
         }
 
@@ -271,6 +275,8 @@ namespace global_mapping
                 {
                     updateProbOccupied(false, global_idx);
                 }
+
+                pf_.log_odds[global_idx] = log_odds_map_[global_idx];
             }   
         }
     }   

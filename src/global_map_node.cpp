@@ -19,9 +19,9 @@ global_mapping::GlobalMapBuilder* global_map_builder;
 void handleLaserScan(const sensor_msgs::LaserScan scan)
 {
     global_map_builder->buildMapFromScan(scan);
+    pf_publisher.publish(global_map_builder->getPFData());
     global_map_publisher.publish(global_map_builder->getGlobalMap());
     local_map_publisher.publish(global_map_builder->getLocalMap());
-    pf_publisher.publish(global_map_builder->getPFData());
 }
 
 int main(int argc, char** argv)

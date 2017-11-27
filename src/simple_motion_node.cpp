@@ -2,6 +2,7 @@
 #include <ros/console.h>
 #include <geometry_msgs/Twist.h>
 #include <termios.h>
+
 int getch()
 {
       static struct termios oldt, newt;
@@ -47,16 +48,19 @@ int main(int argc, char** argv)
 
         if (c == 'w')
         {
+            // ROS_INFO("forward");
             cmd.linear.x = -0.03; //forward is negative, deal with it.
         }
 
         else if (c == 'a')
         {
+            // ROS_INFO("left");
             cmd.angular.z = -0.03;
         }
 
         else if (c == 'd')
         {
+            // ROS_INFO("back");
             cmd.angular.z = 0.03;
         }
 
