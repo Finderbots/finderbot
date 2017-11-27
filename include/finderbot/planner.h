@@ -5,8 +5,14 @@
 #include <nav_msgs/OccupancyGrid.h>
 
 #include <vector>
+#include <queue>
+#include <stdlib.h>     /* atoi */
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include "std_msgs/Int32MultiArray.h"
+#include "std_msgs/MultiArrayDimension.h"
+// #include <finderbot/global_map_builder.h>
+// #include <finderbot/NewHits.h>
 
 #include <geometry_msgs/Twist.h>
 #include <math.h>
@@ -20,38 +26,55 @@ struct Node
     int dist;
     struct Node * parent;
     bool visited;
-    int g_score = 0;
-    int h_score = INT_MAX;
+    int g_score;
+    int h_score;
     int f_score;
 };
 
-Class Planner {
-    nav_msgs::OccupancyGrid global_map;
+class Planner {
+    nav_msgs::OccupancyGrid global_map_;
 
-    ros::Publisher command_velocities;
+    // Nodes each representing a coordinate in the map
+    std::vector<Node> nodes_;
+
+    // A 2-D vector with the coordinates of each point in the map to visit
+    std::vector< std::vector<int> > & path_coordinates_;
+    // Output command velocities based on plan
+    ros::Publisher command_velocities_;
 
     // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
     //          an x,y destination
     // OUTPUT:  command velocities... angular and linear velocities
     //      geometry_msgs/Twist.h
     //      at any given time you can only rotate or go forward or backward
-    void a_star(const nav_msgs::OccupancyGrid & global_map, int goal_row, int goal_col);
+  public:
+    Planner(nav_msgs::OccupancyGrid global_map,
+            std::vector< std::vector<int> > & path_coordinates,
+            std::vector<Node> nodes);
 
-    int get_neighbor(Node & node, vector<Node*> & neighbors);
+    Node * aStar(int goal_row, int goal_col, int source_row, int source_col);
+
+    void getNeighbors(const Node & node, std::vector<Node*> & neighbors);
+
+    void getPath(Node * goal);
+
+    bool isGoal(Node * node, int goal_row, int goal_col);
 };
 
-Class Compare {
+class Compare {
   public:
     bool operator() (const Node * node1, const Node * node2) {
         return node1->f_score < node2->f_score;
     }
 };
 
-inline int distance(Node & node1, Node & node2) {
+// Pass 2 nodes
+inline int distance(const Node & node1, const Node & node2) {
     // Euclidean distance
     return sqrt(pow(node1.row-node2.row,2) + pow(node1.col-node2.col,2));
 }
 
+// Pass 2 sets of row and column
 inline int distance(int row1, int col1, int row2, int col2) {
     // Euclidean distance
     return sqrt(pow(row1-row2,2) + pow(col1-col2,2));
