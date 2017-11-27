@@ -141,8 +141,10 @@ void TwoWire::beginTransmission(int address)
 //	no call to endTransmission(true) is made. Some I2C
 //	devices will behave oddly if they do not see a STOP.
 //
+#include <avr/io.h>
 uint8_t TwoWire::endTransmission(uint8_t sendStop)
 {
+      
   // transmit buffer (blocking)
   int8_t ret = twi_writeTo(txAddress, txBuffer, txBufferLength, 1, sendStop);
   // reset tx buffer iterator vars
@@ -161,16 +163,17 @@ uint8_t TwoWire::endTransmission(void)
   return endTransmission(true);
 }
 
+
 // must be called in:
 // slave tx event callback
 // or after beginTransmission(address)
-size_t TwoWire::write(uint8_t data)
+uint16_t TwoWire::write(uint8_t data)
 {
   if(transmitting){
   // in master transmitter mode
     // don't bother if buffer is full
     if(txBufferLength >= BUFFER_LENGTH){
-      //setWriteError();
+      //setWriteError();    
       return 0;
     }
     // put byte in tx buffer
@@ -182,6 +185,7 @@ size_t TwoWire::write(uint8_t data)
   // in slave send mode
     // reply to master
     twi_transmit(&data, 1);
+
   }
   return 1;
 }
@@ -189,11 +193,11 @@ size_t TwoWire::write(uint8_t data)
 // must be called in:
 // slave tx event callback
 // or after beginTransmission(address)
-size_t TwoWire::write(const uint8_t *data, size_t quantity)
+uint16_t TwoWire::write(const uint8_t *data, uint16_t quantity)
 {
   if(transmitting){
   // in master transmitter mode
-    for(size_t i = 0; i < quantity; ++i){
+    for(uint16_t i = 0; i < quantity; ++i){
       write(data[i]);
     }
   }else{

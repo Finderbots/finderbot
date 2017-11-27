@@ -76,9 +76,12 @@ void twi_init(void)
   twi_sendStop = true;		// default value
   twi_inRepStart = false;
   
+  //DON'T ACTIVATE INTERNAL PULL UPS. WANT I2C TO BE AT 3.3V
   // activate internal pullups for twi.
-  DDRD |= _BV(PD0) | _BV(PD1);
-  PORTD |= _BV(PD1) | _BV(PD1); //sda and sclk
+  // sbi(PORTD, 0); //sclk
+  // sbi(PORTD, 1); //sda
+  // DDRD |= _BV(PD0) | _BV(PD1);
+  // PORTD |= _BV(PD1) | _BV(PD1); //sda and sclk
   // digitalWrite(SDA, 1);
   // digitalWrite(SCL, 1);
 
@@ -203,11 +206,49 @@ uint8_t twi_writeTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t wait
   if(TWI_BUFFER_LENGTH < length){
     return 1;
   }
-
   // wait until twi is ready, become master transmitter
+    // switch(twi_state){
+    //   case TWI_READY:
+    //     PORTD |= _BV(PD2);
+    //     break;
+    //   case TWI_MRX:
+    //     PORTD |= _BV(PD3);
+    //     break;
+    //   case TWI_MTX:
+    //     PORTD |= _BV(PD4);
+    //     break;
+    //   case TWI_SRX:
+    //     PORTD |= _BV(PD5);
+    //     break;
+    //   case TWI_STX: 
+    //     PORTD |= _BV(PD6);
+    //     break;
+    // }
+
+    // if(twi_state == 1) {
+    //   PORTD |= _BV(PD2);
+    // }
+    // else if (twi_state == 2) {
+    //   PORTD |= _BV(PD3);
+    // }
+    // else if(twi_state == 3){
+    //   PORTD |= _BV(PD4);
+    // }
+    // else if(twi_state == 4){
+    //   PORTD |= _BV(PD5);
+    // }
+    // else if(twi_state > 4){
+    //   PORTD |= _BV(PD6);
+    // }
+
+    if(twi_state > 4) {
+      twi_state = TWI_READY;
+    }
+
   while(TWI_READY != twi_state){
     continue;
   }
+  //PORTD &= ~(_BV(PD2));
   twi_state = TWI_MTX;
   twi_sendStop = sendStop;
   // reset error state (0xFF.. no error occured)

@@ -93,6 +93,7 @@ char command;
 
 FreeSixIMU sixDOF = FreeSixIMU();
 
+//TwoWire Wire = TwoWire();
 
 const int AvgAngles = 3;
  float prevTargetAngle = 0;
@@ -138,13 +139,13 @@ int main(void)
     // ,  5  // Priority (low num = low priority)
     // ,  NULL );
 
-    xTaskCreate(
-    TaskMotorCommand
-    ,  (const portCHAR *)"MotorCommand"  // A name just for humans
-    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    ,  NULL
-    ,  5  // Priority (low num = low priority)
-    ,  NULL );
+    // xTaskCreate(
+    // TaskMotorCommand
+    // ,  (const portCHAR *)"MotorCommand"  // A name just for humans
+    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // ,  NULL
+    // ,  5  // Priority (low num = low priority)
+    // ,  NULL );
 
     // xTaskCreate(
     // TaskIRSensorRead
@@ -186,7 +187,7 @@ int main(void)
 
 void init_pwm() {
     DDRC |= _BV(PC7) | _BV(PC6); //set DDC7 = 1 -> PC7 is output pin, DDC6 = 1 ->PC6 is output
-    DDRD |= _BV(PD7); //set DDD0 as output, testing; DDD7 as output -> PD7
+    DDRD |= _BV(PD7); //set DDD7 as output -> PD7
     DDRB |= _BV(PB6); //set DDB6 as output -> PB6
 
 
@@ -409,21 +410,31 @@ void TaskIRSensorRead(void *pvParameters) {
 
 
 void updateAngle(void) {
-  sixDOF.getYawPitchRoll(angles);
-  prevAngles[prevAngleI] = angles[1];
-  prevAngleI = (prevAngleI + 1) % AvgAngles;
-  float sum = 0;
-  for (int i = 0; i < AvgAngles; i++)
-      sum += prevAngles[i];
-  currAngle = sum / AvgAngles;
-  prevAngle = currAngle;
-  
+    PORTD |= _BV(PD2);
+    sixDOF.getYawPitchRoll(angles);
+    prevAngles[prevAngleI] = angles[1];
+    prevAngleI = (prevAngleI + 1) % AvgAngles;
+    float sum = 0;
+    for (int i = 0; i < AvgAngles; i++)
+        sum += prevAngles[i];
+    currAngle = sum / AvgAngles;
+    prevAngle = currAngle;
+    PORTD &= ~(_BV(PD2));
 }
 
 void TaskIMURead(void *pvParameters) {
+    Wire.begin();
+
+    vTaskDelay(1); //1 tick
     sixDOF.init(); //Begin the IMU
+    vTaskDelay(1); //1 tick
+
+    DDRD |= _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
+    PORTD ^= _BV(PD3);
+
     for(;;) {
         updateAngle();
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
