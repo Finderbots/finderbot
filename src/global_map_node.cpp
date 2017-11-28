@@ -5,6 +5,7 @@
 
 #include <finderbot/global_map_builder.h>
 #include <finderbot/PF_Input.h>
+#include <finderbot/GetMap.h>
 
 #include <string>
 #include <cassert>
@@ -22,6 +23,17 @@ void handleLaserScan(const sensor_msgs::LaserScan scan)
     pf_publisher.publish(global_map_builder->getPFData());
     global_map_publisher.publish(global_map_builder->getGlobalMap());
     local_map_publisher.publish(global_map_builder->getLocalMap());
+}
+
+bool sendMap(finderbot::GetMap::Request& req, finderbot::GetMap::Response& res)
+{
+    for (size_t i = 0; i < global_map_builder->getGlobalMap().data.size(); i++)
+    {
+    res.map.push_back(global_map_builder->getGlobalMap().data[i]);
+
+    }
+    
+    return true;
 }
 
 int main(int argc, char** argv)
@@ -60,6 +72,8 @@ int main(int argc, char** argv)
     local_map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("local_map", 1, true);
 
     pf_publisher = nh.advertise<finderbot::PF_Input>("SLAM_pf", 1, true);
+
+    ros::ServiceServer service = nh.advertiseService("get_finderbot_global_map", sendMap);
 
     ros::spin();
 }

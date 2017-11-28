@@ -139,7 +139,7 @@ namespace global_mapping
             }
             catch(tf::TransformException ex)
             {
-                ROS_ERROR("initial woopsie %s", ex.what());
+                ROS_ERROR("%s", ex.what());
                 return;
             }
 
@@ -161,7 +161,7 @@ namespace global_mapping
         }
         catch(tf::TransformException ex)
         {
-            ROS_ERROR("mapping woopsie %s", ex.what());
+            ROS_ERROR("%s", ex.what());
             return;
         }
 
@@ -172,6 +172,7 @@ namespace global_mapping
         map_y_ = (dy / global_map_.info.resolution) + init_map_y_;
 
         theta_ = convertQuatToAngle(new_transform.getRotation()) + M_PI/2;
+        ROS_INFO("theta = %f", theta_);
     }
 
     void GlobalMapBuilder::updateLocalOccupancy(bool occupied, size_t idx)

@@ -61,11 +61,11 @@ add_message_files(
  )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
+add_service_files(
+    FILES
+    GetMap.srv
 #   Service2.srv
-# )
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -142,15 +142,15 @@ include_directories(
 #add_executable(finderbot src/ir_node.cpp src/IR_Sensor.cpp)
 
 add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
-add_executable(transform_node src/transform_node.cpp)
+add_executable(SLAM_node src/SLAM_node.cpp)
 add_executable(simple_motion_node src/simple_motion_node.cpp)
 
 add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp src/ray_caster.cpp)
 
 ##add_executable(planner_node src/planner.cpp)
 
-add_dependencies(global_map_node finderbot_generate_messages_cpp)
-add_dependencies(transform_node finderbot_generate_messages_cpp)
+add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
+add_dependencies(SLAM_node finderbot_generate_messages_cpp )
 ##add_dependencies(planner_node finderbot_generate_messages_cpp)
 
 
@@ -172,7 +172,7 @@ target_link_libraries(
 )
 
 target_link_libraries(
-   transform_node
+   SLAM_node
    ${catkin_LIBRARIES}
 )
 
