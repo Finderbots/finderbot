@@ -24,8 +24,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <inttypes.h>
 //#define DEBUG
 #include "FreeSixIMU.h"
+#include <avr/interrupt.h>
+
 // #include "WireUtils.h"
 //#include "DebugUtils.h"
+
+volatile unsigned long timer0_overflow_count = 0;
+#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
+
+unsigned long micros() {
+  unsigned long m;
+  uint8_t oldSREG = SREG, t;
+  
+  cli();
+  m = timer0_overflow_count;
+#if defined(TCNT0)
+  t = TCNT0;
+#elif defined(TCNT0L)
+  t = TCNT0L;
+#else
+  #error TIMER 0 not defined
+#endif
+
+  
+#ifdef TIFR0
+  if ((TIFR0 & _BV(TOV0)) && (t < 255))
+    m++;
+#else
+  if ((TIFR & _BV(TOV0)) && (t < 255))
+    m++;
+#endif
+
+  SREG = oldSREG;
+  
+  return ((m << 8) + t) * (64 / clockCyclesPerMicrosecond());
+}
 
 
 FreeSixIMU::FreeSixIMU() {
@@ -44,8 +77,8 @@ FreeSixIMU::FreeSixIMU() {
   twoKp = twoKpDef;
   twoKi = twoKiDef;
   integralFBx = 0.0f,  integralFBy = 0.0f, integralFBz = 0.0f;
-  // lastUpdate = 0;
-  // now = 0;
+  lastUpdate = 0;
+  now = 0;
 }
 
 void FreeSixIMU::init() {
@@ -59,23 +92,23 @@ void FreeSixIMU::init(bool fastmode) {
 void FreeSixIMU::init(int acc_addr, int gyro_addr, bool fastmode) {
   delay(5);
   
-  // disable internal pullups of the ATMEGA which Wire enable by default
-  #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega8__) || defined(__AVR_ATmega328P__)
-    // deactivate internal pull-ups for twi
-    // as per note from atmega8 manual pg167
-    cbi(PORTC, 4);
-    cbi(PORTC, 5);
-  #else
-    // deactivate internal pull-ups for twi
-    // as per note from atmega128 manual pg204
-    cbi(PORTD, 0);
-    cbi(PORTD, 1);
-  #endif
+  // // // disable internal pullups of the ATMEGA which Wire enable by default
+  // #if defined(__AVR_ATmega168__) || defined(__AVR_ATmega8__) || defined(__AVR_ATmega328P__)
+  //   // deactivate internal pull-ups for twi
+  //   // as per note from atmega8 manual pg167
+  //   cbi(PORTC, 4);
+  //   cbi(PORTC, 5);
+  // #else
+  //   // deactivate internal pull-ups for twi
+  //   // as per note from atmega128 manual pg204
+  //   cbi(PORTD, 0);
+  //   cbi(PORTD, 1);
+  // #endif
   
-  if(fastmode) { // switch to 400KHz I2C - eheheh
-    TWBR = ((16000000L / 400000L) - 16) / 2; // see twi_init in Wire/utility/twi.c
-    // TODO: make the above usable also for 8MHz arduinos..
-  }
+  // if(fastmode) { // switch to 400KHz I2C - eheheh
+  //   TWBR = ((16000000L / 400000L) - 16) / 2; // see twi_init in Wire/utility/twi.c
+  //   // TODO: make the above usable also for 8MHz arduinos..
+  // }
   
 	// init ADXL345
 	acc.init(acc_addr);
@@ -109,12 +142,14 @@ void FreeSixIMU::getRawValues(int * raw_values) {
 
 void FreeSixIMU::getValues(float * values) {  
   int accval[3];
+ 
   acc.readAccel(&accval[0], &accval[1], &accval[2]);
+
   values[0] = ((float) accval[0]);
   values[1] = ((float) accval[1]);
   values[2] = ((float) accval[2]);
   
-  gyro.readGyro(&values[3]);
+ gyro.readGyro(&values[3]);
   
   //magn.getValues(&values[6]);
 }
@@ -244,8 +279,9 @@ void FreeSixIMU::AHRSupdate(float gx, float gy, float gz, float ax, float ay, fl
 
 void FreeSixIMU::getQ(float * q) {
   float val[9];
+    
+
   getValues(val);
-  
   /*
   DEBUG_PRINT(val[3] * M_PI/180);
   DEBUG_PRINT(val[4] * M_PI/180);
@@ -259,9 +295,9 @@ void FreeSixIMU::getQ(float * q) {
   */
   
   
-  // now = micros();
-  // sampleFreq = 1.0 / ((now - lastUpdate) / 1000000.0);
-  // lastUpdate = now;
+  now = micros();
+  sampleFreq = 1.0 / ((now - lastUpdate) / 1000000.0);
+  lastUpdate = now;
   // gyro values are expressed in deg/sec, the * M_PI/180 will convert it to radians/sec
   //AHRSupdate(val[3] * M_PI/180, val[4] * M_PI/180, val[5] * M_PI/180, val[0], val[1], val[2], val[6], val[7], val[8]);
   // use the call below when using a 6DOF IMU

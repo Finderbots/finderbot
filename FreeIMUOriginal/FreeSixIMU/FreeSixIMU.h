@@ -21,11 +21,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
-#include "Wire/Wire.h"
+#include <Wire.h>
+#include "Arduino.h"
 
-#include "FIMU_ADXL345.h"
+#include <FIMU_ADXL345.h>
 #define FIMU_ACC_ADDR ADXL345_ADDR_ALT_LOW // SDO connected to GND
-#include "FIMU_ITG3200.h"
+#include <FIMU_ITG3200.h>
 
 
 #ifndef FreeSixIMU_h

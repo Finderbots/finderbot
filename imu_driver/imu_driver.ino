@@ -1,4 +1,16 @@
 #include <CommunicationUtils.h>
+#include <FIMU_ADXL345.h>
+#include <FIMU_ITG3200.h>
+#include <DebugUtils.h>
+#include <FreeSixIMU.h>
+
+#include <CommunicationUtils.h>
+#include <FIMU_ADXL345.h>
+#include <FIMU_ITG3200.h>
+#include <DebugUtils.h>
+#include <FreeSixIMU.h>
+
+#include <CommunicationUtils.h>
 
 #include <FIMU_ADXL345.h>
 #include <FIMU_ITG3200.h>

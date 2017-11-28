@@ -8,13 +8,15 @@ struct Coordinates
 	int y;
 };
 
-global_mapping::GlobalMapBuilder* global_map_builder;
 Planner* path_finding_planner;
 
 Planner::Planner(nav_msgs::OccupancyGrid global_map,
-				 std::vector< std::vector<int> > & path_coordinates,
+				 std::vector<int> & path_coordinates,
 				 std::vector<Node> nodes)
-	: global_map_(global_map), path_coordinates_(path_coordinates), nodes_(nodes) {}
+	: global_map_(global_map)
+{
+	nodes_.resize(global_map.data.size(),0);
+}
 // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
 //          an x,y destination
 // OUTPUT:  command velocities... angular and linear velocities
@@ -119,21 +121,50 @@ void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
 // Populate the path_coordinates_ with the path as an array of tuples (coordinates)
 void Planner::getPath(Node * goal) {
 	// Start pushing from the goal to the source, so will be reverse path
-	std::vector<int> tuple(2);
 	Node * current_node;
+	ROS_INFO("Coordinates:");
+	int num_points_in_path = 0;
 	while (NULL != current_node) {
-		tuple[0] = current_node->row;
-		tuple[1] = current_node->col;
-		path_coordinates_.push_back(tuple);
+		path_coordinates_.push_back(current_node->row);
+		path_coordinates_.push_back(current_node->col);
+		ROS_INFO("(%d, %d)", (int)path_coordinates_[num_points_in_path*2], (int)path_coordinates_[num_points_in_path*2+1]);
+
 		current_node = current_node->parent;
+		++num_points_in_path;
 	}
-	// path_coordinates member is a 2D STACK with the path coordinates
+	// path_coordinates member is a 1D array/stack with the path coordinates
 	// pop from top to bottom to go start to finish
 	return;
 }
 
 bool Planner::isGoal(Node * node, int goal_row, int goal_col) {
 	return (node->row == goal_row) && (node->col == goal_col);
+}
+
+bool Planner::pathCb(finderbot::getPath::Request  &req,
+		  			 finderbot::getPath::Response &res) {
+	// Hard code source and destination for tests
+	// TEST 1: 	s -> g:	(0,0) -> (0,0)
+	// 			Path: 	[[ 0 , 0 ]]
+	// TEST 2: 	s -> g:	(0,0) -> (1,1)
+	// 			Path: 	[[ 0 , 0 ], [ 1 , 1 ]]
+	req.source_x = 0;
+	req.source_y = 0;
+	req.goal_x = 0;
+	req.goal_y = 0;
+
+	Node * goal = aStar(req.goal_x, req.goal_y, req.source_x, req.source_y);
+	if (goal == NULL) {
+		ROS_INFO("Error: invalid pathfinding attempt");
+		return 1;
+	}
+	getPath(goal);
+
+	// path_coordinates_ member is a 1D array with the path coordinates
+	res.path = path_coordinates_;
+	for (int i = 0; i < path_coordinates_.size()/2; ++i)
+		ROS_INFO("(%d, %d)", (int)res.path[2*i], (int)res.path[2*i + 1]);
+	return true;
 }
 
 int main(int argc, char** argv) {
@@ -144,53 +175,13 @@ int main(int argc, char** argv) {
     // ros::Subscriber globalMapHandler = nh.subscribe<nav_msgs::OccupancyGrid>("global_map", 1, true);
     // nav_msgs::OccupancyGrid global_map = ???;
     /* ALSO, HOW TO GET nav_msgs::OccupancyGrid global_map FROM HERE */
-    ros::Publisher pub = nh.advertise<std_msgs::Int32MultiArray>("matrix_pub", 1);
-    // For now, loop once every ten seconds
-    ros::Rate loop_rate(10000);
-    std_msgs::Int32MultiArray dat;
-	// path_coordinates member is a 2D array with the path coordinates
-	std::vector< std::vector<int> > path_coordinates;
     nav_msgs::OccupancyGrid global_map = global_map_builder->global_map_;
     // Initialize nodes array to the size of the map
-    std::vector<Node> nodes(global_map.data.size());
 
-	Planner* path_finding_planner = new Planner(global_map, path_coordinates, nodes);
+	Planner* planner = new Planner(global_map);
 
-	int source_row = atoi(argv[1]);
-	int source_col = atoi(argv[2]);
-	int goal_row = atoi(argv[3]);
-	int goal_col = atoi(argv[4]);
-	Node * goal = path_finding_planner->aStar(goal_row, goal_col, source_row, source_col);
-	if (goal == NULL) {
-        ROS_INFO("Error: invalid pathfinding attempt");
-		return 1;
-	}
-	path_finding_planner->getPath(goal);
-
-    dat.layout.dim.push_back(std_msgs::MultiArrayDimension());
-    dat.layout.dim.push_back(std_msgs::MultiArrayDimension());
-    dat.layout.dim[0].label = "points";
-    dat.layout.dim[1].label = "coordinates";
-    dat.layout.dim[0].size = path_coordinates.size();
-    dat.layout.dim[1].size = 2;
-    dat.layout.dim[0].stride = 2*path_coordinates.size();
-    dat.layout.dim[1].stride = 2;
-    dat.layout.data_offset = 0;
-    std::vector<int> vec(2*path_coordinates.size(), 0);
-    for (int i=0; i<path_coordinates.size(); i++) {
-        for (int j=0; j<2; j++) {
-            vec[i*2 + j] = path_coordinates[i][j];
-        }
-    }
-    dat.data = vec;
-
-    while (ros::ok())
-    {
-        pub.publish(dat);
-        loop_rate.sleep();
-    }
-
-
+	ros::ServiceServer service = nh.advertiseService("get_path", planner->pathCb);
+	ROS_INFO("Ready to print path coordinates.");
     ros::spin();
 
     return 0;
