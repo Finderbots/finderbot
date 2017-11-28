@@ -18,6 +18,8 @@
 #include <string>
 #include <cassert>
 
+#define global_width 1000
+
 struct Node
 {
     int row;
@@ -31,7 +33,8 @@ struct Node
 };
 
 class Planner {
-    nav_msgs::OccupancyGrid global_map_;
+    // probabilities of obstacles in map
+    std::vector<double> global_map_;
 
     // Nodes each representing a coordinate in the map
     std::vector<Node> nodes_;
@@ -81,12 +84,12 @@ inline int distance(int row1, int col1, int row2, int col2) {
 }
 
 /* Return true if the point lies in the map */
-inline bool pointInMap(const int row, const int col, const nav_msgs::OccupancyGrid & global_map)
+inline bool pointInMap(const int row, const int col)
 {
-    return ((0 <= col) && ((size_t) col < global_map.info.width) && (0 <= row) && ((size_t) row < global_map.info.height));
+    return ((0 <= col) && ((size_t) col < global_width) && (0 <= row) && ((size_t) row < global_map.info.height));
 }
 
-inline size_t getOffsetRowCol(size_t row, size_t col, const nav_msgs::OccupancyGrid & global_map)
+inline size_t getOffsetRowCol(size_t row, size_t col)
 {
-    return (row * global_map.info.width) + col;
+    return (row * global_width) + col;
 }
