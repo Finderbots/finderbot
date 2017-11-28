@@ -1,13 +1,21 @@
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 #include "Arduino_FreeRTOS.h"
 
 #include "FIMU_ADXL345.h"
 #include "FIMU_ITG3200.h"
 #include "FreeSixIMU.h"
 
+// void vApplicationStackOverflowHook( TaskHandle_t xTask,
+//                                     signed char *pcTaskName ) {
+//     DDRD |= _BV(PD6);
+//     PORTD ^= _BV(PD6);
+// }
 
 void init_pwm();
+
+void init_spi(void);
 
 void motor_run(int motor, uint8_t speed, int movement);
 
@@ -37,8 +45,6 @@ void updateAngle(void);
 
 void TaskIMURead(void *pvParameters);
 
-void TaskSendSPIData(void *pvParameters);
-
 void TaskPIDController(void *pvParameters);
 
 void TaskTestTimers(void *pvParameters);
@@ -54,9 +60,9 @@ int IRleftVal = 0;
 int IRrightVal = 0;
 
 /* odometry data read from IMU. Updated by IMURead. Sent via SPI to XU4 */
-int roll = 0;
-int pitch = 0;
-int yaw = 0;
+uint8_t roll = 0;
+uint8_t pitch = 0;
+uint8_t yaw = 0;
 
 /* Motor pin array */
 int Motor[4][2] = //two dimensional array
@@ -85,7 +91,7 @@ const char SoP = 'C';
 const char EoP = 'E';
 const char nullTerminator = '\0';
 unsigned char inByte;
-#define MESSAGE_MAX_SIZE 5
+#define MESSAGE_MAX_SIZE 10
 char message[MESSAGE_MAX_SIZE];
 char command;
 
@@ -118,18 +124,42 @@ float dTerm = 0;
 float pTerm = 0;
 
 //Location PID CONTROL - These are the PID control for the robot trying to hold its location.
-  float Lp = 0.5;
-  float Li = 0.05;
-  float Ld = 0.4;
-  float offsetLoc = 0;
-  float pT,iT,dT = 0;
-  float errorS = 0;
-  float prevE = 0;
+float Lp = 0.5;
+float Li = 0.05;
+float Ld = 0.4;
+float offsetLoc = 0;
+float pT,iT,dT = 0;
+float errorS = 0;
+float prevE = 0;
+
+/*SPI Variables*/
+volatile char spi_char;
+volatile char spi_message[MESSAGE_MAX_SIZE];
+volatile byte pos;
+const char ack_byte = '!';
+const char recv_index = 0;
+const char start_byte = 's';
+const char request = 'i'; //i = information is being requested
+const char roll_req = 'r'; //r = I want roll
+const char pitch_req = 'p'; //p = I want pitch
+const char yaw_req = 'y'; //y = I want yaw
+const char left_ir_req = '<'; //< = I want left IR value
+const char right_ir_req = '>'; //> = I want right IR value
+const char stop_byte = 'e';
+const char err_byte = 'b';
+const char ack_byte_stop = 'd'; 
+
+
 
 #define F_CPU 16000000
 
 int main(void)
 {
+    //DDRD |= _BV(PD3); //debug
+    //PORTD ^= _BV(PD3); //debug
+
+    sei();
+    //SREG |= (1<<7);
 
     // xTaskCreate(
     // TaskTestTimers
@@ -155,18 +185,10 @@ int main(void)
     // ,  3  // Priority (low num = low priority)
     // ,  NULL );
 
-    xTaskCreate(
-    TaskIMURead
-    ,  (const portCHAR *)"IMURead"  // A name just for humans
-    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    ,  NULL
-    ,  2  // Priority (low num = low priority)
-    ,  NULL );
-
     // xTaskCreate(
-    // TaskSendSPIData
-    // ,  (const portCHAR *)"SendSPIData"  // A name just for humans
-    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // TaskIMURead
+    // ,  (const portCHAR *)"IMURead"  // A name just for humans
+    // ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
     // ,  NULL
     // ,  2  // Priority (low num = low priority)
     // ,  NULL );
@@ -210,6 +232,95 @@ void init_pwm() {
 
     ICR3 = 0xFF; //set TOP value for Timer 3
     
+}
+
+void init_spi(void)
+{
+    // Set MISO output, all others input 
+    DDRB |= _BV(PB3);
+
+    // Enable SPI with interrupts 
+    SPCR |= _BV(SPE) | _BV(SPIE);// need to set _BV(CPOL)(Clk polarity)
+                                // and _BV(CPHA) (clk phase) 
+                                //_BV(DORD) (data order) to match master(ODROID)
+}
+
+// SPI Transmission/reception complete ISR
+ISR(SPI_STC_vect)
+{
+    //we want a deferred interrupt, so all we'll do is grab the byte then let the scheduler
+    // do the rest to mostly preserve priorities
+    spi_char = SPDR;  // grab byte from SPI Data Register
+    
+    // add to buffer if room
+    if (pos < (sizeof (spi_message) - 1)) {
+        spi_message[pos++] = spi_char;
+    }
+
+    uint8_t byte_to_send;
+
+    switch(spi_char) {
+        case start_byte:
+            //start byte
+            //send ack
+            byte_to_send = ack_byte;
+            break;
+        case request: 
+            //master requesting info byte
+            //send ack
+            byte_to_send = ack_byte;
+            break;
+        case roll_req:
+            //roll value requested
+            //send roll value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == request) {
+                byte_to_send  = (uint8_t) roll;
+            }            
+            break;
+        case pitch_req: 
+            //pitch value requested
+            //send pitch value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == request) {
+                byte_to_send  = (uint8_t) pitch;
+            }
+            break;
+        case yaw_req: 
+            //yaw value requested
+            //send yaw value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == request) {
+                byte_to_send  = (uint8_t) yaw;
+            }
+            break;
+        case left_ir_req:
+            //left ir sensor requested
+            //send that value on the spi line
+            if(spi_message[0] == start_byte && spi_message[1] == request) {
+                byte_to_send  = (uint8_t) IRleftVal;
+            }
+            break;
+        case right_ir_req:
+            //left ir sensor requested
+            //send that value on the spi line
+            if(spi_message[0] == start_byte && spi_message[1] == request) {
+                byte_to_send  = (uint8_t) IRrightVal;
+            }
+            break;
+        case stop_byte:
+            //send ack
+            byte_to_send = ack_byte_stop;
+            break;
+        default:
+            byte_to_send = err_byte;
+            break;
+    }
+
+    SPDR = byte_to_send;
+
+    if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
+        pos = 0;
+    }
+
+      
 }
 
 void motor_run(int motor, uint8_t speed, int movement) {
@@ -410,7 +521,7 @@ void TaskIRSensorRead(void *pvParameters) {
 
 
 void updateAngle(void) {
-    PORTD |= _BV(PD2);
+    //PORTD |= _BV(PD2); //debugging
     sixDOF.getYawPitchRoll(angles);
     prevAngles[prevAngleI] = angles[1];
     prevAngleI = (prevAngleI + 1) % AvgAngles;
@@ -419,7 +530,7 @@ void updateAngle(void) {
         sum += prevAngles[i];
     currAngle = sum / AvgAngles;
     prevAngle = currAngle;
-    PORTD &= ~(_BV(PD2));
+    //PORTD &= ~(_BV(PD2)); //debugging
 }
 
 void TaskIMURead(void *pvParameters) {
@@ -430,16 +541,12 @@ void TaskIMURead(void *pvParameters) {
     vTaskDelay(1); //1 tick
 
     DDRD |= _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
-    PORTD ^= _BV(PD3);
+ 
 
     for(;;) {
         updateAngle();
         vTaskDelay(pdMS_TO_TICKS(500));
     }
-}
-
-void TaskSendSPIData(void *pvParameters) {
-
 }
 
 void TaskPIDController(void *pvParameters) {

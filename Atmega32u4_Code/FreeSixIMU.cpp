@@ -149,7 +149,7 @@ void FreeSixIMU::getValues(float * values) {
   values[1] = ((float) accval[1]);
   values[2] = ((float) accval[2]);
   
-  gyro.readGyro(&values[3]);
+ gyro.readGyro(&values[3]);
   
   //magn.getValues(&values[6]);
 }
