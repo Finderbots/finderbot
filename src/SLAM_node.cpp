@@ -80,9 +80,9 @@ public:
         pose_.x = pose.position.x;
         pose_.y = pose.position.y;
         tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-        pose_.theta = convertQuatToAngle(q);
+        pose_.theta = -1.5707;
         
-
+        // ROS_INFO("init transform (%f, %f, %f)",pose_.x, pose_.y, pose_.theta);
         tf::Transform transform;
 
         q.setRPY(0, 0, pose_.theta);
@@ -110,7 +110,7 @@ public:
              pose_.theta = convertQuatToAngle(q);
         }
         else ROS_INFO("boo gazebo");
-        ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
+        // ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
         //fill particles vector by sampling from N(pose, std_dev) num_particles times
         std::default_random_engine generator;
         std::normal_distribution<double> x_distribution(pose_.x, std_dev_);
@@ -163,7 +163,7 @@ public:
             }
         }
         
-        ROS_INFO("pf_pose = (%f, %f, %f", max_pose.x, max_pose.y, max_pose.theta);
+        // ROS_INFO("pf_pose = (%f, %f, %f", max_pose.x, max_pose.y, max_pose.theta);
         //select particle with highest pose, update pose
         pose_ = max_pose;
 
