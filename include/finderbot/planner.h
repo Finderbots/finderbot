@@ -9,8 +9,7 @@
 #include <stdlib.h>     /* atoi */
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-#include "std_msgs/Int32MultiArray.h"
-#include "std_msgs/MultiArrayDimension.h"
+#include "finderbot/getPath.h"
 // #include <finderbot/global_map_builder.h>
 // #include <finderbot/NewHits.h>
 
@@ -38,7 +37,7 @@ class Planner {
     std::vector<Node> nodes_;
 
     // A 2-D vector with the coordinates of each point in the map to visit
-    std::vector< std::vector<int> > & path_coordinates_;
+    std::vector<int> path_coordinates_;
     // Output command velocities based on plan
     ros::Publisher command_velocities_;
 
@@ -56,6 +55,7 @@ class Planner {
 
     void getNeighbors(const Node & node, std::vector<Node*> & neighbors);
 
+    // This handles request and service stuff now
     void getPath(Node * goal);
 
     bool isGoal(Node * node, int goal_row, int goal_col);

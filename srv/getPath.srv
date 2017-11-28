@@ -1,0 +1,6 @@
+int32 source_x
+int32 source_y
+int32 goal_x
+int32 goal_y
+---
+int32[] path
