@@ -4,19 +4,22 @@
 #include <tf/transform_listener.h>
 
 #include <finderbot/global_map_builder.h>
-#include <finderbot/NewHits.h>
+#include <finderbot/PF_Input.h>
 
 #include <string>
 #include <cassert>
 
 ros::Publisher global_map_publisher;
 ros::Publisher local_map_publisher;
+ros::Publisher pf_publisher;
+
 global_mapping::GlobalMapBuilder* global_map_builder;
 
 
 void handleLaserScan(const sensor_msgs::LaserScan scan)
 {
     global_map_builder->buildMapFromScan(scan);
+    pf_publisher.publish(global_map_builder->getPFData());
     global_map_publisher.publish(global_map_builder->getGlobalMap());
     local_map_publisher.publish(global_map_builder->getLocalMap());
 }
@@ -49,10 +52,14 @@ int main(int argc, char** argv)
                                                               local_map_height, 
                                                               map_resolution, 
                                                               local_frame_id);
+
     ros::Subscriber local_map_handler = nh.subscribe<sensor_msgs::LaserScan>("hokuyo_data", 1, handleLaserScan);
 
     global_map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("global_map", 1, true);
 
     local_map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("local_map", 1, true);
+
+    pf_publisher = nh.advertise<finderbot::PF_Input>("SLAM_pf", 1, true);
+
     ros::spin();
 }

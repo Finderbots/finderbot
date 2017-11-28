@@ -72,12 +72,16 @@ void ADXL345::writeTo(byte address, byte val) {
   Wire.write(val);                 // send value to write
   Wire.endTransmission();         // end transmission
 }
-
+#include <avr/io.h>
 // Reads num bytes starting from address register on device in to _buff array
 void ADXL345::readFrom(byte address, int num, byte _buff[]) {
+
   Wire.beginTransmission(_dev_address); // start transmission to device
+
   Wire.write(address);             // sends address to read from
+        
   Wire.endTransmission();         // end transmission
+
 
   Wire.beginTransmission(_dev_address); // start transmission to device
   Wire.requestFrom(_dev_address, num);    // request 6 bytes from device
@@ -88,6 +92,8 @@ void ADXL345::readFrom(byte address, int num, byte _buff[]) {
     _buff[i] = Wire.read();    // receive a byte
     i++;
   }
+
+
   if(i != num){
     status = ADXL345_ERROR;
     error_code = ADXL345_READ_ERROR;
