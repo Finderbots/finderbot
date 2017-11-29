@@ -1,3 +1,6 @@
+#ifndef GLOBAL_MAP_BUILDER_H_
+#define GLOBAL_MAP_BUILDER_H_
+
 #include <ros/ros.h>
 #include <ros/console.h>
 
@@ -7,6 +10,7 @@
 #include <tf/transform_listener.h>
 
 #include <finderbot/ray_caster.h>
+#include <finderbot/map_utils.h>
 
 #include <vector>
 #include <string>
@@ -93,9 +97,6 @@ public:
 
 };
 
-inline size_t getOffsetRowCol(size_t row, size_t col, size_t ncol)
-{
-    return (row * ncol) + col;
 }
 
-}
+#endif
