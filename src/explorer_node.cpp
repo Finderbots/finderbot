@@ -1,16 +1,54 @@
 #include <ros/ros.h>
 #include <ros/console.h>
-
-#include <nav_msgs/OccupancyGrid.h>
-
+#include <finderbot/planner.h>
 #include <vector>
+#include <queue>
+#include <planner.h>
+
+
+
+class DistanceGrid
+{
+    std::vector<double> distances;
+    size_t global_width;
+    size_t global_height;
+
+  public:
+
+
+    void setDistances(const std::vector<double>& map)
+    {
+        assert(map.size() == distances.size());
+
+        distances.assign(map.size(), std::numeric_limits<float>::max());
+
+        std::priority_queue<size_t> searchQueue;
+
+
+    }
+
+    void enqueueObstacleCells(const std::vector<double>& map, std::priority_queue<size_t>& searchQueue)
+    {
+        for (size_t i = 0; i < map.size(); i++)
+        {
+            //TODO: maybe this should be a bit 
+            if (map[i] == 100)
+        }
+    }
+
+};
+
+
+
+
+
 
 //cell is a frontier if it is unexplored (-1) and neighbor is free (0)
-bool isFrontier(size_t idx, const nav_msgs::OccupancyGrid& map)
+bool isFrontier(const size_t idx, const std::vector<double>& map)
 {
     //using prob map not log odds
     //point must be in map, and 
-    if (!pointInMap(idx, map.info.width, map.info.height) || map.data[idx] != -1)
+    if (!pointInMap(idx, global_width, map.size()/ global_width) || map[idx] != -1)
     {
         return false;
     }
@@ -21,8 +59,8 @@ bool isFrontier(size_t idx, const nav_msgs::OccupancyGrid& map)
 
     for (int i = 0; i < num_neighbors; i++)
     {
-        neighbor_idx = getOffsetRowCol(x + x_deltas[i], y+y_deltas[i]);
-        if (map.data[neighbor_idx] == 0)
+        neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i], global_width);
+        if (map[neighbor_idx] == 0)
         {
             return true;
         }
@@ -31,7 +69,7 @@ bool isFrontier(size_t idx, const nav_msgs::OccupancyGrid& map)
     return false;
 }
 
-std::vector<size_t> grow_frontier(size_t cell, const nav_msgs::OccupancyGrid& map, 
+std::vector<size_t> growFrontier(const size_t cell, const std::vector<double>& map, 
                                                 std::set<size_t>& visited_frontiers)
 
 {
@@ -45,10 +83,63 @@ std::vector<size_t> grow_frontier(size_t cell, const nav_msgs::OccupancyGrid& ma
 
     std::vector<size_t> frontier;
 
-    
-}                                                                                                
+    while (!cell_queue.empty())
+    {
+        size_t next_cell = cell_queue.front();
+        cell_queue.pop();
 
-std::vector<std::vector<size_t> > getMapFrontiers(const nav_msgs::OccupancyGrid& map, 
+        frontier.push_back(next_cell);
+
+        size_t x = getRowOffset(next_cell, global_width);
+        size_t y = getColOffset(next_cell, global_width);
+
+        for (int i = 0; i < num_neighbors; i++)
+        {
+            size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y + y_deltas[i], 
+                                                    global_width);
+            if (visited_frontiers.find(neighbor_idx) == visited_frontiers.end() 
+                    && isFrontier(neighbor_idx))
+            {
+                visited_frontiers.insert(neighbor_idx);
+                cell_queue.push(neighbor_idx);
+            }
+
+        }
+    }
+
+    return frontier;
+}       
+
+std::vector<size_t> pathToFrontier(const std::vector<size_t>& frontier,
+                                   const size_t robot_pose_idx
+                                   const std::vector<double>& map,
+                                   const Planner& planner
+                                   )
+{
+    assert(!frontier.empty());
+
+    //sort frontier so that the cell that is furthest from all the others is first
+
+    //loop through sorted vector, find path to that point 
+
+    //if path is valid, then return the first one
+
+}
+
+size_t getNearestNavigableCell(size_t robot_pose_idx,
+                               size_t desired_idx,
+                               const std::vector<double> map,
+                               const Planner& planner)
+{
+    size_t goal_x = map_utils::rowFromOffset(desired_idx, global_width);
+    size_t goal_y = map_utils::colFromOffset(robot_pose_idx, global_width);
+    size_t x =      map_utils::rowFromOffset(robot_pose_idx, global_width);
+    size_t y =      map_utils::colFromOffset(robot_pose_idx, global_width);
+
+    Planner.aStar()
+}
+
+std::vector<std::vector<size_t> > getMapFrontiers(const std::vector<double>& map, 
                                                     size_t robot_pose_idx,
                                                     double min_dist_to_frontier)
 {
@@ -69,22 +160,22 @@ std::vector<std::vector<size_t> > getMapFrontiers(const nav_msgs::OccupancyGrid&
         cellQueue.pop();
 
         //work these out for realz
-        size_t x = getRowOffset();
-        size_t y = getColOffset();
+        size_t x = map_utils::rowFromOffset(next_idx, global_width);
+        size_t y = map_utils::colFromOffset(next_idx, global_width);
 
         for (int n = 0; n < num_neighbors; ++n)
         {
-            neighbor_idx = getOffsetRowCol(x + x_deltas[i], y+y_deltas[i]);
+            neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i]);
 
             if (visited_idxs.find() != visited_idxs.end() || 
-                                !pointInMap(neighbor_idx)
+                                !map_utils::pointInMap(neighbor_idx, global_width, map.size()/global_width)
             {
                 continue;
             }
 
             else if (isFrontier(neighbor_idx, map))
             {
-                std::vector<size_t> f grow_frontier(neighbor_idx, map, visited_idxs);
+                std::vector<size_t> f growFrontier(neighbor_idx, map, visited_idxs);
 
                 if (f[0].size() * map.info.resolution >= min_dist_to_frontier)
                 {
