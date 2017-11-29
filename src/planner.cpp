@@ -10,7 +10,7 @@ struct Coordinates
 
 Planner* path_finding_planner;
 
-Planner::Planner(nav_msgs::OccupancyGrid global_map) : global_map_(global_map)
+Planner::Planner(std::vector<double> global_map) : global_map_(global_map)
 {
 	nodes_.resize(global_map_.size(),0);
 }

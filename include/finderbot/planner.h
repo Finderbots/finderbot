@@ -2,7 +2,6 @@
 #include <limits.h>
 #include <ros/ros.h>
 #include <ros/console.h>
-#include <nav_msgs/OccupancyGrid.h>
 
 #include <vector>
 #include <queue>
@@ -48,9 +47,7 @@ class Planner {
     //      geometry_msgs/Twist.h
     //      at any given time you can only rotate or go forward or backward
   public:
-    Planner(nav_msgs::OccupancyGrid global_map,
-            std::vector< std::vector<int> > & path_coordinates,
-            std::vector<Node> nodes);
+    Planner(std::vector<double> global_map);
 
     Node * aStar(int goal_row, int goal_col, int source_row, int source_col);
 
