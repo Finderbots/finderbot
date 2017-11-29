@@ -133,8 +133,9 @@ void Planner::getPath(Node * goal) {
 	ROS_INFO("Coordinates:");
 	int num_points_in_path = 0;
 	while (NULL != current_node) {
-		path_coordinates_.push_back(current_node->row);
-		path_coordinates_.push_back(current_node->col);
+		// Insert y to the front, then x... so you end with x_src, y_src, ..., x_dst, y_dst
+		path_coordinates_.insert(path_coordinates_.begin(), current_node->col);
+		path_coordinates_.insert(path_coordinates_.begin(), current_node->row);
 		ROS_INFO("(%d, %d)", (int)path_coordinates_[num_points_in_path*2], (int)path_coordinates_[num_points_in_path*2+1]);
 
 		current_node = current_node->parent;
@@ -174,23 +175,3 @@ bool Planner::pathCb(finderbot::getPath::Request  &req,
 		ROS_INFO("(%d, %d)", (int)res.path[2*i], (int)res.path[2*i + 1]);
 	return true;
 }
-
-// int main(int argc, char** argv) {
-//     ros::init(argc, argv, "planner");
-//     ros::NodeHandle nh;
-
-//     /* THIS IS WHERE WE SUBSCRIBE TO THE GLOBAL MAP, MAY NEED TO CHANGE */
-//     // ros::Subscriber globalMapHandler = nh.subscribe<nav_msgs::OccupancyGrid>("global_map", 1, true);
-//     // nav_msgs::OccupancyGrid global_map = ???;
-//     nav_msgs::OccupancyGrid global_map = global_map_builder->global_map_;
-//     /* ALSO, HOW TO GET nav_msgs::OccupancyGrid global_map FROM HERE */
-//     // Initialize nodes array to the size of the map
-
-// 	Planner* planner = new Planner(global_map);
-
-// 	ros::ServiceServer service = nh.advertiseService("get_path", planner->pathCb);
-// 	ROS_INFO("Ready to print path coordinates.");
-//     ros::spin();
-
-//     return 0;
-// }

@@ -10,8 +10,6 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include "finderbot/getPath.h"
-// #include <finderbot/global_map_builder.h>
-// #include <finderbot/NewHits.h>
 
 #include <geometry_msgs/Twist.h>
 #include <math.h>
