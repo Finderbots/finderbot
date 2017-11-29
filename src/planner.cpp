@@ -133,9 +133,8 @@ void Planner::getPath(Node * goal) {
 	ROS_INFO("Coordinates:");
 	int num_points_in_path = 0;
 	while (NULL != current_node) {
-		// Insert y to the front, then x... so you end with x_src, y_src, ..., x_dst, y_dst
-		path_coordinates_.insert(path_coordinates_.begin(), current_node->col);
-		path_coordinates_.insert(path_coordinates_.begin(), current_node->row);
+		path_coordinates_.push_back(current_node->col);
+		path_coordinates_.push_back(current_node->row);
 		ROS_INFO("(%d, %d)", (int)path_coordinates_[num_points_in_path*2], (int)path_coordinates_[num_points_in_path*2+1]);
 
 		current_node = current_node->parent;
@@ -155,8 +154,8 @@ bool Planner::pathCb(finderbot::getPath::Request  &req,
 	// Hard code source and destination for tests
 	// TEST 1: 	s -> g:	(0,0) -> (0,0)
 	// 			Path: 	[[ 0 , 0 ]]
-	// TEST 2: 	s -> g:	(0,0) -> (1,1)
-	// 			Path: 	[[ 0 , 0 ], [ 1 , 1 ]]
+	// TEST 2: 	s -> g:	(0,0) -> (10,10)
+	// 			Path: 	[[ 0 , 0 ], ..., [ 10 , 10 ]]
 	req.source_x = 0;
 	req.source_y = 0;
 	req.goal_x = 0;
