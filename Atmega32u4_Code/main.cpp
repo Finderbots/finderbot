@@ -1,6 +1,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
 #include "Arduino_FreeRTOS.h"
 
 #include "FIMU_ADXL345.h"
@@ -158,8 +159,17 @@ int main(void)
     //DDRD |= _BV(PD3); //debug
     //PORTD ^= _BV(PD3); //debug
 
+    init_spi();
+
     sei();
     //SREG |= (1<<7);
+    volatile int i = 0;
+    volatile int j = 0;
+
+    while(1) {
+        i++;
+        j = i;
+    }
 
     // xTaskCreate(
     // TaskTestTimers
@@ -236,11 +246,21 @@ void init_pwm() {
 
 void init_spi(void)
 {
+    DDRE |= _BV(PE6); //debugging
+
+    SPCR |= _BV(SPE); //enable spi mode
+
+    SPCR &= ~(_BV(MSTR)); //explicitly set spi to slave mode
+
+    DDRB &= ~(_BV(PB0)); //set SS as input explicitly 
+
     // Set MISO output, all others input 
     DDRB |= _BV(PB3);
 
-    // Enable SPI with interrupts 
-    SPCR |= _BV(SPE) | _BV(SPIE);// need to set _BV(CPOL)(Clk polarity)
+    // Enable spi interrupts 
+    SPCR |= _BV(SPIE); 
+
+    //might need to set _BV(CPOL)(Clk polarity)
                                 // and _BV(CPHA) (clk phase) 
                                 //_BV(DORD) (data order) to match master(ODROID)
 }
@@ -248,10 +268,14 @@ void init_spi(void)
 // SPI Transmission/reception complete ISR
 ISR(SPI_STC_vect)
 {
-    //we want a deferred interrupt, so all we'll do is grab the byte then let the scheduler
-    // do the rest to mostly preserve priorities
+    PORTE |= _BV(PE6); //debugging
+
     spi_char = SPDR;  // grab byte from SPI Data Register
     
+    if(spi_char == start_byte) {
+        pos = 0;
+    }
+
     // add to buffer if room
     if (pos < (sizeof (spi_message) - 1)) {
         spi_message[pos++] = spi_char;
@@ -275,13 +299,17 @@ ISR(SPI_STC_vect)
             //send roll value on spi line
             if(spi_message[0] == start_byte && spi_message[1] == request) {
                 byte_to_send  = (uint8_t) roll;
-            }            
+            }  else {
+                byte_to_send = err_byte;
+            }          
             break;
         case pitch_req: 
             //pitch value requested
             //send pitch value on spi line
             if(spi_message[0] == start_byte && spi_message[1] == request) {
                 byte_to_send  = (uint8_t) pitch;
+            }else {
+                byte_to_send = err_byte;
             }
             break;
         case yaw_req: 
@@ -290,12 +318,17 @@ ISR(SPI_STC_vect)
             if(spi_message[0] == start_byte && spi_message[1] == request) {
                 byte_to_send  = (uint8_t) yaw;
             }
+            else {
+                byte_to_send = err_byte;
+            }
             break;
         case left_ir_req:
             //left ir sensor requested
             //send that value on the spi line
             if(spi_message[0] == start_byte && spi_message[1] == request) {
                 byte_to_send  = (uint8_t) IRleftVal;
+            }else {
+                byte_to_send = err_byte;
             }
             break;
         case right_ir_req:
@@ -303,6 +336,8 @@ ISR(SPI_STC_vect)
             //send that value on the spi line
             if(spi_message[0] == start_byte && spi_message[1] == request) {
                 byte_to_send  = (uint8_t) IRrightVal;
+            }else {
+                byte_to_send = err_byte;
             }
             break;
         case stop_byte:
@@ -319,6 +354,8 @@ ISR(SPI_STC_vect)
     if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
         pos = 0;
     }
+
+    PORTE &= ~(_BV(PE6));
 
       
 }
@@ -515,8 +552,104 @@ void TaskMotorCommand( void *pvParameters)  // This is a Task.
     }
 }
 
-void TaskIRSensorRead(void *pvParameters) {
+ISR(ADC_vect) 
+{
 
+    if(ADMUX & _BV(MUX0)) {
+        IRrightVal = ADCH;
+    }
+    else  {
+        IRleftVal = ADCH;
+    }
+}
+
+
+
+void init_IR_pins(void) {
+   // DDRE |= _BV(PE6); //debugging
+   // DDRB |= _BV(PB0); //debugging
+   // DDRD |= _BV(PD2) | _BV(PD3); //debugging
+    ADCSRA |= _BV(ADEN) | _BV(ADIE); //enable ADC
+    ADMUX |= _BV(REFS0) | _BV(ADLAR) ; //left shift adc result register
+}
+
+void TaskIRSensorRead(void *pvParameters) {
+    init_IR_pins();
+
+    for(;;) {
+
+        /*******left ir sensor*********/
+        ADMUX &= ~(_BV(MUX4)) & ~(_BV(MUX3)) & ~(_BV(MUX2))& ~(_BV(MUX1)) & ~(_BV(MUX0)); //choose channel_0
+        ADCSRB &= ~(_BV(MUX5));
+
+        //ADCSRA |= _BV(ADSC); //start single conversion
+
+        
+        SMCR |= _BV(SM0); //enter adc noise reduction (sleep) mode
+        SMCR |= _BV(SE); //enter sleep mode
+        sleep_cpu();
+        SMCR &= ~(_BV(SE)); //disable sleep mode
+
+        // while(!(ADCSRA & _BV(ADIF))){ //wait for conversion to finish - finished when ADIF is set to 1
+        //     continue;
+        // }
+        // //PORTB ^= _BV(PB0); debugging
+        // //IRleftVal = ADCL;
+        // IRleftVal = ADCH; //only need 8 bit precision
+
+        // ADCSRA |= _BV(ADIF); //clear the interrupt flag maybe??? datasheet says to write a one to it to clear it...
+
+
+        /*******right ir sensor*********/
+        ADMUX &= ~(_BV(MUX4)) & ~(_BV(MUX3)) & ~(_BV(MUX2))& ~(_BV(MUX1)); //choose channel_1
+        ADCSRB &= ~(_BV(MUX5)); //choose channel_1
+        
+        ADMUX |= _BV(MUX0); //choose channel_1
+
+        PORTB &= ~(_BV(PB0));
+        // ADCSRA |= _BV(ADSC); //start single conversion
+        
+        SMCR |= _BV(SM0); //enter adc noise reduction (sleep) mode
+        SMCR |= _BV(SE); //enter sleep mode
+        sleep_cpu();
+        SMCR &= ~(_BV(SE)); //disable sleep mode
+
+        // while(!(ADCSRA & _BV(ADIF))){ //wait for conversion to finish - finished when ADIF is set to 1
+        //     continue;
+        // }
+        PORTB |= _BV(PB0); //debugging
+
+        //IRrightVal = ADCH; //only need 8 bit precision
+
+        //ADCSRA |= _BV(ADIF); //clear the interrupt flag maybe??? datasheet says to write a one to it to clear it...
+
+        if(IRrightVal > 90) {
+            PORTE |= _BV(PE6); //debugging
+            cli(); //disable interrupts
+            stop_bot();
+            sei(); //enable interrupts
+        }
+        else
+        {
+            PORTE &= ~ _BV(PE6);
+        }
+
+        // //testing
+        // if(IRrightVal <20) {
+        //     PORTB ^= _BV(PB0);
+        // }
+        // if(IRrightVal <40){
+        //     PORTE ^= _BV(PE6);
+        // }
+        // if(IRrightVal <60) {
+        //     PORTD ^= _BV(PD2);
+        // }
+        // if(IRrightVal <80) {
+        //     PORTD ^= _BV(PD3);
+        // }
+
+        //vTaskDelayUntil(TickType_t *const pxPreviousWakeTime, const TickType_t xTimeIncrement)
+    }
 }
 
 
