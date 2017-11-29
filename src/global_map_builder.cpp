@@ -7,16 +7,16 @@ namespace global_mapping
     const double default_max_log_odds = 100;
     const double default_belief_threshold = 20;
 
-    double convertQuatToAngle(const tf::Quaternion& q)
-    {
-        if(std::fabs(q.x()) > 1e-5 || std::fabs(q.y()) > 1e-5){
-            tf::Vector3 axis = q.getAxis();
-            // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
-                // axis.x(), axis.y(), axis.z());
-        }
+    // double convertQuatToAngle(const tf::Quaternion& q)
+    // {
+    //     if(std::fabs(q.x()) > 1e-5 || std::fabs(q.y()) > 1e-5){
+    //         tf::Vector3 axis = q.getAxis();
+    //         // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
+    //             // axis.x(), axis.y(), axis.z());
+    //     }
 
-        return 2*std::atan2(q.z(), q.w());
-    }
+    //     return 2*std::atan2(q.z(), q.w());
+    // }
 
     GlobalMapBuilder::GlobalMapBuilder(int global_width, int global_height, 
                                     int local_width, int local_height, 
@@ -171,8 +171,7 @@ namespace global_mapping
         map_x_ = (dx / global_map_.info.resolution) + init_map_x_;
         map_y_ = (dy / global_map_.info.resolution) + init_map_y_;
 
-        theta_ = convertQuatToAngle(new_transform.getRotation()) + M_PI/2;
-        ROS_INFO("theta = %f", theta_);
+        theta_ = map_utils::convertQuatToAngle(new_transform.getRotation()) + M_PI/2;
     }
 
     void GlobalMapBuilder::updateLocalOccupancy(bool occupied, size_t idx)
@@ -262,8 +261,8 @@ namespace global_mapping
         {
             for (size_t j = 0; j < local_ncol; j++)
             {
-                size_t local_idx = getOffsetRowCol(i, j, local_ncol);
-                size_t global_idx = getOffsetRowCol(global_start_row+i, 
+                size_t local_idx = map_utils::getOffsetRowCol(i, j, local_ncol);
+                size_t global_idx = map_utils::getOffsetRowCol(global_start_row+i, 
                                                     global_start_col+j, 
                                                     global_map_.info.width);
 
