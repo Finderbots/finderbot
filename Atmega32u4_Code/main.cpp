@@ -157,7 +157,6 @@ int main(void)
 {
     //DDRD |= _BV(PD3); //debug
     //PORTD ^= _BV(PD3); //debug
-
     sei();
     //SREG |= (1<<7);
 
