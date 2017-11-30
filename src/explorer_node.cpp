@@ -1,142 +1,22 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <finderbot/planner.h>
+#include <finderbot/DistanceGrid.h>
+
 #include <vector>
 #include <queue>
-#include <planner.h>
-
-
-class DistanceGrid
-{
-    std::vector<DistNode> distances;
-    size_t global_width;
-    size_t global_height;
-
-    struct DistNode
-    {
-        double distance;
-        size_t obstacle_idx;
-
-        bool operator<(const DistNode& rhs) const
-        {
-            return distance < rhs.distance;
-        }
-
-        DistNode(size_t cell_idx, obstacle_idx)
-        : obstacle_idx(obstacle_idx)
-        {
-            if (cell_idx == obstacle_idx) distance = 0;
-
-            else
-            {
-                x_cell = map_utils::rowFromOffset(cell_idx, global_width);
-                y_cell = map_utils::colFromOffset(cell_idx, global_width);
-                x_obs = map_utils::rowFromOffset(obstacle_idx, global_width);
-                y_obs = map_utils::colFromOffset(obstacle_idx, global_width);
-
-                // int delta_x = (x_cell == x_obs) ? 0 : std::max(std::abs(x_cell - x_obs) - 1, 0);
-                // int delta_y = (y_cell == y_obs) ? 0 : std::max(std::abs(y_cell - y_obs) - 1, 0);
-
-                distance = map_utils::distance(x_cell, y_cell, x_obs, y_obs);
-            }
-        }
-    };
-
-  public:
-
-    void setCellDist(size_t cell_idx, obstacle_idx)
-    {
-        if (cell_idx == obstacle_idx) distances[cell_idx] = 0;
-        else
-        {
-            x_cell = map_utils::rowFromOffset(cell_idx, global_width);
-            y_cell = map_utils::colFromOffset(cell_idx, global_width);
-            x_obs = map_utils::rowFromOffset(obstacle_idx, global_width);
-            y_obs = map_utils::colFromOffset(obstacle_idx, global_width);
-
-            // int delta_x = (x_cell == x_obs) ? 0 : std::max(std::abs(x_cell - x_obs) - 1, 0);
-            // int delta_y = (y_cell == y_obs) ? 0 : std::max(std::abs(y_cell - y_obs) - 1, 0);
-
-            distances[cell_idx] = map_utils::distance(x_cell, y_cell, x_obs, y_obs);
-        }
-    }
-
-    void setDistances(const std::vector<double>& map)
-    {
-        assert(map.size() == distances.size());
-
-        for (size_t i = 0; i < map.size(); i++)
-        {
-            distances[i].distance = std::numeric_limits<double>::max();
-        }
-
-        std::priority_queue<DistNode> search_queue;
-        //TODO Finish this function
-        enqueueObstacleCells(map, search_queue);
-
-        while (!search_queue.empty())
-        {
-            DistNode next_node = search_queue.top()
-            search_queue.pop();
-
-            if (next_node.distance < )
-        }
-    }
-
-    void enqueueObstacleCells(const std::vector<double>& map, std::priority_queue<DistNode>& search_queue)
-    {
-        for (size_t i = 0; i < map.size(); i++)
-        {
-            //if most likely an obstacle, treat it like an obstacle
-            if (map[i] >= 50)
-            {
-                //if obstacle found then expand and add to searchQueue
-                expandFromObstacle(distances[i], search_queue);
-            }
-
-        }
-    }
-
-    void expandFromObstacle(const DistNode& node, std::priority_queue<DistNode>& search_queue)
-    {
-        const int x_deltas[4] = {1,-1, 0, 0};
-        const int y_deltas[4] = {0, 0, 1,-1};
-
-        size_t x = rowFromOffset(obstacle_idx, global_width);
-        size_t y = colFromOffset(obstacle_idx, global_width);
-
-        for (int i = 0; i < 4; i++)
-        {
-            //if adjaacent cell is in map
-            if (pointInMap(x + x_deltas[i], y+y_deltas[i], global_width, global_height))
-            {
-                //get neighbor_idx
-                size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i],
-                                                                 y + y_deltas[i],
-                                                                 global_width);
-                //create dist node relative to this obstacle
-                DistNode adjacent_node(neighbor_idx, node.obstacle_idx);
-
-                //if this obstacle is closer than the one previously assigned to
-                //that cell then replace the dist node and add the new node to
-                //the searchQueue
-                if (adjacent_node.distance < distances[neighbor_idx].distance)
-                {
-                    distances[neighbor_idx] = adjacent_node;
-                    search_queue.push(adjacent_node);
-                }
-            }
-        }
-    }
-
-};
-
-
-
-
-
 
 //cell is a frontier if it is unexplored (-1) and neighbor is free (0)
+struct frontier_t
+{
+    std::vector<size_t> cells;
+};
+
+struct robot_path_t
+{
+    std::vector<size_t> cells;
+};
+
 bool isFrontier(const size_t idx, const std::vector<double>& map)
 {
     //using prob map not log odds
@@ -162,7 +42,7 @@ bool isFrontier(const size_t idx, const std::vector<double>& map)
     return false;
 }
 
-std::vector<size_t> growFrontier(const size_t cell, const std::vector<double>& map,
+frontier_t growFrontier(const size_t cell, const std::vector<double>& map,
                                                 std::set<size_t>& visited_frontiers)
 
 {
@@ -174,7 +54,7 @@ std::vector<size_t> growFrontier(const size_t cell, const std::vector<double>& m
     const int xDeltas[] = { -1, -1, -1, 1, 1, 1, 0, 0 };
     const int yDeltas[] = { 0, 1, -1, 0, 1, -1, 1, -1 };
 
-    std::vector<size_t> frontier;
+    frontier_t frontier;
 
     while (!cell_queue.empty())
     {
@@ -199,12 +79,12 @@ std::vector<size_t> growFrontier(const size_t cell, const std::vector<double>& m
 
         }
     }
-    {
 
     return frontier;
 }
 
-std::vector<size_t> pathToFrontier(const std::vector<size_t>& frontier,
+
+robot_path_t pathToFrontier(const std::vector<size_t>& frontier,
                                    const size_t robot_pose_idx
                                    const std::vector<double>& map,
                                    const Planner& planner
@@ -212,11 +92,101 @@ std::vector<size_t> pathToFrontier(const std::vector<size_t>& frontier,
     assert(!frontier.empty());
 
     //sort frontier so that the cell that is furthest from all the others is first
+    DistanceGrid dist = planner.getObstactleGrid();
 
     //loop through sorted vector, find path to that point
+    std::sort(frontier.cells.begin(), frontier.cells.end(), [&dist](size_t lhs, size_t rhs) -> bool {
+        return dist[lhs] > dist[rhs];
+    });
 
-    //if path is valid, then return the first one
+    for (size_t i = 0; i < frontier.cells.size(); i++)
+    {
+        robot_path_t path = planner.aStar(robot_pose_idx, 
+                                        getNearestNavigableCell(robot_pose_idx, frontier.cells[i], map, planner));
 
+        if (path.cells.size() > 1)
+        {
+            return path;
+        }
+    }
+
+    robot_path_t invalid;
+    invalid.cells.push_back(robot_pose_idx);
+    return invalid;
+}
+
+robot_path_t planPathToFrontier(const std::vector<std::vector<size_t> >& frontiers,
+                                       const size_t robot_pose_idx,
+                                       const std::vector<double>& map,
+                                       const Planner& planner)
+{
+    if (frontiers.empty())
+    {
+        std::vector<size_t> empty_path;
+        empty_path.push_back(robot_pose_idx);
+        return empty_path;
+    }   
+
+    std::vector<robot_path_t > paths;
+
+    //iterates through frontiers gets path and appends to path
+    std::transform(frontiers.begin(), 
+                   frontiers.end(), 
+                   std::back_inserter(paths),
+                   [&robotPose, &map, &planner](const frontier_t& f) {
+        return path_to_frontier(f, robotPose, map, planner);
+    });
+
+    //return path in paths with lowest size
+    return *std::min_element(paths.begin(), paths.end(), [](const robot_path_t& lhs, const robot_path_t& rhs){
+        return lhs.size() < rhs.size();
+    });
+}
+
+size_t searchToNearestFreeSpace(size_t pose_idx, const std::vector<double>& map, const Planner& planner)
+{
+    std::queue<size_t> cell_queue;
+    cell_queue.push(pose_idx);
+
+    std::set<size_t> visited_idxs;
+    visited_idxs.insert(pose_idx);
+
+    const int num_neighbors = 8;
+    const int x_deltas[] = { -1, -1, -1, 1, 1, 1, 0, 0 };
+    const int y_deltas[] = { 0, 1, -1, 0, 1, -1, 1, -1 };
+
+    while (!cell_queue.empty())
+    {
+        size_t next_idx = cell_queue.front();
+        cell_queue.pop();
+
+        size_t x =      map_utils::rowFromOffset(robot_pose_idx, global_width);
+        size_t y =      map_utils::colFromOffset(robot_pose_idx, global_width);
+
+        if (map_utils::pointInMap(x,y, global_height, global_width))
+        {
+            return next_idx;
+        }
+
+        for (int i = 0; i < num_neighbors; i++)
+        {
+            size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i]);
+
+            if (visited_idxs.find(neighbor_idx) != visited_idxs.end())
+            {
+               continue;
+            }
+
+            else if (map[neighbor_idx] < 50)
+            {
+                cell_queue.push(neighbor_idx);
+                visited_idxs.push(neighbor_idx);
+            }
+        }
+    }
+
+    //couldnt find a valid spot to move to return original pose as error
+    return pose_idx;
 }
 
 size_t getNearestNavigableCell(size_t robot_pose_idx,
@@ -229,14 +199,26 @@ size_t getNearestNavigableCell(size_t robot_pose_idx,
     size_t x =      map_utils::rowFromOffset(robot_pose_idx, global_width);
     size_t y =      map_utils::colFromOffset(robot_pose_idx, global_width);
 
-    Planner.aStar()
+    robot_path_t path = Planner.aStar(robot_pose_idx, desired_idx);
+
+    for (size_t i = 0; i < path.cells.size(); i++)
+    {
+        if (map_utils::pointInMap(idx))
+        {
+            return path.cells[i];
+        }
+    }
+
+    return -1;
 }
 
-std::vector<std::vector<size_t> > getMapFrontiers(const std::vector<double>& map,
+size_t 
+
+std::vector<frontier_t> findMapFrontiers(const std::vector<double>& map,
                                                     size_t robot_pose_idx,
                                                     double min_dist_to_frontier)
 {
-    std::vector<std::vector<size_t> > frontiers;
+    std::vector<frontier_t > frontiers;
     std::set<size_t> visited_idxs;
 
     std::queue<size_t> cellQueue;
@@ -258,7 +240,7 @@ std::vector<std::vector<size_t> > getMapFrontiers(const std::vector<double>& map
 
         for (int n = 0; n < num_neighbors; ++n)
         {
-            neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i]);
+            size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i]);
 
             if (visited_idxs.find() != visited_idxs.end() ||
                                 !map_utils::pointInMap(neighbor_idx, global_width, map.size()/global_width)
@@ -268,9 +250,10 @@ std::vector<std::vector<size_t> > getMapFrontiers(const std::vector<double>& map
 
             else if (isFrontier(neighbor_idx, map))
             {
-                std::vector<size_t> f growFrontier(neighbor_idx, map, visited_idxs);
+                frontier_t f  = growFrontier(neighbor_idx, map, visited_idxs);
 
-                if (f[0].size() * map.info.resolution >= min_dist_to_frontier)
+                //TODO: this wont compile
+                if (f.cells.size() * resolution >= min_dist_to_frontier)
                 {
                     frontiers.push_back();
                 }
@@ -283,5 +266,6 @@ std::vector<std::vector<size_t> > getMapFrontiers(const std::vector<double>& map
             }
         }
     }
+
     return frontiers;
 }
