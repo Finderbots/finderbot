@@ -147,6 +147,8 @@ add_executable(simple_motion_node src/simple_motion_node.cpp)
 
 add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp src/ray_caster.cpp)
 
+add_executable(distance_grid_test_node src/distance_grid_test.cpp src/DistanceGrid.cpp)
+
 ##add_executable(planner_node src/planner.cpp)
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
@@ -183,6 +185,11 @@ target_link_libraries(
 
 target_link_libraries(
   global_map_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(
+  distance_grid_test_node
   ${catkin_LIBRARIES}
 )
 
