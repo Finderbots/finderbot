@@ -141,15 +141,19 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/finderbot_node.cpp)
 #add_executable(finderbot src/ir_node.cpp src/IR_Sensor.cpp)
 
-add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
+#add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
 add_executable(SLAM_node src/SLAM_node.cpp)
 add_executable(simple_motion_node src/simple_motion_node.cpp)
 
 add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp src/ray_caster.cpp)
 
+<<<<<<< HEAD
 add_executable(distance_grid_test_node src/distance_grid_test.cpp src/DistanceGrid.cpp)
 
 ##add_executable(planner_node src/planner.cpp)
+=======
+add_executable(a_star_test src/a_star_test.cpp src/planner.cpp)
+>>>>>>> 2719688f05146a12e52d904680e0d1e3997a0472
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
 add_dependencies(SLAM_node finderbot_generate_messages_cpp )
@@ -168,10 +172,10 @@ add_dependencies(SLAM_node finderbot_generate_messages_cpp )
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ### Specify libraries to link a library or executable target against
-target_link_libraries(
-   mini_mapping_node
-   ${catkin_LIBRARIES}
-)
+#target_link_libraries(
+#   mini_mapping_node
+#   ${catkin_LIBRARIES}
+#)
 
 target_link_libraries(
    SLAM_node
@@ -189,6 +193,7 @@ target_link_libraries(
 )
 
 target_link_libraries(
+<<<<<<< HEAD
   distance_grid_test_node
   ${catkin_LIBRARIES}
 )
@@ -197,6 +202,11 @@ target_link_libraries(
 ##  planner_node
 ##  ${catkin_LIBRARIES}
 ##)
+=======
+  a_star_test
+  ${catkin_LIBRARIES}
+)
+>>>>>>> 2719688f05146a12e52d904680e0d1e3997a0472
 
 #############
 ## Install ##
