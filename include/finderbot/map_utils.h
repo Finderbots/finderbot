@@ -12,20 +12,20 @@ struct Node
     int dist;
     struct Node * parent;
     bool visited;
-    int g_score;
-    int h_score;
-    int f_score;
+    double g_score;
+    double h_score;
+    double f_score;
 };
 namespace map_utils{
 
 // Pass 2 sets of row and column
-inline int distance(int row1, int col1, int row2, int col2) {
+inline double distance(int row1, int col1, int row2, int col2) {
     // Euclidean distance
     return sqrt(pow(row1-row2,2) + pow(col1-col2,2));
 }
 
 // Pass 2 nodes
-inline int distance(const Node & node1, const Node & node2) {
+inline double distance(const Node & node1, const Node & node2) {
     // Euclidean distance
     return sqrt(pow(node1.row-node2.row,2) + pow(node1.col-node2.col,2));
 }

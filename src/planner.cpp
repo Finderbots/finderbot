@@ -33,16 +33,16 @@ Node * Planner::aStar(int goal_row, int goal_col,
         nodes_[i].col = i % global_width;
         nodes_[i].parent = NULL;
         nodes_[i].visited = false;
-        nodes_[i].g_score = INT_MAX;
+        nodes_[i].g_score = DBL_MAX;
         // h_score should stay the same as long as the goal does not change as we are moving towards goal
     	// 50 is an arbitrary probability of an obstacle
     	if (global_map_[i] > 50.0) {
-    		nodes_[i].h_score = INT_MAX;
+    		nodes_[i].h_score = DBL_MAX;
     	}
     	else {
         	nodes_[i].h_score = distance(nodes_[i].row, nodes_[i].col, goal_row, goal_col); // heuristic is just euclidean distance
     	}
-        nodes_[i].f_score = INT_MAX;
+        nodes_[i].f_score = DBL_MAX;
     }
 
     size_t source_idx = getOffsetRowCol(source_row, source_col, global_width);
@@ -75,8 +75,8 @@ Node * Planner::aStar(int goal_row, int goal_col,
             if (neighbors[i]->g_score > tentative_g_score) {
 				neighbors[i]->g_score = tentative_g_score;
 				neighbors[i]->parent = current_node;
-				if (INT_MAX == neighbors[i]->h_score) {
-					neighbors[i]->f_score = INT_MAX;
+				if (DBL_MAX == neighbors[i]->h_score) {
+					neighbors[i]->f_score = DBL_MAX;
 				}
 				else {
 					neighbors[i]->f_score = neighbors[i]->g_score + neighbors[i]->h_score;
