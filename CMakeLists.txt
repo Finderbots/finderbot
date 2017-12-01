@@ -149,6 +149,10 @@ add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cp
 
 add_executable(distance_grid_test_node src/distance_grid_test.cpp src/DistanceGrid.cpp)
 
+
+add_executable(uwb_node src/uwb.cpp)
+set_source_files_properties(src/uwb.cpp PROPERTIES COMPILE_FLAGS "-m32 -D_GLIBCXX_USE_CXX11_ABI=0 -std=gnu++11")
+
 ##add_executable(planner_node src/planner.cpp)
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
@@ -167,10 +171,19 @@ add_dependencies(SLAM_node finderbot_generate_messages_cpp )
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+
+FIND_LIBRARY(UWB_LIBRARY -lModuleConnector ~/catkin_ws/src/finderbot/ModuleConnector-rpi-1.4.2/lib/)
+
 ### Specify libraries to link a library or executable target against
 target_link_libraries(
    mini_mapping_node
    ${catkin_LIBRARIES}
+)
+
+target_link_libraries(
+    uwb_node
+    ${catkin_LIBRARIES}
+    ${UWB_LIBRARY}
 )
 
 target_link_libraries(
