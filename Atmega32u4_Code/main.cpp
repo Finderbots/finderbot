@@ -1,8 +1,11 @@
 #include <avr/io.h>
 #include <util/delay.h>
-#include <avr/interrupt.h>
 #include <avr/sleep.h>
+
 #include "Arduino_FreeRTOS.h"
+
+#include "timing.h"
+#include "PID_v1.h"
 
 #include "FIMU_ADXL345.h"
 #include "FIMU_ITG3200.h"
@@ -127,9 +130,10 @@ float dTerm = 0;
 float pTerm = 0;
 
 //Location PID CONTROL - These are the PID control for the robot trying to hold its location.
-float Lp = 0.5;
-float Li = 0.05;
-float Ld = 0.4;
+float Kp = 0.5;
+float Ki = 0.05;
+float Kd = 0.4;
+
 float offsetLoc = 0;
 float pT,iT,dT = 0;
 float errorS = 0;
@@ -331,6 +335,26 @@ ISR(USART1_RX_vect)
     PORTE &= ~(_BV(PE6));
 }
 
+ISR(TIMER0_OVF_vect)
+{
+  // copy these to local variables so they can be stored in registers
+  // (volatile variables must be read from memory on every access)
+  unsigned long m = timer0_millis;
+  unsigned char f = timer0_fract;
+
+  m += MILLIS_INC;
+  f += FRACT_INC;
+  if (f >= FRACT_MAX) {
+    f -= FRACT_MAX;
+    m += 1;
+  }
+
+  timer0_fract = f;
+  timer0_millis = m;
+  timer0_overflow_count++;
+}
+
+
 int main(void)
 {
     //DDRD |= _BV(PD3); //debug
@@ -351,6 +375,9 @@ int main(void)
     //     uart_transmit('t');
     //     delay(1000);
     // }
+    timing_init();
+
+    //sei(); called by timing_init();
     
     // volatile int i = 0;
     // volatile int j = 0;

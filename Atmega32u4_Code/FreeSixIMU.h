@@ -21,16 +21,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
 
+#ifndef FreeSixIMU_h
+#define FreeSixIMU_h
+
 #include "Wire.h"
 #include <avr/io.h>
+#include "timing.h"
 
 #include "FIMU_ADXL345.h"
 #define FIMU_ACC_ADDR ADXL345_ADDR_ALT_LOW // SDO connected to GND
 #include "FIMU_ITG3200.h"
-
-
-#ifndef FreeSixIMU_h
-#define FreeSixIMU_h
 
 
 #define FIMU_BMA180_DEF_ADDR BMA180_ADDRESS_SDO_LOW
@@ -41,9 +41,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define twoKpDef  (2.0f * 0.5f) // 2 * proportional gain
 #define twoKiDef  (2.0f * 0.1f) // 2 * integral gain
 
-#ifndef cbi
-#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
-#endif
 
 class FreeSixIMU
 {

@@ -24,41 +24,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <inttypes.h>
 //#define DEBUG
 #include "FreeSixIMU.h"
-#include <avr/interrupt.h>
+
 
 // #include "WireUtils.h"
 //#include "DebugUtils.h"
-
-volatile unsigned long timer0_overflow_count = 0;
-#define clockCyclesPerMicrosecond() ( F_CPU / 1000000L )
-
-unsigned long micros() {
-  unsigned long m;
-  uint8_t oldSREG = SREG, t;
-  
-  cli();
-  m = timer0_overflow_count;
-#if defined(TCNT0)
-  t = TCNT0;
-#elif defined(TCNT0L)
-  t = TCNT0L;
-#else
-  #error TIMER 0 not defined
-#endif
-
-  
-#ifdef TIFR0
-  if ((TIFR0 & _BV(TOV0)) && (t < 255))
-    m++;
-#else
-  if ((TIFR & _BV(TOV0)) && (t < 255))
-    m++;
-#endif
-
-  SREG = oldSREG;
-  
-  return ((m << 8) + t) * (64 / clockCyclesPerMicrosecond());
-}
 
 
 FreeSixIMU::FreeSixIMU() {

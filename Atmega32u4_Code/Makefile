@@ -21,7 +21,7 @@ DEVICE     = atmega32u4
 CLOCK      = 16000000
 PROGRAMMER = -c usbtiny
 #PROGRAMMER = -c avr109 -P /dev/cu.usbmodem1421
-OBJECTS    = main.o croutine.o event_groups.o heap_3.o list.o port.o queue.o tasks.o timers.o hooks.o FIMU_ADXL345.o FIMU_ITG3200.o FreeSixIMU.o Wire.o twi.o
+OBJECTS    = main.o croutine.o event_groups.o heap_3.o list.o port.o queue.o tasks.o timers.o hooks.o FIMU_ADXL345.o FIMU_ITG3200.o FreeSixIMU.o Wire.o twi.o PID_v1.o timing.o
 FUSES      = -U lfuse:w:0xFF:m -U hfuse:w:0xCB:m -U efuse:w:0xE8:m
 
 # ATMega8 fuse bits used above (fuse bits for other devices are different!):
@@ -50,16 +50,18 @@ FUSES      = -U lfuse:w:0xFF:m -U hfuse:w:0xCB:m -U efuse:w:0xE8:m
 # Tune the lines below only if you know what you are doing:
 
 AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
-COMPILE = avr-gcc  -o3 -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+CFLAGS = avr-gcc -o3 -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+CXXFLAGS = avr-gcc  -std=c++11 -o3 -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+COMPILE = avr-gcc  -std=c++11 -o3 -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
 
 # symbolic targets:
 all:	main.hex
 
 .c.o:
-	$(COMPILE) -c $< -o $@
+	$(CFLAGS) -c $< -o $@
 
 .cpp.o:
-	$(COMPILE) -c $< -o $@
+	$(CXXFLAGS) -c $< -o $@
 
 .S.o:
 	$(COMPILE) -x assembler-with-cpp -c $< -o $@
@@ -69,10 +71,10 @@ all:	main.hex
 # compatibility define the file type manually.
 
 .c.s:
-	$(COMPILE) -S $< -o $@
+	$(CFLAGS) -S $< -o $@
 
 .cpp.s:
-	$(COMPILE) -S $< -o $@
+	$(CXXFLAGS) -S $< -o $@
 
 flash:	all
 	$(AVRDUDE) -U flash:w:main.hex:i
@@ -106,4 +108,4 @@ disasm:	main.elf
 	avr-objdump -d main.elf
 
 cpp:
-	$(COMPILE) -E main.c
+	$(CXXFLAGS) -E main.c
