@@ -18,6 +18,8 @@ void init_pwm();
 
 void init_spi(void);
 
+void moveRobot(char command);
+
 void motor_run(int motor, uint8_t speed, int movement);
 
 void stop_bot(void);
@@ -140,12 +142,18 @@ volatile byte pos;
 const char ack_byte = '!';
 const char recv_index = 0;
 const char start_byte = 's';
-const char request = 'i'; //i = information is being requested
+const char info_req = 'i'; //i = information is being requested
 const char roll_req = 'r'; //r = I want roll
 const char pitch_req = 'p'; //p = I want pitch
 const char yaw_req = 'y'; //y = I want yaw
 const char left_ir_req = '<'; //< = I want left IR value
 const char right_ir_req = '>'; //> = I want right IR value
+const char command_req = 'C'; // command is being sent
+const char forward_req = 'f'; // move forward command
+const char backward_req = 'B'; // move backward command
+const char halt_req = 'h'; // halt command
+const char rot_left_req = 'L'; // rotate right command
+const char rot_right_req = 'R'; // rotate left command
 const char stop_byte = 'e';
 const char err_byte = 'b';
 const char ack_byte_stop = 'd'; 
@@ -156,48 +164,51 @@ const char ack_byte_stop = 'd';
 
 int main(void)
 {
-    //init_spi();
+    //DDRD |= _BV(PD3); //debug
+    //PORTD ^= _BV(PD3); //debug
 
-    //sei();
+    init_spi();
 
-     DDRD |= _BV(PD3); //pb1 as output
-     DDRE |= _BV(PE6); //pe6 as output
 
-    // PORTB |= _BV(PB1); //set pb1  high
+    sei();
+    //SREG |= (1<<7);
+    
+    volatile int i = 0;
+    volatile int j = 0;
 
-    SPCR |= _BV(SPE); //enable spi mode
+//     DDRE |= _BV(PE6); //debugging
+//     DDRD |= _BV(PD3); //debugging
 
-    SPCR &= ~(_BV(MSTR)); //explicitly set spi to slave mode
+//     DDRB |= _BV(PB3); //set miso as output
+//     /* Enable SPI */
+//     SPCR |= _BV(SPE) | _BV(SPR0);
+//     uint8_t s_clk;
 
-    DDRB &= ~(_BV(PB0)); //set SS as input explicitly 
+// while(1) {
+    
+//     while(!(SPSR & (1<<SPIF))) {
 
-    // Set MISO output, all others input 
-    DDRB |= _BV(PB3);
+//     }
+//     PORTD |= (_BV(PD3));
+
+//     spi_char = SPDR;  // grab byte from SPI Data Register
+    
+//     if(spi_char == start_byte) {
+//         PORTE |= _BV(PE6); //set debug pin PE6 high
+//     }else {
+//         PORTE &= ~(_BV(PE6)); //set debug pin PE6 low
+//     }
+
+//     uint8_t byte_to_send = '!';
+//     SPDR = byte_to_send;
+
+//     PORTD &= ~(_BV(PD3));
+
+// } //while 1
 
     while(1) {
-        while(!(SPSR & _BV(SPIF))) {
-
-        }
-        PORTE |= _BV(PE6);
-
-        spi_char = SPDR;
-
-        if(spi_char == 's') {
-            PORTD |= PD3;
-        }
-        else 
-        {
-            PORTD &= ~(_BV(PD3));
-        }
-
-        SPDR = '!';
-        
-        volatile int i = 0;
-        volatile int j = 0;
-
-        PORTE &= ~(_BV(PE6));
-        // i++;
-        // j = i;
+        i++;
+        j = i;
     }
 
     // xTaskCreate(
@@ -276,7 +287,6 @@ void init_pwm() {
 void init_spi(void)
 {
     DDRE |= _BV(PE6); //debugging
-    DDRD |= _BV(PD3); //debugging
 
     SPCR |= _BV(SPE); //enable spi mode
 
@@ -296,102 +306,177 @@ void init_spi(void)
 }
 
 // SPI Transmission/reception complete ISR
-// ISR(SPI_STC_vect)
-// {
-//     PORTE |= _BV(PE6); //debugging
+ISR(SPI_STC_vect)
+{
+    PORTE |= _BV(PE6); //debugging
 
-//     spi_char = SPDR;  // grab byte from SPI Data Register
+    char master_motor_command = '\0';
+
+    spi_char = SPDR;  // grab byte from SPI Data Register
     
-//     if(spi_char == start_byte) {
-//         pos = 0;
-//         PORTD |= _BV(PD3);
-//     }else {
-//         PORTD &= ~(_BV(PD3));
-//     }
+    if(spi_char == start_byte) {
+        pos = 0;
+    }
 
-//     // add to buffer if room
-//     if (pos < (sizeof (spi_message) - 1)) {
-//         spi_message[pos++] = spi_char;
-//     }
+    // add to buffer if room
+    if (pos < (sizeof (spi_message) - 1)) {
+        spi_message[pos++] = spi_char;
+    }
+    else
+    {
+        pos = 0;
+        spi_message[pos++] = spi_char;
+    }
 
-//     uint8_t byte_to_send;
+    uint8_t byte_to_send;
 
-//     switch(spi_char) {
-//         case start_byte:
-//             //start byte
-//             //send ack
-//             byte_to_send = ack_byte;
-//             break;
-//         case request: 
-//             //master requesting info byte
-//             //send ack
-//             byte_to_send = ack_byte;
-//             break;
-//         case roll_req:
-//             //roll value requested
-//             //send roll value on spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == request) {
-//                 byte_to_send  = (uint8_t) roll;
-//             }  else {
-//                 byte_to_send = err_byte;
-//             }          
-//             break;
-//         case pitch_req: 
-//             //pitch value requested
-//             //send pitch value on spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == request) {
-//                 byte_to_send  = (uint8_t) pitch;
-//             }else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case yaw_req: 
-//             //yaw value requested
-//             //send yaw value on spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == request) {
-//                 byte_to_send  = (uint8_t) yaw;
-//             }
-//             else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case left_ir_req:
-//             //left ir sensor requested
-//             //send that value on the spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == request) {
-//                 byte_to_send  = (uint8_t) IRleftVal;
-//             }else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case right_ir_req:
-//             //left ir sensor requested
-//             //send that value on the spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == request) {
-//                 byte_to_send  = (uint8_t) IRrightVal;
-//             }else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case stop_byte:
-//             //send ack
-//             byte_to_send = ack_byte_stop;
-//             break;
-//         default:
-//             byte_to_send = err_byte;
-//             break;
-//     }
+    switch(spi_char) {
+        case start_byte:
+            //start byte
+            //send ack
+            byte_to_send = ack_byte;
+            break;
+        case info_req: 
+            //master requesting info byte
+            //send ack
+            if (spi_message[0] == start_byte && pos == 1) {
+                byte_to_send = ack_byte;
+            } else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case roll_req:
+            //roll value requested
+            //send roll value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 2) {
+                byte_to_send  = (uint8_t) roll;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case pitch_req: 
+            //pitch value requested
+            //send pitch value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 3) {
+                byte_to_send  = (uint8_t) pitch;
+            }else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case yaw_req: 
+            //yaw value requested
+            //send yaw value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 4) {
+                byte_to_send  = (uint8_t) yaw;
+            }
+            else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case left_ir_req:
+            //left ir sensor requested
+            //send that value on the spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 5) {
+                byte_to_send  = (uint8_t) IRleftVal;
+            }else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case right_ir_req:
+            //left ir sensor requested
+            //send that value on the spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 6) {
+                byte_to_send  = (uint8_t) IRrightVal;
+            }else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case command_req:
+            // master sending motor command
+            // send ack byte back
+            if (spi_message[0] == start_byte && pos == 1) {
+                byte_to_send = ack_byte;
+            } else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case forward_req:
+            // forward command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 2) {
+                byte_to_send  = forward_req;
+                master_motor_command = FORWARD;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case backward_req:
+            // forward command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 2) {
+                byte_to_send  = backward_req;
+                master_motor_command = BACKWARD;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case halt_req:
+            // halt command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 2) {
+                byte_to_send  = halt_req;
+                master_motor_command = STOP;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case rot_left_req:
+            // rotate left command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 2) {
+                byte_to_send  = rot_left_req;
+                master_motor_command = LEFT;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case rot_right_req:
+            // right command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 2) {
+                byte_to_send  = rot_right_req;
+                master_motor_command = RIGHT;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case stop_byte:
+            //send ack
+            if (spi_message[0] == start_byte && ((spi_message[1] == info_req && pos == 6)
+                || (spi_message[1] == command_req && pos == 3)))
+            {
+                byte_to_send = ack_byte_stop;
+            } else {
+                byte_to_send = err_byte;
+            }
+            break;
+        default:
+            byte_to_send = err_byte;
+            break;
+    }
 
-//     SPDR = byte_to_send;
+    SPDR = byte_to_send;
 
-//     if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
-//         pos = 0;
-//     }
+    moveRobot(master_motor_command);
 
-//     PORTE &= ~(_BV(PE6));
+    if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
+        pos = 0;
+    }
+
+    PORTE &= ~(_BV(PE6));
 
       
-// }
+}
 
 void motor_run(int motor, uint8_t speed, int movement) {
     if(movement == STOP) {
