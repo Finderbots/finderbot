@@ -156,16 +156,48 @@ const char ack_byte_stop = 'd';
 
 int main(void)
 {
-    init_spi();
+    //init_spi();
 
-    sei();
-    
-    volatile int i = 0;
-    volatile int j = 0;
+    //sei();
+
+     DDRD |= _BV(PD3); //pb1 as output
+     DDRE |= _BV(PE6); //pe6 as output
+
+    // PORTB |= _BV(PB1); //set pb1  high
+
+    SPCR |= _BV(SPE); //enable spi mode
+
+    SPCR &= ~(_BV(MSTR)); //explicitly set spi to slave mode
+
+    DDRB &= ~(_BV(PB0)); //set SS as input explicitly 
+
+    // Set MISO output, all others input 
+    DDRB |= _BV(PB3);
 
     while(1) {
-        i++;
-        j = i;
+        while(!(SPSR & _BV(SPIF))) {
+
+        }
+        PORTE |= _BV(PE6);
+
+        spi_char = SPDR;
+
+        if(spi_char == 's') {
+            PORTD |= PD3;
+        }
+        else 
+        {
+            PORTD &= ~(_BV(PD3));
+        }
+
+        SPDR = '!';
+        
+        volatile int i = 0;
+        volatile int j = 0;
+
+        PORTE &= ~(_BV(PE6));
+        // i++;
+        // j = i;
     }
 
     // xTaskCreate(
@@ -244,6 +276,7 @@ void init_pwm() {
 void init_spi(void)
 {
     DDRE |= _BV(PE6); //debugging
+    DDRD |= _BV(PD3); //debugging
 
     SPCR |= _BV(SPE); //enable spi mode
 
@@ -263,99 +296,102 @@ void init_spi(void)
 }
 
 // SPI Transmission/reception complete ISR
-ISR(SPI_STC_vect)
-{
-    PORTE |= _BV(PE6); //debugging
+// ISR(SPI_STC_vect)
+// {
+//     PORTE |= _BV(PE6); //debugging
 
-    spi_char = SPDR;  // grab byte from SPI Data Register
+//     spi_char = SPDR;  // grab byte from SPI Data Register
     
-    if(spi_char == start_byte) {
-        pos = 0;
-    }
+//     if(spi_char == start_byte) {
+//         pos = 0;
+//         PORTD |= _BV(PD3);
+//     }else {
+//         PORTD &= ~(_BV(PD3));
+//     }
 
-    // add to buffer if room
-    if (pos < (sizeof (spi_message) - 1)) {
-        spi_message[pos++] = spi_char;
-    }
+//     // add to buffer if room
+//     if (pos < (sizeof (spi_message) - 1)) {
+//         spi_message[pos++] = spi_char;
+//     }
 
-    uint8_t byte_to_send;
+//     uint8_t byte_to_send;
 
-    switch(spi_char) {
-        case start_byte:
-            //start byte
-            //send ack
-            byte_to_send = ack_byte;
-            break;
-        case request: 
-            //master requesting info byte
-            //send ack
-            byte_to_send = ack_byte;
-            break;
-        case roll_req:
-            //roll value requested
-            //send roll value on spi line
-            if(spi_message[0] == start_byte && spi_message[1] == request) {
-                byte_to_send  = (uint8_t) roll;
-            }  else {
-                byte_to_send = err_byte;
-            }          
-            break;
-        case pitch_req: 
-            //pitch value requested
-            //send pitch value on spi line
-            if(spi_message[0] == start_byte && spi_message[1] == request) {
-                byte_to_send  = (uint8_t) pitch;
-            }else {
-                byte_to_send = err_byte;
-            }
-            break;
-        case yaw_req: 
-            //yaw value requested
-            //send yaw value on spi line
-            if(spi_message[0] == start_byte && spi_message[1] == request) {
-                byte_to_send  = (uint8_t) yaw;
-            }
-            else {
-                byte_to_send = err_byte;
-            }
-            break;
-        case left_ir_req:
-            //left ir sensor requested
-            //send that value on the spi line
-            if(spi_message[0] == start_byte && spi_message[1] == request) {
-                byte_to_send  = (uint8_t) IRleftVal;
-            }else {
-                byte_to_send = err_byte;
-            }
-            break;
-        case right_ir_req:
-            //left ir sensor requested
-            //send that value on the spi line
-            if(spi_message[0] == start_byte && spi_message[1] == request) {
-                byte_to_send  = (uint8_t) IRrightVal;
-            }else {
-                byte_to_send = err_byte;
-            }
-            break;
-        case stop_byte:
-            //send ack
-            byte_to_send = ack_byte_stop;
-            break;
-        default:
-            byte_to_send = err_byte;
-            break;
-    }
+//     switch(spi_char) {
+//         case start_byte:
+//             //start byte
+//             //send ack
+//             byte_to_send = ack_byte;
+//             break;
+//         case request: 
+//             //master requesting info byte
+//             //send ack
+//             byte_to_send = ack_byte;
+//             break;
+//         case roll_req:
+//             //roll value requested
+//             //send roll value on spi line
+//             if(spi_message[0] == start_byte && spi_message[1] == request) {
+//                 byte_to_send  = (uint8_t) roll;
+//             }  else {
+//                 byte_to_send = err_byte;
+//             }          
+//             break;
+//         case pitch_req: 
+//             //pitch value requested
+//             //send pitch value on spi line
+//             if(spi_message[0] == start_byte && spi_message[1] == request) {
+//                 byte_to_send  = (uint8_t) pitch;
+//             }else {
+//                 byte_to_send = err_byte;
+//             }
+//             break;
+//         case yaw_req: 
+//             //yaw value requested
+//             //send yaw value on spi line
+//             if(spi_message[0] == start_byte && spi_message[1] == request) {
+//                 byte_to_send  = (uint8_t) yaw;
+//             }
+//             else {
+//                 byte_to_send = err_byte;
+//             }
+//             break;
+//         case left_ir_req:
+//             //left ir sensor requested
+//             //send that value on the spi line
+//             if(spi_message[0] == start_byte && spi_message[1] == request) {
+//                 byte_to_send  = (uint8_t) IRleftVal;
+//             }else {
+//                 byte_to_send = err_byte;
+//             }
+//             break;
+//         case right_ir_req:
+//             //left ir sensor requested
+//             //send that value on the spi line
+//             if(spi_message[0] == start_byte && spi_message[1] == request) {
+//                 byte_to_send  = (uint8_t) IRrightVal;
+//             }else {
+//                 byte_to_send = err_byte;
+//             }
+//             break;
+//         case stop_byte:
+//             //send ack
+//             byte_to_send = ack_byte_stop;
+//             break;
+//         default:
+//             byte_to_send = err_byte;
+//             break;
+//     }
 
-    SPDR = byte_to_send;
+//     SPDR = byte_to_send;
 
-    if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
-        pos = 0;
-    }
+//     if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
+//         pos = 0;
+//     }
 
-    PORTE &= ~(_BV(PE6));
+//     PORTE &= ~(_BV(PE6));
 
       
-}
+// }
 
 void motor_run(int motor, uint8_t speed, int movement) {
     if(movement == STOP) {
