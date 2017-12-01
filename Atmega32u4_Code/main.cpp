@@ -156,47 +156,12 @@ const char ack_byte_stop = 'd';
 
 int main(void)
 {
-    //DDRD |= _BV(PD3); //debug
-    //PORTD ^= _BV(PD3); //debug
-
     init_spi();
 
-
     sei();
-    //SREG |= (1<<7);
     
     volatile int i = 0;
     volatile int j = 0;
-
-//     DDRE |= _BV(PE6); //debugging
-//     DDRD |= _BV(PD3); //debugging
-
-//     DDRB |= _BV(PB3); //set miso as output
-//     /* Enable SPI */
-//     SPCR |= _BV(SPE) | _BV(SPR0);
-//     uint8_t s_clk;
-
-// while(1) {
-    
-//     while(!(SPSR & (1<<SPIF))) {
-
-//     }
-//     PORTD |= (_BV(PD3));
-
-//     spi_char = SPDR;  // grab byte from SPI Data Register
-    
-//     if(spi_char == start_byte) {
-//         PORTE |= _BV(PE6); //set debug pin PE6 high
-//     }else {
-//         PORTE &= ~(_BV(PE6)); //set debug pin PE6 low
-//     }
-
-//     uint8_t byte_to_send = '!';
-//     SPDR = byte_to_send;
-
-//     PORTD &= ~(_BV(PD3));
-
-// } //while 1
 
     while(1) {
         i++;
