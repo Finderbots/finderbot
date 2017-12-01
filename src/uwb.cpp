@@ -1,10 +1,9 @@
-// #include <ros/ros.h>
-#include <string>
-// #include <finderbot/UWB/ModuleConnector.hpp>
-// #include <finderbot/UWB/X4M300.hpp>
-// #include <finderbot/UWB/xtid.h>
-// #include <iostream>
-// #include <unistd.h>
+#include <ros/ros.h>
+#include <finderbot/UWB/ModuleConnector.hpp>
+#include <finderbot/UWB/X4M300.hpp>
+#include <finderbot/UWB/xtid.h>
+ #include <iostream>
+ #include <unistd.h>
 
 // /** \example presence_single.cpp
 //  * this is a small ModuleConnector usage example
