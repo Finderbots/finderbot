@@ -5,11 +5,29 @@
 #include <tf/tf.h>
 #include <geometry_msgs/Point32.h>
 
+struct Node
+{
+    int row;
+    int col;
+    int dist;
+    struct Node * parent;
+    bool visited;
+    int g_score;
+    int h_score;
+    int f_score;
+};
 namespace map_utils{
+
 // Pass 2 sets of row and column
 inline int distance(int row1, int col1, int row2, int col2) {
     // Euclidean distance
     return sqrt(pow(row1-row2,2) + pow(col1-col2,2));
+}
+
+// Pass 2 nodes
+inline int distance(const Node & node1, const Node & node2) {
+    // Euclidean distance
+    return sqrt(pow(node1.row-node2.row,2) + pow(node1.col-node2.col,2));
 }
 
 /* Return true if the point lies in the map */
