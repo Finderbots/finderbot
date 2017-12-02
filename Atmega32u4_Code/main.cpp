@@ -64,18 +64,18 @@ int IRleftVal = 0;
 int IRrightVal = 0;
 
 /* odometry data read from IMU. Updated by IMURead. Sent via SPI to XU4 */
-uint8_t roll = 0;
-uint8_t pitch = 0;
-uint8_t yaw = 0;
+int roll = 0;
+int pitch = 0;
+int yaw = 0;
 
-/* Motor pin array */
-int Motor[4][2] = //two dimensional array
-{
-{PD4 , PD6},   //input pin to control Motor1 (front right)
-{PB4 , PB5},   //input pin to control Motor2 (back right)
-{PF4 , PF5},   //input pin to control Motor3 (front left)
-{PF6 , PF7},  //input pin to control Motor4 (back left)
-};
+// /* Motor pin array */
+// int Motor[4][2] = //two dimensional array
+// {
+// {PD4 , PD6},   //input pin to control Motor1 (front right)
+// {PB4 , PB5},   //input pin to control Motor2 (back right)
+// {PF4 , PF5},   //input pin to control Motor3 (front left)
+// {PF6 , PF7},  //input pin to control Motor4 (back left)
+// };
 
 /* Motor enable pins */
 #define EN1  PD7
@@ -105,16 +105,16 @@ FreeSixIMU sixDOF = FreeSixIMU();
 
 //TwoWire Wire = TwoWire();
 
-const int AvgAngles = 3;
- float prevTargetAngle = 0;
- float targetAngle = 0;
+// const int AvgAngles = 3;
+//  float prevTargetAngle = 0;
+//  float targetAngle = 0;
 
 
-float angles[5];
+float angles[3];
 
-float currAngle, prevAngle;
-float prevAngles[AvgAngles];
-int prevAngleI = 0;
+// float currAngle, prevAngle;
+// float prevAngles[AvgAngles];
+// int prevAngleI = 0;
 
 // time vars
 int currTime = 0; 
@@ -136,6 +136,12 @@ float offsetLoc = 0;
 float pT,iT,dT = 0;
 float errorS = 0;
 float prevE = 0;
+
+
+double Setpoint, Input, Output;
+
+//Specify the links and initial tuning parameters
+PID myPID(&Input, &Output, &Setpoint,2,5,1, DIRECT);
 
 /*SPI Variables*/
 volatile char spi_char;
@@ -182,6 +188,13 @@ int main(void)
     timing_init();
 
     init_spi();
+
+    //initialize the variables we're linked to
+    Input = yaw;
+    Setpoint = 0;
+
+    //turn the PID on
+    myPID.SetMode(AUTOMATIC);
 
     //sei(); called by timing_init();
 
@@ -239,6 +252,7 @@ int main(void)
 
     return 0;               /* never reached */
 }
+
 
 void init_pwm() {
     DDRC |= _BV(PC7) | _BV(PC6); //set DDC7 = 1 -> PC7 is output pin, DDC6 = 1 ->PC6 is output
@@ -305,6 +319,8 @@ ISR(SPI_STC_vect)
     }
 
     uint8_t byte_to_send;
+
+    //********NEED TO ACCOUNT FOR THE FACT THAT WE ARE USING INTS FOR ROLL PITCH AND YAW &*******/
 
     switch(spi_char) {
         case start_byte:
@@ -509,6 +525,20 @@ void left(void) {
     motor_run(3, speedBL, BACKWARD);
 }
 
+void headingReset() {
+     speedFR = speedFR_init; speedBR = speedBR_init; speedFL = speedFL_init; speedBL = speedBL_init;
+    
+    // set motor speeds
+    update_speed();
+
+    updateAngle();
+
+    heading[0] = yaw;
+
+    updateAngle();
+    heading[1] = getHeading();
+}
+
 void moveRobot(char command) {
      switch(command) {
         case FORWARD:
@@ -679,13 +709,16 @@ void TaskIRSensorRead(void *pvParameters) {
 void updateAngle(void) {
     //PORTD |= _BV(PD2); //debugging
     sixDOF.getYawPitchRoll(angles);
-    prevAngles[prevAngleI] = angles[1];
-    prevAngleI = (prevAngleI + 1) % AvgAngles;
-    float sum = 0;
-    for (int i = 0; i < AvgAngles; i++)
-        sum += prevAngles[i];
-    currAngle = sum / AvgAngles;
-    prevAngle = currAngle;
+    roll = static_cast<int>(angles[0]);
+    pitch = static_cast<int>(angles[1]);
+    yaw = static_cast<int> (angles[2]);
+    // prevAngles[prevAngleI] = angles[1];
+    // // prevAngleI = (prevAngleI + 1) % AvgAngles;
+    // float sum = 0;
+    // for (int i = 0; i < AvgAngles; i++)
+    //     sum += prevAngles[i];
+    // currAngle = sum / AvgAngles;
+    // prevAngle = currAngle;
     //PORTD &= ~(_BV(PD2)); //debugging
 }
 
@@ -696,7 +729,7 @@ void TaskIMURead(void *pvParameters) {
     sixDOF.init(); //Begin the IMU
     vTaskDelay(1); //1 tick
 
-    DDRD |= _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
+    //DDRD |= _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
  
 
     for(;;) {
