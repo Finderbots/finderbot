@@ -1,139 +1,16 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <finderbot/planner.h>
+#include <finderbot/DistanceGrid.h>
 #include <vector>
 #include <queue>
 #include <planner.h>
 
 
-class DistanceGrid
+struct frontier_t 
 {
-    std::vector<DistNode> distances;
-    size_t global_width;
-    size_t global_height;
-
-    struct DistNode
-    {
-        double distance;
-        size_t obstacle_idx;
-
-        bool operator<(const DistNode& rhs) const
-        {
-            return distance < rhs.distance;
-        }
-
-        DistNode(size_t cell_idx, obstacle_idx)
-        : obstacle_idx(obstacle_idx)
-        {
-            if (cell_idx == obstacle_idx) distance = 0;
-
-            else
-            {
-                x_cell = map_utils::rowFromOffset(cell_idx, global_width);
-                y_cell = map_utils::colFromOffset(cell_idx, global_width);
-                x_obs = map_utils::rowFromOffset(obstacle_idx, global_width);
-                y_obs = map_utils::colFromOffset(obstacle_idx, global_width);
-
-                // int delta_x = (x_cell == x_obs) ? 0 : std::max(std::abs(x_cell - x_obs) - 1, 0);
-                // int delta_y = (y_cell == y_obs) ? 0 : std::max(std::abs(y_cell - y_obs) - 1, 0);
-
-                distance = map_utils::distance(x_cell, y_cell, x_obs, y_obs);
-            }
-        }
-    };
-
-  public:
-
-    void setCellDist(size_t cell_idx, obstacle_idx)
-    {
-        if (cell_idx == obstacle_idx) distances[cell_idx] = 0;
-        else
-        {
-            x_cell = map_utils::rowFromOffset(cell_idx, global_width);
-            y_cell = map_utils::colFromOffset(cell_idx, global_width);
-            x_obs = map_utils::rowFromOffset(obstacle_idx, global_width);
-            y_obs = map_utils::colFromOffset(obstacle_idx, global_width);
-
-            // int delta_x = (x_cell == x_obs) ? 0 : std::max(std::abs(x_cell - x_obs) - 1, 0);
-            // int delta_y = (y_cell == y_obs) ? 0 : std::max(std::abs(y_cell - y_obs) - 1, 0);
-
-            distances[cell_idx] = map_utils::distance(x_cell, y_cell, x_obs, y_obs);
-        }
-    }
-
-    void setDistances(const std::vector<double>& map)
-    {
-        assert(map.size() == distances.size());
-
-        for (size_t i = 0; i < map.size(); i++)
-        {
-            distances[i].distance = std::numeric_limits<double>::max();
-        }
-
-        std::priority_queue<DistNode> search_queue;
-        //TODO Finish this function
-        enqueueObstacleCells(map, search_queue);
-
-        while (!search_queue.empty())
-        {
-            DistNode next_node = search_queue.top()
-            search_queue.pop();
-
-            if (next_node.distance < )
-        }
-    }
-
-    void enqueueObstacleCells(const std::vector<double>& map, std::priority_queue<DistNode>& search_queue)
-    {
-        for (size_t i = 0; i < map.size(); i++)
-        {
-            //if most likely an obstacle, treat it like an obstacle
-            if (map[i] >= 50)
-            {
-                //if obstacle found then expand and add to searchQueue
-                expandFromObstacle(distances[i], search_queue);
-            }
-
-        }
-    }
-
-    void expandFromObstacle(const DistNode& node, std::priority_queue<DistNode>& search_queue)
-    {
-        const int x_deltas[4] = {1,-1, 0, 0};
-        const int y_deltas[4] = {0, 0, 1,-1};
-
-        size_t x = rowFromOffset(obstacle_idx, global_width);
-        size_t y = colFromOffset(obstacle_idx, global_width);
-
-        for (int i = 0; i < 4; i++)
-        {
-            //if adjaacent cell is in map
-            if (pointInMap(x + x_deltas[i], y+y_deltas[i], global_width, global_height))
-            {
-                //get neighbor_idx
-                size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i],
-                                                                 y + y_deltas[i],
-                                                                 global_width);
-                //create dist node relative to this obstacle
-                DistNode adjacent_node(neighbor_idx, node.obstacle_idx);
-
-                //if this obstacle is closer than the one previously assigned to
-                //that cell then replace the dist node and add the new node to
-                //the searchQueue
-                if (adjacent_node.distance < distances[neighbor_idx].distance)
-                {
-                    distances[neighbor_idx] = adjacent_node;
-                    search_queue.push(adjacent_node);
-                }
-            }
-        }
-    }
-
+    std;;vector<size_t> idxs;
 };
-
-
-
-
 
 
 //cell is a frontier if it is unexplored (-1) and neighbor is free (0)

@@ -1,4 +1,3 @@
-// #include <finderbot/planner.h>
 #include <vector>
 #include <queue>
 #include <finderbot/map_utils.h>

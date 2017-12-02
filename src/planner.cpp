@@ -10,7 +10,7 @@ Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obs
 {
 	nodes_.resize(global_map_.size());
 
-    obstacle_distance_map_.setDistances(global_map_)
+    obstacle_distance_map_.setDistances(global_map_);
 }
 // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
 //          an x,y destination

@@ -55,23 +55,10 @@ class Planner {
     // bool pathCb(finderbot::getPath::Request  &req,
     //             finderbot::getPath::Response &res);
 
-<<<<<<< HEAD
-    // A 2-D vector with the coordinates of each point in the map to visit
-    std::vector<int> path_coordinates_;
-
-    // void setObstacleDistances()
-    // {
-    //     assert(!global_map_.empty());
-    //     obstacle_distance_map_.setDistances(global_map_);
-    // }
-
-    // double distAt(size_t idx)
-    // {
-    //     return obstacle_distance_map_[idx];
-    // }
-
-=======
->>>>>>> 7b93e235271b0e5d1aba08a2f31520718eeaa7f6
+    double distAt(size_t idx)
+    {
+        return obstacle_distance_map_[idx];
+    }
 };
 
 class Compare {
