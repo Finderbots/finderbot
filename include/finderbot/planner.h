@@ -28,15 +28,15 @@ class Planner {
     std::vector<Node> nodes_;
     
     // A 2-D vector with the coordinates of each point in the map to visit
-    std::vector<int> path_coordinates_;
+    std::vector<size_t> path_coordinates_;
 
     distance_grid::DistanceGrid obstacle_distance_map_;
 
     // Output command velocities based on plan
     ros::Publisher command_velocities_;
 
-    int source_row;
-    int source_col;
+    size_t source_row;
+    size_t source_col;
     // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
     //          an x,y destination
     // OUTPUT:  command velocities... angular and linear velocities
@@ -45,21 +45,23 @@ class Planner {
   public:
     Planner(std::vector<double> global_map);
 
-    std::vector<int> * aStar(int goal_row, int goal_col);
+    std::vector<size_t> * aStar(size_t goal_row, size_t goal_col);
 
     void getNeighbors(const Node & node, std::vector<Node*> & neighbors);
 
     // This handles request and service stuff now
-    std::vector<int> * getPath(Node * goal);
+    std::vector<size_t> * getPath(Node * goal);
 
-    void setPose(int row, int col);
+    bool isValidNeighbor(size_t idx);
+
+    void setPose(size_t row, size_t col);
 
     const size_t getPoseIdx()
     {
         return map_utils::getOffsetRowCol(source_row, source_col, global_width);
     }
 
-    bool isGoal(Node * node, int goal_row, int goal_col);
+    bool isGoal(Node * node, size_t goal_row, size_t goal_col);
 
     // bool pathCb(finderbot::getPath::Request  &req,
     //             finderbot::getPath::Response &res);

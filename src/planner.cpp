@@ -17,11 +17,11 @@ Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obs
 // OUTPUT:  command velocities... angular and linear velocities
 //      geometry_msgs/Twist.h
 //      at any given time you can only rotate or go forward or backward
-std::vector<int> * Planner::aStar(int goal_row, int goal_col) {
+std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
 	
 	std::priority_queue<Node*, std::vector<Node*>, Compare> visit_queue; // set of pointers to nodes sorted by the f_scores
 
-    for (int i = 0; i < global_map_.size(); ++i)
+    for (size_t i = 0; i < global_map_.size(); ++i)
     {
         nodes_[i].row = i / global_width;
         nodes_[i].col = i % global_width;
@@ -32,6 +32,7 @@ std::vector<int> * Planner::aStar(int goal_row, int goal_col) {
     	// 50 is an arbitrary probability of an obstacle
     	if (global_map_[i] > 50.0) {
     		nodes_[i].h_score = DBL_MAX;
+            std::cerr << "OBSTACLE AT (" << nodes_[i].row << "," << nodes_[i].col << ")\n";
     	}
     	else {
         	nodes_[i].h_score = distance(nodes_[i].row, nodes_[i].col, goal_row, goal_col); // heuristic is just euclidean distance
@@ -48,24 +49,20 @@ std::vector<int> * Planner::aStar(int goal_row, int goal_col) {
 
     visit_queue.push(&nodes_[source_idx]);
 
-			std::cerr << "IT WAS ALL GOOD JUST A WEEK AGO\n";
     std::vector<Node*> neighbors;
     Node * current_node = &nodes_[source_idx];
     while (!visit_queue.empty() && !isGoal(current_node, goal_row, goal_col)) {
-		// std::cerr << "FIRST I DROP MY TOOOPPP AYE\n";
         current_node = visit_queue.top();
         current_node->visited = true;
 
-		// std::cerr << "ABOUT TO GET NEIGHBORS\n";
         visit_queue.pop();
         getNeighbors(*current_node, neighbors);
-		// std::cerr << "GOT NEIGHBORS\n";
-        for (int i = 0; i < neighbors.size(); ++i) {
+        for (size_t i = 0; i < neighbors.size(); ++i) {
         	// If this is a neighbor that has not already in the visit_queue, add it to the visit_queue
-        	visit_queue.push(neighbors[i]);
-        	std::cout << "INSPECTING (" << neighbors[i]->row << "," << neighbors[i]->col << ")\n";
+            visit_queue.push(neighbors[i]);
+            // std::cerr << "EVALUATING (" << neighbors[i]->row << "," << neighbors[i]->col << ")\n";
             // if there exists a neighbor to the n, e, s, w, and ne, se, sw, nw.
-            int tentative_g_score = current_node->g_score + distance(*current_node, *neighbors[i]);
+            size_t tentative_g_score = current_node->g_score + distance(*current_node, *neighbors[i]);
             if (neighbors[i]->g_score > tentative_g_score) {
 				neighbors[i]->g_score = tentative_g_score;
 				neighbors[i]->parent = current_node;
@@ -79,7 +76,7 @@ std::vector<int> * Planner::aStar(int goal_row, int goal_col) {
         }
     }
     if (!isGoal(current_node, goal_row, goal_col)) {
-        ROS_INFO("Error: invalid pathfinding attempt");
+        ROS_INFO("ERROR: failed pathfinding attempt");
         return NULL;
     }
 
@@ -87,55 +84,91 @@ std::vector<int> * Planner::aStar(int goal_row, int goal_col) {
     return getPath(current_node);
 }
 
+bool Planner::isValidNeighbor(size_t idx) {
+    size_t row = rowFromOffset(idx, global_width);
+    size_t col = colFromOffset(idx, global_width);
+    if (row > 11 || col > 11) return false;
+    return pointInMap(row, col, global_width, global_width)
+                      && (nodes_[idx].visited == false)
+                      && (global_map_[idx] <= 50.0);
+}
+
+void printNode(const Node & node) {
+    std::cerr << "(" << node.row << "," << node.col << ")\n";
+    return;
+}
+
 void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
 	// clear the neighbors vector
 	neighbors.clear();
 	// Add neighbord to vector for evaluation if they have not been visited
+    //   and if the occupancy is less than 50.0
+    size_t n_idx = getOffsetRowCol(node.row + 1, node.col, global_width);
+    size_t e_idx = getOffsetRowCol(node.row, node.col + 1, global_width);
+    size_t s_idx = getOffsetRowCol(node.row - 1, node.col, global_width);
+    size_t w_idx = getOffsetRowCol(node.row, node.col - 1, global_width);
+    size_t ne_idx = getOffsetRowCol(node.row + 1, node.col + 1, global_width);
+    size_t se_idx = getOffsetRowCol(node.row - 1, node.col + 1, global_width);
+    size_t sw_idx = getOffsetRowCol(node.row - 1, node.col - 1, global_width);
+    size_t nw_idx = getOffsetRowCol(node.row + 1, node.col - 1, global_width);
+
+    std::cerr << "ADDING NEIGHBORS OF:";
+    printNode(node);
+    std::cerr << "\n";
+
     // check north neighbor
-    if (pointInMap(node.row + 1, node.col, global_width, global_width) && nodes_[getOffsetRowCol(node.row + 1, node.col, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row + 1, node.col, global_width)]);
+    if (isValidNeighbor(n_idx)) {
+        neighbors.push_back(&nodes_[n_idx]);
+        printNode(nodes_[n_idx]);
     }
     // check east neighbor
-    if (pointInMap(node.row, node.col + 1, global_width, global_width) && nodes_[getOffsetRowCol(node.row, node.col + 1, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row, node.col + 1, global_width)]);
+    if (isValidNeighbor(e_idx)) {
+        neighbors.push_back(&nodes_[e_idx]);
+        printNode(nodes_[e_idx]);
     }
     // check south neighbor
-    if (pointInMap(node.row - 1, node.col, global_width, global_width) && nodes_[getOffsetRowCol(node.row - 1, node.col, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row - 1, node.col, global_width)]);
+    if (isValidNeighbor(s_idx)) {
+        neighbors.push_back(&nodes_[s_idx]);
+        printNode(nodes_[s_idx]);
     }
     // check west neighbor
-    if (pointInMap(node.row, node.col - 1, global_width, global_width) && nodes_[getOffsetRowCol(node.row, node.col - 1, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row, node.col - 1, global_width)]);
+    if (isValidNeighbor(w_idx)) {
+        neighbors.push_back(&nodes_[w_idx]);
+        printNode(nodes_[w_idx]);
     }
     // check northeast neighbor
-    if (pointInMap(node.row + 1, node.col + 1, global_width, global_width) && nodes_[getOffsetRowCol(node.row + 1, node.col + 1, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row + 1, node.col + 1, global_width)]);
+    if (isValidNeighbor(ne_idx)) {
+        neighbors.push_back(&nodes_[ne_idx]);
+        printNode(nodes_[ne_idx]);
     }
     // check southeast neighbor
-    if (pointInMap(node.row - 1, node.col + 1, global_width, global_width) && nodes_[getOffsetRowCol(node.row - 1, node.col + 1, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row - 1, node.col + 1, global_width)]);
+    if (isValidNeighbor(se_idx)) {
+        neighbors.push_back(&nodes_[se_idx]);
+        printNode(nodes_[se_idx]);
     }
     // check southwest neighbor
-    if (pointInMap(node.row - 1, node.col - 1, global_width, global_width) && nodes_[getOffsetRowCol(node.row - 1, node.col - 1, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row - 1, node.col - 1, global_width)]);
+    if (isValidNeighbor(sw_idx)) {
+        neighbors.push_back(&nodes_[sw_idx]);
+        printNode(nodes_[sw_idx]);
     }
     // check northwest neighbor
-    if (pointInMap(node.row + 1, node.col - 1, global_width, global_width) && nodes_[getOffsetRowCol(node.row + 1, node.col - 1, global_width)].visited == false) {
-        neighbors.push_back(&nodes_[getOffsetRowCol(node.row + 1, node.col - 1, global_width)]);
+    if (isValidNeighbor(nw_idx)) {
+        neighbors.push_back(&nodes_[nw_idx]);
+        printNode(nodes_[nw_idx]);
     }
     return;
 }
 
 // Populate the path_coordinates_ with the path as an array of tuples (coordinates)
-std::vector<int> * Planner::getPath(Node * goal) {
+std::vector<size_t> * Planner::getPath(Node * goal) {
 	// Start pushing from the goal to the source, so will be reverse path
 	Node * current_node = goal;
 	ROS_INFO("Coordinates:");
-	int num_points_in_path = 0;
+	size_t num_points_in_path = 0;
 	while (NULL != current_node) {
-		int offset = getOffsetRowCol(current_node->row, current_node->col, global_width);
+		size_t offset = getOffsetRowCol(current_node->row, current_node->col, global_width);
 		path_coordinates_.push_back(offset);
-		ROS_INFO("(%d, %d)", (int)rowFromOffset(offset, global_width), (int)colFromOffset(offset, global_width));
+		ROS_INFO("(%d, %d)", (size_t)rowFromOffset(offset, global_width), (int)colFromOffset(offset, global_width));
 
 		current_node = current_node->parent;
 		++num_points_in_path;
@@ -145,14 +178,14 @@ std::vector<int> * Planner::getPath(Node * goal) {
 	return &path_coordinates_;
 }
 
-bool Planner::isGoal(Node * node, int goal_row, int goal_col) {
+bool Planner::isGoal(Node * node, size_t goal_row, size_t goal_col) {
 	return (node->row == goal_row) && (node->col == goal_col);
 }
 
 
 
 
-void Planner::setPose(int row, int col)
+void Planner::setPose(size_t row, size_t col)
 {
     assert(pointInMap(row, col, global_width, global_width));
         

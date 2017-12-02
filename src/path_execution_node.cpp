@@ -2,9 +2,6 @@
 
 #define PI 3.14159265
 
-// Make a function that does the reverse of the ray caster code's functionality
-//   ray caster takes a (row,col) coordinate and outputs the meters
-//   make something that does the opposite, takes in (x,y) meters and output (row,col)
 
 // Applies command velocities until you are within a threshold of desired angle
 void Executor::turnTheta(int goal_theta) {
@@ -23,14 +20,19 @@ void Executor::turnTheta(int goal_theta) {
 // Returns a command velocity to move forward distance in feet (negative for backwards)
 void Executor::drive(int goal_row, int goal_col) {
 	cmd_.linear.x = -0.03;
-	while (!coordinatesCloseEnough)
+	while (!closeEnoughToGoal(0.5, goal_row, goal_col)) {
 		command_velocities_pub.publish(cmd_);
+	}
 	return;
 }
 
 // Input is a radius to the goal that you consider close enough
 bool Executor::closeEnoughToGoal(int radius, int goal_row, int goal_col) {
 	return distance(goal_row, goal_col, current_row_, current_col_) < radius;
+}
+
+bool Executor::thetaCloseEnough(int threshold, double goal_theta) {
+	return (goal_theta - current_theta_) < threshold;
 }
 
 void Executor::goToNextNodeInPath(int goal_row, int goal_col) {
