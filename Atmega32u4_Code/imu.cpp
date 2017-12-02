@@ -14,6 +14,15 @@ uint8_t yaw = 0;
  float Ki = 0.05;
  float Kd = 0.4;
 
+
+void init_imu() {
+    Wire.begin();
+
+    delay(1); //1 ms
+    sixDOF.init(); //Begin the IMU
+    delay(1); //1 ms 
+}
+
 void updateAngle(void) {
     //PORTD |= _BV(PD2); //debugging
     sixDOF.getYawPitchRoll(angles);

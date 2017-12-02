@@ -22,5 +22,6 @@ extern float Ki;
 extern float Kd;
 
 void updateAngle(void);
+void init_imu();
 
 #endif

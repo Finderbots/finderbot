@@ -1,5 +1,4 @@
 #include <util/delay.h>
-#include <avr/sleep.h>
 
 #include "Arduino_FreeRTOS.h"
 
@@ -11,6 +10,29 @@
 #include "ir.h"
 #include "imu.h"
 
+
+volatile char spi_char ='\0';
+volatile char spi_message[MESSAGE_MAX_SIZE];
+volatile uint8_t pos = 0;
+
+ const char ack_byte = '!';
+ const char recv_index = 0;
+ const char start_byte = 's';
+ const char info_req = 'i'; //i = information is being requested
+ const char roll_req = 'r'; //r = I want roll
+ const char pitch_req = 'p'; //p = I want pitch
+ const char yaw_req = 'y'; //y = I want yaw
+ const char left_ir_req = '<'; //< = I want left IR value
+ const char right_ir_req = '>'; //> = I want right IR value
+ const char command_req = 'C'; // command is being sent
+ const char forward_req = 'f'; // move forward command
+ const char backward_req = 'B'; // move backward command
+ const char halt_req = 'h'; // halt command
+ const char rot_left_req = 'L'; // rotate right command
+ const char rot_right_req = 'R'; // rotate left command
+ const char stop_byte = 'e';
+ const char err_byte = 'b';
+ const char ack_byte_stop = 'd'; 
 
 // void vApplicationStackOverflowHook( TaskHandle_t xTask,
 //                                     signed char *pcTaskName ) {
@@ -37,7 +59,7 @@ void TaskTestTimers(void *pvParameters);
 int main(void)
 {
 
-    DDRB |= _BV(PB0);
+    DDRD |= _BV(PD3);
 
     // PORTB |= _BV(PB0);
     timing_init();
@@ -47,9 +69,9 @@ int main(void)
 
     init_spi();
 
-    while(1) {
+    // while(1) {
 
-    }
+    // }
 
     // xTaskCreate(
     // TaskTestTimers
@@ -67,18 +89,18 @@ int main(void)
     // ,  5  // Priority (low num = low priority)
     // ,  NULL );
 
-    // xTaskCreate(
-    // TaskIRSensorRead
-    // ,  (const portCHAR *)"IRSensorRead"  // A name just for humans
-    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  3  // Priority (low num = low priority)
-    // ,  NULL );
+    xTaskCreate(
+    TaskIRSensorRead
+    ,  (const portCHAR *)"IRSensorRead"  // A name just for humans
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  3  // Priority (low num = low priority)
+    ,  NULL );
 
     // xTaskCreate(
     // TaskIMURead
     // ,  (const portCHAR *)"IMURead"  // A name just for humans
-    // ,  512  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
     // ,  NULL
     // ,  2  // Priority (low num = low priority)
     // ,  NULL );
@@ -131,108 +153,45 @@ void TaskMotorCommand( void *pvParameters)  // This is a Task.
 
 
 void TaskIRSensorRead(void *pvParameters) {
+    PORTD |= _BV(PD3);
     init_IR_pins();
-
+    PORTD &= _BV(PD3);
     for(;;) {
-
-        /*******left ir sensor*********/
-        ADMUX &= ~(_BV(MUX4)) & ~(_BV(MUX3)) & ~(_BV(MUX2))& ~(_BV(MUX1)) & ~(_BV(MUX0)); //choose channel_0
-        ADCSRB &= ~(_BV(MUX5));
-
-        //ADCSRA |= _BV(ADSC); //start single conversion
-
-        
-        SMCR |= _BV(SM0); //enter adc noise reduction (sleep) mode
-        SMCR |= _BV(SE); //enter sleep mode
-        sleep_cpu();
-        SMCR &= ~(_BV(SE)); //disable sleep mode
-
-        // while(!(ADCSRA & _BV(ADIF))){ //wait for conversion to finish - finished when ADIF is set to 1
-        //     continue;
-        // }
-        // //PORTB ^= _BV(PB0); debugging
-        // //IRleftVal = ADCL;
-        // IRleftVal = ADCH; //only need 8 bit precision
-
-        // ADCSRA |= _BV(ADIF); //clear the interrupt flag maybe??? datasheet says to write a one to it to clear it...
-
-
-        /*******right ir sensor*********/
-        ADMUX &= ~(_BV(MUX4)) & ~(_BV(MUX3)) & ~(_BV(MUX2))& ~(_BV(MUX1)); //choose channel_1
-        ADCSRB &= ~(_BV(MUX5)); //choose channel_1
-        
-        ADMUX |= _BV(MUX0); //choose channel_1
-
-        PORTB &= ~(_BV(PB0));
-        // ADCSRA |= _BV(ADSC); //start single conversion
-        
-        SMCR |= _BV(SM0); //enter adc noise reduction (sleep) mode
-        SMCR |= _BV(SE); //enter sleep mode
-        sleep_cpu();
-        SMCR &= ~(_BV(SE)); //disable sleep mode
-
-        // while(!(ADCSRA & _BV(ADIF))){ //wait for conversion to finish - finished when ADIF is set to 1
-        //     continue;
-        // }
-        PORTB |= _BV(PB0); //debugging
-
-        //IRrightVal = ADCH; //only need 8 bit precision
-
-        //ADCSRA |= _BV(ADIF); //clear the interrupt flag maybe??? datasheet says to write a one to it to clear it...
+        PORTE |= _BV(PE6);
+        left_IR_read();
+        right_IR_read();
+        PORTE &= _BV(PE6);
 
         if(IRrightVal > 90) {
-            PORTE |= _BV(PE6); //debugging
+            //PORTE |= _BV(PE6); //debugging
             cli(); //disable interrupts
             stop_bot();
             sei(); //enable interrupts
         }
         else
         {
-            PORTE &= ~ _BV(PE6);
+            //PORTE &= ~ _BV(PE6);
         }
 
-        // //testing
-        // if(IRrightVal <20) {
-        //     PORTB ^= _BV(PB0);
-        // }
-        // if(IRrightVal <40){
-        //     PORTE ^= _BV(PE6);
-        // }
-        // if(IRrightVal <60) {
-        //     PORTD ^= _BV(PD2);
-        // }
-        // if(IRrightVal <80) {
-        //     PORTD ^= _BV(PD3);
-        // }
-
-        //vTaskDelayUntil(TickType_t *const pxPreviousWakeTime, const TickType_t xTimeIncrement)
+     
     }
 }
 
 
 void TaskIMURead(void *pvParameters) {
     
-    // Wire.begin();
-    // //PORTB |= _BV(PB0);
-
-    // vTaskDelay(1); //1 tick
-    // sixDOF.init(); //Begin the IMU
-    // //PORTB &= ~(_BV(PB0));
-    // vTaskDelay(1); //1 tick 
-    PORTE |= _BV(PE6);
-
+    init_imu();
+    
     for(;;) {
-        PORTB ^= _BV(PB0);
-        //updateAngle();
+        
+        updateAngle();
 
-        //uart_transmit('t');
-        //PORTB &= ~(_BV(PB0));
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 void TaskPIDController(void *pvParameters) {
-
+    
 }
 
 /*********ISRs******************************************/
