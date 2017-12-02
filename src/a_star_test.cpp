@@ -31,7 +31,8 @@ void testSanity() {
 	int goal_x = 0;
 	int goal_y = 0;
 	Planner * planner = new Planner(occupancy_grid);
-	printPath(*planner->aStar(goal_x, goal_y, source_x, source_y));
+	planner->setPose(source_x, source_y);
+	printPath(*planner->aStar(goal_x, goal_y));
 	return;
 }
 
@@ -50,7 +51,8 @@ void testDiagonal() {
 	int goal_x = 10;
 	int goal_y = 10;
 	Planner * planner = new Planner(occupancy_grid);
-	printPath(*planner->aStar(goal_x, goal_y, source_x, source_y));
+	planner->setPose(source_x, source_y);
+	printPath(*planner->aStar(goal_x, goal_y));
 	return;
 }
 
@@ -75,7 +77,8 @@ void testVerticalWall() {
 	int goal_x = 10;
 	int goal_y = 3;
 	Planner * planner = new Planner(occupancy_grid);
-	printPath(*planner->aStar(goal_x, goal_y, source_x, source_y));
+	planner->setPose(source_x, source_y);
+	printPath(*planner->aStar(goal_x, goal_y));
 	return;
 }
 

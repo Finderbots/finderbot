@@ -76,7 +76,6 @@ std::vector<size_t> growFrontier(const size_t cell, const std::vector<double>& m
 
         }
     }
-    {
 
     return frontier;
 }
@@ -86,6 +85,7 @@ std::vector<size_t> pathToFrontier(const std::vector<size_t>& frontier,
                                    const std::vector<double>& map,
                                    const Planner& planner
                                    )
+{
     assert(!frontier.empty());
 
     //sort frontier so that the cell that is furthest from all the others is first

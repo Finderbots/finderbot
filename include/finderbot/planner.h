@@ -35,6 +35,8 @@ class Planner {
     // Output command velocities based on plan
     ros::Publisher command_velocities_;
 
+    int source_row;
+    int source_col;
     // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
     //          an x,y destination
     // OUTPUT:  command velocities... angular and linear velocities
@@ -43,12 +45,14 @@ class Planner {
   public:
     Planner(std::vector<double> global_map);
 
-    std::vector<int> * aStar(int goal_row, int goal_col, int source_row, int source_col);
+    std::vector<int> * aStar(int goal_row, int goal_col);
 
     void getNeighbors(const Node & node, std::vector<Node*> & neighbors);
 
     // This handles request and service stuff now
     std::vector<int> * getPath(Node * goal);
+
+    void setPose(int row, int col);
 
     bool isGoal(Node * node, int goal_row, int goal_col);
 
