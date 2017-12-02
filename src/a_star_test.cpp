@@ -79,10 +79,30 @@ void testVerticalWall() {
 	return;
 }
 
+void testInvalidPath() {
+	std::cout << "STARTING SANITY TEST\n";
+	std::vector<double> occupancy_grid(global_width * global_width, 0);
+	occupancy_grid[map_utils::getOffsetRowCol(3, 0, global_width)] = 90;
+	occupancy_grid[map_utils::getOffsetRowCol(3, 1, global_width)] = 90;
+	occupancy_grid[map_utils::getOffsetRowCol(3, 2, global_width)] = 90;
+	occupancy_grid[map_utils::getOffsetRowCol(3, 3, global_width)] = 90;
+	occupancy_grid[map_utils::getOffsetRowCol(2, 3, global_width)] = 90;
+	occupancy_grid[map_utils::getOffsetRowCol(1, 3, global_width)] = 90;
+	occupancy_grid[map_utils::getOffsetRowCol(0, 3, global_width)] = 90;
+	int source_x = 0;
+	int source_y = 0;
+	int goal_x = 5;
+	int goal_y = 5;
+	Planner * planner = new Planner(occupancy_grid);
+	printPath(*planner->aStar(goal_x, goal_y, source_x, source_y));
+	return;	
+}
+
 // NO ROS NECESSARY!!!
 int main(int argc, char** argv) {
 	testSanity();
 	testDiagonal();
 	testVerticalWall();
+	testInvalidPath();
 	return 0;
 }

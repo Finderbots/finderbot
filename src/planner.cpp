@@ -84,7 +84,7 @@ std::vector<int> * Planner::aStar(int goal_row, int goal_col,
             }
         }
     }
-    if (current_node == NULL) {
+    if (!isGoal(current_node, goal_row, goal_col)) {
         ROS_INFO("Error: invalid pathfinding attempt");
         return NULL;
     }
