@@ -30,6 +30,9 @@ class Planner {
     // Nodes each representing a coordinate in the map
     std::vector<Node> nodes_;
     
+    // set of pointers to nodes. Needs to be sorted by f_scores
+    std::vector<Node*> visit_queue_;
+
     // A 2-D vector with the coordinates of each point in the map to visit
     std::vector<size_t> path_coordinates_;
 
@@ -55,7 +58,7 @@ class Planner {
     // This handles request and service stuff now
     std::vector<size_t> * getPath(Node * goal);
 
-    bool isValidNeighbor(size_t idx);
+    bool isValidNeighbor(size_t row, size_t col);
 
     void setPose(size_t row, size_t col);
 

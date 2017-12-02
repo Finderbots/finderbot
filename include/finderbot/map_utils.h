@@ -7,9 +7,9 @@
 
 struct Node
 {
-    int row;
-    int col;
-    int dist;
+    size_t row;
+    size_t col;
+    size_t dist;
     struct Node * parent;
     bool visited;
     double g_score;

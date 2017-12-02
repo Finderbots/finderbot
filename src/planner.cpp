@@ -1,6 +1,7 @@
 /* Finderbots: Implementation of A-star algorithm */
 #include <finderbot/planner.h>
 #include <iostream>
+#include <algorithm>
 
 using namespace map_utils;
 
@@ -19,8 +20,6 @@ Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obs
 //      at any given time you can only rotate or go forward or backward
 std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
 	
-	std::priority_queue<Node*, std::vector<Node*>, Compare> visit_queue; // set of pointers to nodes sorted by the f_scores
-
     for (size_t i = 0; i < global_map_.size(); ++i)
     {
         nodes_[i].row = i / global_width;
@@ -32,7 +31,7 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
     	// 50 is an arbitrary probability of an obstacle
     	if (global_map_[i] > 50.0) {
     		nodes_[i].h_score = DBL_MAX;
-            std::cerr << "OBSTACLE AT (" << nodes_[i].row << "," << nodes_[i].col << ")\n";
+            // std::cerr << "OBSTACLE AT (" << nodes_[i].row << "," << nodes_[i].col << ")\n";
     	}
     	else {
         	nodes_[i].h_score = distance(nodes_[i].row, nodes_[i].col, goal_row, goal_col); // heuristic is just euclidean distance
@@ -47,19 +46,23 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
     nodes_[source_idx].h_score = distance(source_row, source_col, goal_row, goal_col);
     nodes_[source_idx].f_score = nodes_[source_idx].g_score + nodes_[source_idx].h_score;
 
-    visit_queue.push(&nodes_[source_idx]);
+    visit_queue_.push_back(&nodes_[source_idx]);
+    std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
 
     std::vector<Node*> neighbors;
     Node * current_node = &nodes_[source_idx];
-    while (!visit_queue.empty() && !isGoal(current_node, goal_row, goal_col)) {
-        current_node = visit_queue.top();
+    while (!visit_queue_.empty() && !isGoal(current_node, goal_row, goal_col)) {
+        current_node = visit_queue_.back();
         current_node->visited = true;
 
-        visit_queue.pop();
+        visit_queue_.pop_back();
         getNeighbors(*current_node, neighbors);
         for (size_t i = 0; i < neighbors.size(); ++i) {
-        	// If this is a neighbor that has not already in the visit_queue, add it to the visit_queue
-            visit_queue.push(neighbors[i]);
+        	// If this is a neighbor that has not already in the visit_queue_, add it to the visit_queue_
+            if (!std::binary_search(visit_queue_.begin(), visit_queue_.end(), neighbors[i])) {
+                visit_queue_.push_back(neighbors[i]);
+                std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
+            }
             // std::cerr << "EVALUATING (" << neighbors[i]->row << "," << neighbors[i]->col << ")\n";
             // if there exists a neighbor to the n, e, s, w, and ne, se, sw, nw.
             size_t tentative_g_score = current_node->g_score + distance(*current_node, *neighbors[i]);
@@ -84,12 +87,13 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
     return getPath(current_node);
 }
 
-bool Planner::isValidNeighbor(size_t idx) {
-    size_t row = rowFromOffset(idx, global_width);
-    size_t col = colFromOffset(idx, global_width);
-    if (row > 11 || col > 11) return false;
+bool Planner::isValidNeighbor(size_t row, size_t col) {
+    size_t idx = getOffsetRowCol(row, col, global_width);
+    // if (row > 11 || col > 11) return false;
+    // std::cerr << "VISITED? " << nodes_[idx].visited << "\n";
     return pointInMap(row, col, global_width, global_width)
                       && (nodes_[idx].visited == false)
+                      && (!std::binary_search(visit_queue_.begin(), visit_queue_.end(), &nodes_[idx]))
                       && (global_map_[idx] <= 50.0);
 }
 
@@ -112,47 +116,49 @@ void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
     size_t sw_idx = getOffsetRowCol(node.row - 1, node.col - 1, global_width);
     size_t nw_idx = getOffsetRowCol(node.row + 1, node.col - 1, global_width);
 
+    
+
     std::cerr << "ADDING NEIGHBORS OF:";
     printNode(node);
     std::cerr << "\n";
 
     // check north neighbor
-    if (isValidNeighbor(n_idx)) {
+    if (isValidNeighbor(node.row + 1, node.col)) {
         neighbors.push_back(&nodes_[n_idx]);
         printNode(nodes_[n_idx]);
     }
     // check east neighbor
-    if (isValidNeighbor(e_idx)) {
+    if (isValidNeighbor(node.row, node.col + 1)) {
         neighbors.push_back(&nodes_[e_idx]);
         printNode(nodes_[e_idx]);
     }
     // check south neighbor
-    if (isValidNeighbor(s_idx)) {
+    if (isValidNeighbor(node.row - 1, node.col)) {
         neighbors.push_back(&nodes_[s_idx]);
         printNode(nodes_[s_idx]);
     }
     // check west neighbor
-    if (isValidNeighbor(w_idx)) {
+    if (isValidNeighbor(node.row, node.col - 1)) {
         neighbors.push_back(&nodes_[w_idx]);
         printNode(nodes_[w_idx]);
     }
     // check northeast neighbor
-    if (isValidNeighbor(ne_idx)) {
+    if (isValidNeighbor(node.row + 1, node.col + 1)) {
         neighbors.push_back(&nodes_[ne_idx]);
         printNode(nodes_[ne_idx]);
     }
     // check southeast neighbor
-    if (isValidNeighbor(se_idx)) {
+    if (isValidNeighbor(node.row - 1, node.col + 1)) {
         neighbors.push_back(&nodes_[se_idx]);
         printNode(nodes_[se_idx]);
     }
     // check southwest neighbor
-    if (isValidNeighbor(sw_idx)) {
+    if (isValidNeighbor(node.row - 1, node.col - 1)) {
         neighbors.push_back(&nodes_[sw_idx]);
         printNode(nodes_[sw_idx]);
     }
     // check northwest neighbor
-    if (isValidNeighbor(nw_idx)) {
+    if (isValidNeighbor(node.row + 1, node.col - 1)) {
         neighbors.push_back(&nodes_[nw_idx]);
         printNode(nodes_[nw_idx]);
     }
