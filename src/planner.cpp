@@ -174,7 +174,7 @@ std::vector<size_t> * Planner::getPath(Node * goal) {
 	while (NULL != current_node) {
 		size_t offset = getOffsetRowCol(current_node->row, current_node->col, global_width);
 		path_coordinates_.push_back(offset);
-		ROS_INFO("(%d, %d)", (size_t)rowFromOffset(offset, global_width), (int)colFromOffset(offset, global_width));
+		ROS_INFO("(%zd, %zd)", (size_t)rowFromOffset(offset, global_width), (size_t)colFromOffset(offset, global_width));
 
 		current_node = current_node->parent;
 		++num_points_in_path;
