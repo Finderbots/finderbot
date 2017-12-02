@@ -1,3 +1,6 @@
+#ifndef PLANNER_H_
+#define PLANNER_H_
+
 /* Finderbots: Implementation of A-star algorithm */
 #include <limits.h>
 #include <ros/ros.h>
@@ -82,4 +85,4 @@ class Compare {
     }
 };
 
-
+#endif

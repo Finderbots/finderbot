@@ -1,3 +1,6 @@
+#ifndef DISTANCE_GRID_H_
+#define DISTANCE_GRID_H_
+
 #include <vector>
 #include <queue>
 #include <finderbot/map_utils.h>
@@ -63,3 +66,5 @@ class DistanceGrid
 };
 
 }
+
+#endif

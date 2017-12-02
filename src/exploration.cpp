@@ -111,20 +111,8 @@ std::vector<size_t>* pathToFrontier(const std::vector<size_t>& frontier,
     return nullptr;
 }
 
-// size_t nearestNavigableCell(size_t robot_pose_idx,
-//                                size_t desired_idx,
-//                                const std::vector<double> map,
-//                                const Planner& planner)
-// {
-//     size_t goal_x = map_utils::rowFromOffset(desired_idx, global_width);
-//     size_t goal_y = map_utils::colFromOffset(desired_idx, global_width);
-//     size_t x =      map_utils::rowFromOffset(robot_pose_idx, global_width);
-//     size_t y =      map_utils::colFromOffset(robot_pose_idx, global_width);
 
-//     Planner.aStar()
-// }
-
-findMapFrontiers(const Planner& planner,
+void findMapFrontiers(const Planner& planner,
                  std::vector<frontier_t>& frontiers,
                  double map_resolution,
                  double min_dist_to_frontier)

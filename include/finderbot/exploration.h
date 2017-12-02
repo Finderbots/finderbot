@@ -1,3 +1,6 @@
+#ifndef EXPLORATION_H_
+#define EXPLORATION_H_
+
 #include <finderbot/planner.h>
 #include <finderbot/DistanceGrid.h>
 #include <vector>
@@ -36,6 +39,4 @@ std::vector<std::vector<size_t> > findMapFrontiers(const std::vector<double>& ma
                                                     size_t robot_pose_idx,
                                                     double min_dist_to_frontier);
 
-
-
-
+#endif
