@@ -52,10 +52,12 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
     std::vector<Node*> neighbors;
     Node * current_node = &nodes_[source_idx];
     while (!visit_queue_.empty() && !isGoal(current_node, goal_row, goal_col)) {
+        std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
         current_node = visit_queue_.back();
         current_node->visited = true;
-
         visit_queue_.pop_back();
+        std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
+
         getNeighbors(*current_node, neighbors);
         for (size_t i = 0; i < neighbors.size(); ++i) {
         	// If this is a neighbor that has not already in the visit_queue_, add it to the visit_queue_
@@ -91,10 +93,11 @@ bool Planner::isValidNeighbor(size_t row, size_t col) {
     size_t idx = getOffsetRowCol(row, col, global_width);
     // if (row > 11 || col > 11) return false;
     // std::cerr << "VISITED? " << nodes_[idx].visited << "\n";
+    std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
     return pointInMap(row, col, global_width, global_width)
-                      && (nodes_[idx].visited == false)
-                      && (!std::binary_search(visit_queue_.begin(), visit_queue_.end(), &nodes_[idx]))
-                      && (global_map_[idx] <= 50.0);
+           && (nodes_[idx].visited == false)
+           && (!std::binary_search(visit_queue_.begin(), visit_queue_.end(), &nodes_[idx]))
+           && (global_map_[idx] <= 50.0);
 }
 
 void printNode(const Node & node) {
