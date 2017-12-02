@@ -6,9 +6,11 @@ using namespace map_utils;
 
 Planner* path_finding_planner;
 
-Planner::Planner(std::vector<double> global_map) : global_map_(global_map)
+Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obstacle_distance_map_((size_t)global_width, (size_t)global_width)
 {
 	nodes_.resize(global_map_.size());
+
+    obstacle_distance_map_.setDistances(global_map_)
 }
 // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
 //          an x,y destination

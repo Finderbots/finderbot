@@ -15,8 +15,10 @@
 #include <string>
 #include <cassert>
 
-#define global_width 1000
+#include <finderbot/DistanceGrid.h>
 
+#define global_width 1000
+#define global_height 1000
 
 class Planner {
     // probabilities of obstacles in map
@@ -24,6 +26,8 @@ class Planner {
 
     // Nodes each representing a coordinate in the map
     std::vector<Node> nodes_;
+
+    distance_grid::DistanceGrid obstacle_distance_map_;
 
     // Output command velocities based on plan
     ros::Publisher command_velocities_;
@@ -50,6 +54,18 @@ class Planner {
 
     // A 2-D vector with the coordinates of each point in the map to visit
     std::vector<int> path_coordinates_;
+
+    // void setObstacleDistances()
+    // {
+    //     assert(!global_map_.empty());
+    //     obstacle_distance_map_.setDistances(global_map_);
+    // }
+
+    // double distAt(size_t idx)
+    // {
+    //     return obstacle_distance_map_[idx];
+    // }
+
 };
 
 class Compare {
