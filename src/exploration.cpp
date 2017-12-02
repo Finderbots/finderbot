@@ -5,10 +5,10 @@
 bool isFrontier(const size_t idx, const std::vector<double>* map)
 {
     //using prob map not log odds
-    size_t x = getRowOffset(idx, global_width);
-    size_t y = getColOffset(idx, global_width);
+    size_t x = map_utils::rowFromOffset(idx, global_width);
+    size_t y = map_utils::colFromOffset(idx, global_width);
 
-    if (!pointInMap(x, y, global_width, map.size()/ global_width) || map->at(idx) != -1)
+    if (!map_utils::pointInMap(x, y, global_width, map->size()/ global_width) || map->at(idx) != -1)
     {
         return false;
     }
@@ -20,7 +20,7 @@ bool isFrontier(const size_t idx, const std::vector<double>* map)
     //if the point is unexplored and neighbors an explored space, then it is a frontier cell
     for (int i = 0; i < num_neighbors; i++)
     {
-        neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i], global_width);
+        size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i], global_width);
         if (map->at(neighbor_idx) == 0)
         {
             return true;
@@ -41,8 +41,8 @@ void growFrontier(const size_t cell,
     visited_frontiers.insert(cell);
 
     const int num_neighbors = 8;
-    const int xDeltas[] = { -1, -1, -1, 1, 1, 1, 0, 0 };
-    const int yDeltas[] = { 0, 1, -1, 0, 1, -1, 1, -1 };
+    const int x_deltas[] = { -1, -1, -1, 1, 1, 1, 0, 0 };
+    const int y_deltas[] = { 0, 1, -1, 0, 1, -1, 1, -1 };
 
     
 
@@ -51,10 +51,10 @@ void growFrontier(const size_t cell,
         size_t next_cell = cell_queue.front();
         cell_queue.pop();
 
-        frontier.push_back(next_cell);
+        frontier.idxs.push_back(next_cell);
 
-        size_t x = getRowOffset(next_cell, global_width);
-        size_t y = getColOffset(next_cell, global_width);
+        size_t x = map_utils::rowFromOffset(next_cell, global_width);
+        size_t y = map_utils::colFromOffset(next_cell, global_width);
 
         for (int i = 0; i < num_neighbors; i++)
         {
@@ -63,30 +63,28 @@ void growFrontier(const size_t cell,
 
             //if not explored already  and is frontier then add to this frontier
             if (visited_frontiers.find(neighbor_idx) == visited_frontiers.end()
-                    && isFrontier(neighbor_idx))
+                    && isFrontier(neighbor_idx, map))
             {
                 visited_frontiers.insert(neighbor_idx);
                 cell_queue.push(neighbor_idx);
             }
         }
     }
-
-    return frontier;
 }
 
-std::vector<size_t>* pathToFrontier(const std::vector<size_t>& frontier,
-                                   const Planner& planner
+std::vector<size_t>* pathToFrontier(const frontier_t& frontier,
+                                   Planner& planner
                                    )
 {
-    assert(!frontier.empty());
+    assert(!frontier.idxs.empty());
     const std::vector<double>* map = planner.getMapPtr();
 
     size_t robot_pose_idx = planner.getPoseIdx();
 
     //sort frontier so that the cell that is furthest from obstacles is first
     //frontiers order doesnt actually matter so no need to make a new one
-    std::sort(frontier.cells.begin(), 
-              frontier.cells.end(),
+    std::sort(frontier.idxs.begin(), 
+              frontier.idxs.end(),
               [&planner](size_t lhs, size_t rhs) -> 
               bool {
                 return planner.distAt(lhs) > planner.distAt(rhs); 
@@ -94,13 +92,13 @@ std::vector<size_t>* pathToFrontier(const std::vector<size_t>& frontier,
 
 
     //go through vector return first valid path
-    for (size_t i = 0; i < frontier.cells.size(); i++)
+    for (size_t i = 0; i < frontier.idxs.size(); i++)
     {
 
-        size_t goal_x = map_utils::rowFromOffset(frontier.cells[i], global_width);
-        size_t goal_y = map_utils::colFromOffset(frontier.cells[i], global_width);
+        size_t goal_x = map_utils::rowFromOffset(frontier.idxs[i], global_width);
+        size_t goal_y = map_utils::colFromOffset(frontier.idxs[i], global_width);
         
-        std::vector<int> path* = planner.aStar(global_x, global_y);
+        std::vector<int>* path = planner.aStar(goal_x, goal_y);
 
         if (path != nullptr)
         {
@@ -139,7 +137,7 @@ void findMapFrontiers(const Planner& planner,
         size_t x = map_utils::rowFromOffset(next_idx, global_width);
         size_t y = map_utils::colFromOffset(next_idx, global_width);
 
-        for (int n = 0; n < num_neighbors; ++n)
+        for (int i = 0; n < num_neighbors; ++i)
         {
             size_t neighbor_x = x + x_deltas[i];
             size_t neighbor_y = y + y_deltas[i];
@@ -160,7 +158,7 @@ void findMapFrontiers(const Planner& planner,
 
                 growFrontier(neighbor_idx, map, f, visited_idxs);
 
-                if (f->at(0).size() * map_resolution >= min_dist_to_frontier)
+                if (f->size() * map_resolution >= min_dist_to_frontier)
                 {
 
                     frontiers.push_back(f);
@@ -180,7 +178,7 @@ void findMapFrontiers(const Planner& planner,
 
 //returns path to nearest frontier
 // if no valid path, returns its own pose
-std::vector<size_t>* exploreFrontiers(const Planner& planner, std::vector<frontier_t>& frontiers)
+std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers)
 {
     //TODO actual min_dist_to_frontier
     size_t robot_pose_idx = planner.getPoseIdx();
@@ -200,9 +198,9 @@ std::vector<size_t>* exploreFrontiers(const Planner& planner, std::vector<fronti
     std::transform(frontiers.begin(), frontiers.end(), std::back_inserter(paths),
         [&planner](const frontier_t& frontier) {return *pathToFrontier(frontier, planner)};)
 
-    return *std::min_element(paths.begin(), paths.end(), 
+    return *(*std::min_element(paths.begin(), paths.end(), 
             [](const std::vector<size_t>* lhs, const std::vector<size_t>* rhs)
             {
                 return lhs->size() < rhs->size();
-            })
+            }));
 }

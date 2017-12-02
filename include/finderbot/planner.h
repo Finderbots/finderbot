@@ -57,7 +57,7 @@ class Planner {
 
     void setPose(int row, int col);
 
-    const size_t getPoseIdx()
+    const size_t getPoseIdx() const
     {
         return map_utils::getOffsetRowCol(source_row, source_col, global_width);
     }
@@ -67,12 +67,12 @@ class Planner {
     // bool pathCb(finderbot::getPath::Request  &req,
     //             finderbot::getPath::Response &res);
 
-    double distAt(size_t idx)
+    double distAt(size_t idx) const
     {
         return obstacle_distance_map_[idx];
     }
 
-    const std::vector<double>* getMapPtr()
+    const std::vector<double>* getMapPtr() const
     {
         return &global_map_;
     }
