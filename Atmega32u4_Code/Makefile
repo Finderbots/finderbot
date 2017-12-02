@@ -22,7 +22,7 @@ CLOCK      = 16000000
 PROGRAMMER = -c usbtiny
 #PROGRAMMER = -c avr109 -P /dev/cu.usbmodem1421
 OBJECTS    = main.o croutine.o event_groups.o heap_3.o list.o port.o queue.o tasks.o timers.o hooks.o FIMU_ADXL345.o FIMU_ITG3200.o FreeSixIMU.o Wire.o twi.o
-#FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
+FUSES      = -U lfuse:w:0xFF:m -U hfuse:w:0xCB:m -U efuse:w:0xE8:m
 
 # ATMega8 fuse bits used above (fuse bits for other devices are different!):
 # Example for 8 MHz internal oscillator
