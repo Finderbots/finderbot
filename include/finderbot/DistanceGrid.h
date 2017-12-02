@@ -45,6 +45,10 @@ class DistanceGrid
     };
 
     std::vector<double> distances;
+
+    void enqueueObstacleCells(const std::vector<double>& map, std::priority_queue<DistNode>& search_queue);
+
+    void expandNode(const DistNode& node, std::priority_queue<DistNode>& search_queue);
     
 
   public:
@@ -55,12 +59,6 @@ class DistanceGrid
     float operator[](size_t idx) const {return distances[idx];}
 
     void setDistances(const std::vector<double>& map);
-
-    void enqueueObstacleCells(const std::vector<double>& map, std::priority_queue<DistNode>& search_queue);
-    
-
-    void expandNode(const DistNode& node, std::priority_queue<DistNode>& search_queue);
-    
 
 };
 
