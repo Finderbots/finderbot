@@ -17,6 +17,32 @@
 //     PORTD ^= _BV(PD6);
 // }
 
+volatile char spi_char ='\0';
+volatile char spi_message[MESSAGE_MAX_SIZE];
+volatile uint8_t pos = 0;
+
+
+ const char ack_byte = '!';
+ const char recv_index = 0;
+ const char start_byte = 's';
+ const char info_req = 'i'; //i = information is being requested
+ const char roll_req = 'r'; //r = I want roll
+ const char pitch_req = 'p'; //p = I want pitch
+ const char yaw_req = 'y'; //y = I want yaw
+ const char left_ir_req = '<'; //< = I want left IR value
+ const char right_ir_req = '>'; //> = I want right IR value
+ const char command_req = 'C'; // command is being sent
+ const char forward_req = 'f'; // move forward command
+ const char backward_req = 'B'; // move backward command
+ const char halt_req = 'h'; // halt command
+ const char rot_left_req = 'L'; // rotate right command
+ const char rot_right_req = 'R'; // rotate left command
+ const char stop_byte = 'e';
+ const char err_byte = 'b';
+  const char ack_byte_stop = 'd'; 
+
+
+
 void TaskMotorCommand(void *pvParameters);
 
 void TaskIRSensorRead(void *pvParameters);
@@ -38,7 +64,6 @@ PID myPID(&Input, &Output, &Setpoint,2,5,1, DIRECT);
 
 int main(void)
 {
-<<<<<<< HEAD
     timing_init();
 
     //initialize the variables we're linked to
@@ -171,14 +196,9 @@ ISR(TIMER0_OVF_vect)
   timer0_overflow_count++;
 }
 
-<<<<<<< HEAD
-    //DDRD |= _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
- 
-=======
 //ADC ISR
 ISR(ADC_vect) 
 {
->>>>>>> cad48a88c938e140d179da775c2ad37fb6ae8843
 
     if(ADMUX & _BV(MUX0)) {
         IRrightVal = ADCH;
