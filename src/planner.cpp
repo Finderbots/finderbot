@@ -6,25 +6,19 @@ using namespace map_utils;
 
 Planner* path_finding_planner;
 
-Planner::Planner(std::vector<double> global_map) : global_map_(global_map)
+Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obstacle_distance_map_((size_t)global_width, (size_t)global_width)
 {
 	nodes_.resize(global_map_.size());
+
+    obstacle_distance_map_.setDistances(global_map_);
 }
 // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
 //          an x,y destination
 // OUTPUT:  command velocities... angular and linear velocities
 //      geometry_msgs/Twist.h
 //      at any given time you can only rotate or go forward or backward
-std::vector<int> * Planner::aStar(int goal_row, int goal_col,
-					  int source_row, int source_col) {
-	if (!pointInMap(source_row, source_col, global_width, global_width)) {
-        ROS_INFO("Error: source out of map");
-		return NULL;
-	}
-	if (!pointInMap(goal_row, goal_col, global_width, global_width)) {
-        ROS_INFO("Error: goal out of map");
-		return NULL;
-	}
+std::vector<int> * Planner::aStar(int goal_row, int goal_col) {
+	
 	std::priority_queue<Node*, std::vector<Node*>, Compare> visit_queue; // set of pointers to nodes sorted by the f_scores
 
     for (int i = 0; i < global_map_.size(); ++i)
@@ -155,6 +149,17 @@ bool Planner::isGoal(Node * node, int goal_row, int goal_col) {
 	return (node->row == goal_row) && (node->col == goal_col);
 }
 
+
+
+
+void Planner::setPose(int row, int col)
+{
+    assert(pointInMap(row, col, global_width, global_width));
+        
+
+    source_row = row;
+    source_col = col;
+}
 // bool Planner::pathCb(finderbot::getPath::Request  &req,
 // 		  			 finderbot::getPath::Response &res) {
 // 	// Hard code source and destination for tests
