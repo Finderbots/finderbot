@@ -21,13 +21,13 @@ std::vector<size_t> pathToFrontier(const std::vector<size_t>& frontier,
                                    const Planner& planner
                                    );
 
+//planner stores map and initialized obstacle distance grid
 std::vector<size_t> exploreFrontier(Planner& planner);
 
 
-size_t nearestNavigableCell(size_t robot_pose_idx,
-                               size_t desired_idx,
-                               const std::vector<double> map,
-                               const Planner& planner);
+size_t nearestNavigableCell(size_t desired_idx,
+                            const std::vector<double> map,
+                            const Planner& planner);
 
 size_t nearestFreeCell();
 
