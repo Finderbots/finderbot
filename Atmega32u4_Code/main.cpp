@@ -208,132 +208,131 @@ void uart_transmit (unsigned char data)
     UDR1 = data;                             // load data in the register
 }
 
-ISR(USART1_RX_vect)
-{
-    PORTE |= _BV(PE6);
-    // Code to be executed when the USART receives a byte here
-    usart_rx_char = UDR1;
+// ISR(USART1_RX_vect)
+// {
+//     // Code to be executed when the USART receives a byte here
+//     usart_rx_char = UDR1;
 
-    // if(usart_rx_char == 's') {
-    //     usart_tx_char = '!'; // Echo back the received byte back to the computer    
-    // }
-    // else {
-    //     usart_tx_char = '?';
-    // }
+//     // if(usart_rx_char == 's') {
+//     //     usart_tx_char = '!'; // Echo back the received byte back to the computer    
+//     // }
+//     // else {
+//     //     usart_tx_char = '?';
+//     // }
 
-    char master_motor_command = '\0';
+//     char master_motor_command = '\0';
 
-    // add to buffer if room
-    if (pos < (sizeof (uart_message) - 1)) {
-        uart_message[pos++] = usart_rx_char;
-    }
-    else
-    {
-        pos = 0;
-        uart_message[pos++] = usart_rx_char;
-    }
+//     // add to buffer if room
+//     if (pos < (sizeof (uart_message) - 1)) {
+//         uart_message[pos++] = usart_rx_char;
+//     }
+//     else
+//     {
+//         pos = 0;
+//         uart_message[pos++] = usart_rx_char;
+//     }
 
-    bool valid_start = false;
-    bool valid_command_msg = false;
+//     bool valid_start = false;
+//     bool valid_command_msg = false;
 
-    if(pos >= 1)
-        valid_start = uart_message[0] == start_byte;
-    if(pos >=2)
-        valid_command_msg = (valid_start && (uart_message[1] == command_req));
+//     if(pos >= 1)
+//         valid_start = uart_message[0] == start_byte;
+//     if(pos >=2)
+//         valid_command_msg = (valid_start && (uart_message[1] == command_req));
 
 
-    switch(usart_rx_char) {
-        case start_byte:
-            //start byte
-            //send ack
-            usart_tx_char = ack_byte;
-            break;
-        case command_req:
-            // master sending motor command
-            // send ack byte back
-            if (valid_start && pos == 2) {
-                usart_tx_char = ack_byte;
-            } else {
-                usart_tx_char = err_byte;
-            }
-            break;
-        case forward_req:
-            // forward command
-            // echo back command to comfirm to master
-            if(valid_command_msg && pos == 3) {
-                usart_tx_char  = forward_req;
-                master_motor_command = FORWARD;
-            }  else {
-                usart_tx_char = err_byte;
-            }          
-            break;
-        case backward_req:
-            // forward command
-            // echo back command to comfirm to master
-            if(valid_command_msg && pos == 3) {
-                usart_tx_char  = backward_req;
-                master_motor_command = BACKWARD;
-            }  else {
-                usart_tx_char = err_byte;
-            }          
-            break;
-        case halt_req:
-            // halt command
-            // echo back command to comfirm to master
-            if(valid_command_msg && pos == 3) {
-                usart_tx_char  = halt_req;
-                master_motor_command = STOP;
-            }  else {
-                usart_tx_char = err_byte;
-            }          
-            break;
-        case rot_left_req:
-            // rotate left command
-            // echo back command to comfirm to master
-            if(valid_command_msg && pos == 3) {
-                usart_tx_char  = rot_left_req;
-                master_motor_command = LEFT;
-            }  else {
-                usart_tx_char = err_byte;
-            }          
-            break;
-        case rot_right_req:
-            // right command
-            // echo back command to comfirm to master
-            if(valid_command_msg && pos == 3) {
-                usart_tx_char  = rot_right_req;
-                master_motor_command = RIGHT;
-            }  else {
-                usart_tx_char = err_byte;
-            }          
-            break;
-        case stop_byte:
-            //send ack
-            if (valid_command_msg && pos == 4)
-            {
-                usart_tx_char = ack_byte_stop;
-            } else {
-                usart_tx_char = err_byte;
-            }
-            break;
-        default:
-            usart_tx_char = err_byte;
-            break;
-    }
+//     switch(usart_rx_char) {
+//         case start_byte:
+//             //start byte
+//             //send ack
+//             usart_tx_char = ack_byte;
+//             break;
+//         case command_req:
+//             // master sending motor command
+//             // send ack byte back
+//             if (valid_start && pos == 2) {
+//                 usart_tx_char = ack_byte;
+//             } else {
+//                 usart_tx_char = err_byte;
+//             }
+//             break;
+//         case forward_req:
+//             // forward command
+//             // echo back command to comfirm to master
+//             if(valid_command_msg && pos == 3) {
+//                 usart_tx_char  = forward_req;
+//                 master_motor_command = FORWARD;
+//             }  else {
+//                 usart_tx_char = err_byte;
+//             }          
+//             break;
+//         case backward_req:
+//             // forward command
+//             // echo back command to comfirm to master
+//             if(valid_command_msg && pos == 3) {
+//                 usart_tx_char  = backward_req;
+//                 master_motor_command = BACKWARD;
+//             }  else {
+//                 usart_tx_char = err_byte;
+//             }          
+//             break;
+//         case halt_req:
+//             // halt command
+//             // echo back command to comfirm to master
+//             if(valid_command_msg && pos == 3) {
+//                 usart_tx_char  = halt_req;
+//                 master_motor_command = STOP;
+//             }  else {
+//                 usart_tx_char = err_byte;
+//             }          
+//             break;
+//         case rot_left_req:
+//             // rotate left command
+//             // echo back command to comfirm to master
+//             if(valid_command_msg && pos == 3) {
+//                 usart_tx_char  = rot_left_req;
+//                 master_motor_command = LEFT;
+//             }  else {
+//                 usart_tx_char = err_byte;
+//             }          
+//             break;
+//         case rot_right_req:
+//             // right command
+//             // echo back command to comfirm to master
+//             if(valid_command_msg && pos == 3) {
+//                 usart_tx_char  = rot_right_req;
+//                 master_motor_command = RIGHT;
+//             }  else {
+//                 usart_tx_char = err_byte;
+//             }          
+//             break;
+//         case stop_byte:
+//             //send ack
+//             if (valid_command_msg && pos == 4)
+//             {
+//                 usart_tx_char = ack_byte_stop;
+//             } else {
+//                 usart_tx_char = err_byte;
+//             }
+//             break;
+//         default:
+//             usart_tx_char = err_byte;
+//             break;
+//     }
 
-    uart_transmit(usart_tx_char);
+//     uart_transmit(usart_tx_char);
 
-    if (master_motor_command != '\0' && master_motor_command != command_state)
-    {
-        moveRobot(master_motor_command);
-    }
+//     if (master_motor_command != '\0' && master_motor_command != command_state)
+//     {
+//         moveRobot(master_motor_command);
+//     }
 
-    if(usart_tx_char == err_byte || usart_tx_char == ack_byte_stop){
-        pos = 0;
-    }
+//     if(usart_tx_char == err_byte || usart_tx_char == ack_byte_stop){
+//         pos = 0;
+//     }
 
-    PORTE &= ~(_BV(PE6));
-}
+
+// }
 
 ISR(TIMER0_OVF_vect)
 {
@@ -357,65 +356,24 @@ ISR(TIMER0_OVF_vect)
 
 int main(void)
 {
-    //DDRD |= _BV(PD3); //debug
-    //PORTD ^= _BV(PD3); //debug
 
-    // init_spi();
+    DDRB |= _BV(PB0);
 
+    // PORTB |= _BV(PB0);
+    // timing_init();
+    // PORTB &= ~(_BV(PB0));
 
+    DDRE |= _BV(PE6); //debugging
+
+    // cli(); //disable interrupts while initializing usart
+    // USART_Init();
     // sei();
-    //SREG |= (1<<7);
-    DDRE |= _BV(PE6);
-
-    cli(); //disable interrupts while initializing usart
-    USART_Init();
-    sei();
 
     // while(1) {
     //     uart_transmit('t');
     //     delay(1000);
     // }
-    timing_init();
 
-    //sei(); called by timing_init();
-    
-    // volatile int i = 0;
-    // volatile int j = 0;
-
-//     DDRE |= _BV(PE6); //debugging
-//     DDRD |= _BV(PD3); //debugging
-
-//     DDRB |= _BV(PB3); //set miso as output
-//     /* Enable SPI */
-//     SPCR |= _BV(SPE) | _BV(SPR0);
-//     uint8_t s_clk;
-
-// while(1) {
-    
-//     while(!(SPSR & (1<<SPIF))) {
-
-//     }
-//     PORTD |= (_BV(PD3));
-
-//     spi_char = SPDR;  // grab byte from SPI Data Register
-    
-//     if(spi_char == start_byte) {
-//         PORTE |= _BV(PE6); //set debug pin PE6 high
-//     }else {
-//         PORTE &= ~(_BV(PE6)); //set debug pin PE6 low
-//     }
-
-//     uint8_t byte_to_send = '!';
-//     SPDR = byte_to_send;
-
-//     PORTD &= ~(_BV(PD3));
-
-// } //while 1
-
-    // while(1) {
-    //     i++;
-    //     j = i;
-    // }
 
     // xTaskCreate(
     // TaskTestTimers
@@ -444,7 +402,7 @@ int main(void)
     xTaskCreate(
     TaskIMURead
     ,  (const portCHAR *)"IMURead"  // A name just for humans
-    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  512  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
     ,  2  // Priority (low num = low priority)
     ,  NULL );
@@ -489,203 +447,6 @@ void init_pwm() {
     ICR3 = 0xFF; //set TOP value for Timer 3
     
 }
-
-// void init_spi(void)
-// {
-//     DDRE |= _BV(PE6); //debugging
-
-//     SPCR |= _BV(SPE); //enable spi mode
-
-//     SPCR &= ~(_BV(MSTR)); //explicitly set spi to slave mode
-
-//     DDRB &= ~(_BV(PB0)); //set SS as input explicitly 
-
-//     // Set MISO output, all others input 
-//     DDRB |= _BV(PB3);
-
-//     // Enable spi interrupts 
-//     SPCR |= _BV(SPIE); 
-
-//     //might need to set _BV(CPOL)(Clk polarity)
-//                                 // and _BV(CPHA) (clk phase) 
-//                                 //_BV(DORD) (data order) to match master(ODROID)
-// }
-
-// SPI Transmission/reception complete ISR
-// ISR(SPI_STC_vect)
-// {
-//     PORTE |= _BV(PE6); //debugging
-
-//     char master_motor_command = '\0';
-
-//     spi_char = SPDR;  // grab byte from SPI Data Register
-    
-//     if(spi_char == start_byte) {
-//         pos = 0;
-//     }
-
-//     // add to buffer if room
-//     if (pos < (sizeof (spi_message) - 1)) {
-//         spi_message[pos++] = spi_char;
-//     }
-//     else
-//     {
-//         pos = 0;
-//         spi_message[pos++] = spi_char;
-//     }
-
-//     uint8_t byte_to_send;
-
-//     switch(spi_char) {
-//         case start_byte:
-//             //start byte
-//             //send ack
-//             byte_to_send = ack_byte;
-//             break;
-//         case info_req: 
-//             //master requesting info byte
-//             //send ack
-//             if (spi_message[0] == start_byte && pos == 2) {
-//                 byte_to_send = ack_byte;
-//             } else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case roll_req:
-//             //roll value requested
-//             //send roll value on spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 3) {
-//                 byte_to_send  = (uint8_t) roll;
-//             }  else {
-//                 byte_to_send = err_byte;
-//             }          
-//             break;
-//         case pitch_req: 
-//             //pitch value requested
-//             //send pitch value on spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 4) {
-//                 byte_to_send  = (uint8_t) pitch;
-//             }else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case yaw_req: 
-//             //yaw value requested
-//             //send yaw value on spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 5) {
-//                 byte_to_send  = (uint8_t) yaw;
-//             }
-//             else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case left_ir_req:
-//             //left ir sensor requested
-//             //send that value on the spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 6) {
-//                 byte_to_send  = (uint8_t) IRleftVal;
-//             }else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case right_ir_req:
-//             //left ir sensor requested
-//             //send that value on the spi line
-//             if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 7) {
-//                 byte_to_send  = (uint8_t) IRrightVal;
-//             }else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case command_req:
-//             // master sending motor command
-//             // send ack byte back
-//             if (spi_message[0] == start_byte && pos == 2) {
-//                 byte_to_send = ack_byte;
-//             } else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         case forward_req:
-//             // forward command
-//             // echo back command to comfirm to master
-//             if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
-//                 byte_to_send  = forward_req;
-//                 master_motor_command = FORWARD;
-//             }  else {
-//                 byte_to_send = err_byte;
-//             }          
-//             break;
-//         case backward_req:
-//             // forward command
-//             // echo back command to comfirm to master
-//             if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
-//                 byte_to_send  = backward_req;
-//                 master_motor_command = BACKWARD;
-//             }  else {
-//                 byte_to_send = err_byte;
-//             }          
-//             break;
-//         case halt_req:
-//             // halt command
-//             // echo back command to comfirm to master
-//             if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
-//                 byte_to_send  = halt_req;
-//                 master_motor_command = STOP;
-//             }  else {
-//                 byte_to_send = err_byte;
-//             }          
-//             break;
-//         case rot_left_req:
-//             // rotate left command
-//             // echo back command to comfirm to master
-//             if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
-//                 byte_to_send  = rot_left_req;
-//                 master_motor_command = LEFT;
-//             }  else {
-//                 byte_to_send = err_byte;
-//             }          
-//             break;
-//         case rot_right_req:
-//             // right command
-//             // echo back command to comfirm to master
-//             if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
-//                 byte_to_send  = rot_right_req;
-//                 master_motor_command = RIGHT;
-//             }  else {
-//                 byte_to_send = err_byte;
-//             }          
-//             break;
-//         case stop_byte:
-//             //send ack
-//             if (spi_message[0] == start_byte && ((spi_message[1] == info_req && pos == 8)
-//                 || (spi_message[1] == command_req && pos == 4)))
-//             {
-//                 byte_to_send = ack_byte_stop;
-//             } else {
-//                 byte_to_send = err_byte;
-//             }
-//             break;
-//         default:
-//             byte_to_send = err_byte;
-//             break;
-//     }
-
-//     SPDR = byte_to_send;
-
-//     if (master_motor_command != '\0' && master_motor_command != command_state)
-//     {
-//         moveRobot(master_motor_command);
-//     }
-
-//     if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
-//         pos = 0;
-//     }
-
-//     PORTE &= ~(_BV(PE6));
-
-      
-// }
 
 void motor_run(int motor, uint8_t speed, int movement) {
     if(movement == STOP) {
@@ -997,20 +758,22 @@ void updateAngle(void) {
 }
 
 void TaskIMURead(void *pvParameters) {
+    
     // Wire.begin();
+    // //PORTB |= _BV(PB0);
 
     // vTaskDelay(1); //1 tick
     // sixDOF.init(); //Begin the IMU
+    // //PORTB &= ~(_BV(PB0));
     // vTaskDelay(1); //1 tick 
-
-    DDRB |= _BV(PB0);
+    PORTE |= _BV(PE6);
 
     for(;;) {
-        PORTB |= _BV(PB0);
+        PORTB ^= _BV(PB0);
         //updateAngle();
 
-        uart_transmit('t');
-        PORTB &= ~(_BV(PB0));
+        //uart_transmit('t');
+        //PORTB &= ~(_BV(PB0));
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
