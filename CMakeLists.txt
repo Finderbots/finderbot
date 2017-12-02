@@ -61,11 +61,11 @@ add_message_files(
  )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
+add_service_files(
+    FILES
+    GetMap.srv
 #   Service2.srv
-# )
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -139,19 +139,22 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/finderbot_node.cpp)
-#add_executable(finderbot src/ir_node.cpp src/IR_Sensor.cpp)
 
-add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
-add_executable(transform_node src/transform_node.cpp)
+add_executable(SLAM_node src/SLAM_node.cpp)
 add_executable(simple_motion_node src/simple_motion_node.cpp)
 
 add_executable(global_map_node src/global_map_node.cpp src/global_map_builder.cpp src/ray_caster.cpp)
 
-##add_executable(planner_node src/planner.cpp)
+add_executable(distance_grid_test_node src/distance_grid_test.cpp src/DistanceGrid.cpp)
 
-add_dependencies(global_map_node finderbot_generate_messages_cpp)
-add_dependencies(transform_node finderbot_generate_messages_cpp)
-##add_dependencies(planner_node finderbot_generate_messages_cpp)
+
+#add_executable(uwb_node src/uwb.cpp)
+#set_source_files_properties(src/uwb.cpp PROPERTIES COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -std=gnu++11")
+
+add_executable(a_star_test src/a_star_test.cpp src/planner.cpp src/DistanceGrid.cpp)
+
+add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
+add_dependencies(SLAM_node finderbot_generate_messages_cpp )
 
 
 
@@ -165,14 +168,18 @@ add_dependencies(transform_node finderbot_generate_messages_cpp)
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+
+
 ### Specify libraries to link a library or executable target against
-target_link_libraries(
-   mini_mapping_node
-   ${catkin_LIBRARIES}
-)
+
+#target_link_libraries(
+#    uwb_node
+#    ${catkin_LIBRARIES}
+#    ~/catkin_ws/src/finderbot/lib/libModuleConnector.so
+#)
 
 target_link_libraries(
-   transform_node
+   SLAM_node
    ${catkin_LIBRARIES}
 )
 
@@ -186,10 +193,15 @@ target_link_libraries(
   ${catkin_LIBRARIES}
 )
 
-##target_link_libraries(
-##  planner_node
-##  ${catkin_LIBRARIES}
-##)
+target_link_libraries(
+  distance_grid_test_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(
+  a_star_test
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

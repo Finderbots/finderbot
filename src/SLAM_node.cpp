@@ -1,8 +1,7 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 
-#include <finderbot/ray_caster.h>
-
+#include <finderbot/map_utils.h>
 #include <finderbot/PF_Input.h>
 #include <sensor_msgs/LaserScan.h>
 #include <gazebo_msgs/GetModelState.h>
@@ -43,21 +42,21 @@ class SLAM
 
     tf::TransformBroadcaster br_;
 
-    inline double convertQuatToAngle(const tf::Quaternion& q)
-    {
-        if(std::fabs(q.x()) > 1e-5 || std::fabs(q.y()) > 1e-5){
-            tf::Vector3 axis = q.getAxis();
-            // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
-                // axis.x(), axis.y(), axis.z());
-        }
+    // inline double convertQuatToAngle(const tf::Quaternion& q)
+    // {
+    //     if(std::fabs(q.x()) > 1e-5 || std::fabs(q.y()) > 1e-5){
+    //         tf::Vector3 axis = q.getAxis();
+    //         // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
+    //             // axis.x(), axis.y(), axis.z());
+    //     }
 
-        return 2*std::atan2(q.z(), q.w());
-    }
+    //     return 2*std::atan2(q.z(), q.w());
+    // }
 
-    inline size_t getOffsetRowCol(size_t row, size_t col, size_t ncol)
-    {
-        return (row * ncol) + col;
-    }
+    // inline size_t getOffsetRowCol(size_t row, size_t col, size_t ncol)
+    // {
+    //     return (row * ncol) + col;
+    // }
 
 public:
     //(num_particles, std_dev, world_frame_id, laser_frame_id, model_name
@@ -80,9 +79,9 @@ public:
         pose_.x = pose.position.x;
         pose_.y = pose.position.y;
         tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-        pose_.theta = convertQuatToAngle(q);
+        pose_.theta = -1.5707;
         
-
+        // ROS_INFO("init transform (%f, %f, %f)",pose_.x, pose_.y, pose_.theta);
         tf::Transform transform;
 
         q.setRPY(0, 0, pose_.theta);
@@ -107,10 +106,10 @@ public:
              pose_.x = pose.position.x;
              pose_.y = pose.position.y;
              tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-             pose_.theta = convertQuatToAngle(q);
+             pose_.theta = map_utils::convertQuatToAngle(q);
         }
         else ROS_INFO("boo gazebo");
-        ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
+        // ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
         //fill particles vector by sampling from N(pose, std_dev) num_particles times
         std::default_random_engine generator;
         std::normal_distribution<double> x_distribution(pose_.x, std_dev_);
@@ -147,9 +146,9 @@ public:
                 size_t map_x = (size_t) world_x / pfInput.map_resolution;
                 size_t map_y = (size_t) world_y / pfInput.map_resolution;
                 
-                size_t idx = getOffsetRowCol(map_x, map_y, pfInput.map_width);
+                size_t idx = map_utils::getOffsetRowCol(map_x, map_y, pfInput.map_width);
                 //if particlesrticle and scan yield a valid point then add to score
-                if (ray_caster::pointInMap(map_x, map_y, pfInput.map_height, pfInput.map_width) 
+                if (map_utils::pointInMap(map_x, map_y, pfInput.map_height, pfInput.map_width) 
                         && pfInput.log_odds[idx] != 0)
                 {
                     score += pfInput.log_odds[idx];   
@@ -163,7 +162,7 @@ public:
             }
         }
         
-        ROS_INFO("pf_pose = (%f, %f, %f", max_pose.x, max_pose.y, max_pose.theta);
+        // ROS_INFO("pf_pose = (%f, %f, %f", max_pose.x, max_pose.y, max_pose.theta);
         //select particle with highest pose, update pose
         pose_ = max_pose;
 
