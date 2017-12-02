@@ -8,7 +8,7 @@
 
 struct frontier_t 
 {
-    std::vector<size_t> idxs;
+    std::vector<int> idxs;
 };
 
 // bool isFrontier(const size_t idx, const std::vector<double>& map);
@@ -35,7 +35,7 @@ std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& 
 
 
 void findMapFrontiers(const Planner& planner,
-                      const std::vector<frontier_t>& frontiers,
+                      std::vector<frontier_t>& frontiers,
                       double map_resolution,
                       double min_dist_to_frontier);
 
