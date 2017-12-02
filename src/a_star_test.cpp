@@ -4,7 +4,7 @@
 #include <vector>
 
 
-void printPath(std::vector<int> path) {
+void printPath(std::vector<int> & path) {
 	int row = 0;
 	int col = 0;
 	std::cout << "PRINTING PATH:\n";
@@ -31,13 +31,7 @@ void testSanity() {
 	int goal_x = 0;
 	int goal_y = 0;
 	Planner * planner = new Planner(occupancy_grid);
-	Node * goal = planner->aStar(goal_x, goal_y, source_x, source_y);
-	if (goal == NULL) {
-		ROS_INFO("Error: invalid pathfinding attempt");
-		return;
-	}
-	planner->getPath(goal);
-	printPath(planner->path_coordinates_);
+	printPath(*planner->aStar(goal_x, goal_y, source_x, source_y));
 	return;
 }
 
@@ -56,13 +50,7 @@ void testDiagonal() {
 	int goal_x = 10;
 	int goal_y = 10;
 	Planner * planner = new Planner(occupancy_grid);
-	Node * goal = planner->aStar(goal_x, goal_y, source_x, source_y);
-	if (goal == NULL) {
-		ROS_INFO("Error: invalid pathfinding attempt");
-		return;
-	}
-	planner->getPath(goal);
-	printPath(planner->path_coordinates_);
+	printPath(*planner->aStar(goal_x, goal_y, source_x, source_y));
 	return;
 }
 
@@ -87,13 +75,7 @@ void testVerticalWall() {
 	int goal_x = 10;
 	int goal_y = 3;
 	Planner * planner = new Planner(occupancy_grid);
-	Node * goal = planner->aStar(goal_x, goal_y, source_x, source_y);
-	if (goal == NULL) {
-		ROS_INFO("Error: invalid pathfinding attempt");
-		return;
-	}
-	planner->getPath(goal);
-	printPath(planner->path_coordinates_);
+	printPath(*planner->aStar(goal_x, goal_y, source_x, source_y));
 	return;
 }
 

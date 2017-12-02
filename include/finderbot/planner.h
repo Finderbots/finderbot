@@ -24,6 +24,9 @@ class Planner {
 
     // Nodes each representing a coordinate in the map
     std::vector<Node> nodes_;
+    
+    // A 2-D vector with the coordinates of each point in the map to visit
+    std::vector<int> path_coordinates_;
 
     // Output command velocities based on plan
     ros::Publisher command_velocities_;
@@ -36,20 +39,18 @@ class Planner {
   public:
     Planner(std::vector<double> global_map);
 
-    Node * aStar(int goal_row, int goal_col, int source_row, int source_col);
+    std::vector<int> * aStar(int goal_row, int goal_col, int source_row, int source_col);
 
     void getNeighbors(const Node & node, std::vector<Node*> & neighbors);
 
     // This handles request and service stuff now
-    void getPath(Node * goal);
+    std::vector<int> * getPath(Node * goal);
 
     bool isGoal(Node * node, int goal_row, int goal_col);
 
     // bool pathCb(finderbot::getPath::Request  &req,
     //             finderbot::getPath::Response &res);
 
-    // A 2-D vector with the coordinates of each point in the map to visit
-    std::vector<int> path_coordinates_;
 };
 
 class Compare {

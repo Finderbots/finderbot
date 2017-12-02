@@ -7,9 +7,8 @@ void path_execution() {
 	int goal_col = 0;
 	while (!path_coordinates_.empty()) {
 		// Pop from the end so you get column first then row
-		goal_col = path_coordinates_.back();
-		path_coordinates_.pop_back();
-		goal_row = path_coordinates_.back();
+		goal_row = map_utils::rowFromOffset(path_coordinates_.back());
+		goal_col = map_utils::colFromOffset(path_coordinates_.back());
 		path_coordinates_.pop_back();
 		while ((current_row != goal_row) && (current_col != goal_col)) {
 			// UPDATE Current position everytime

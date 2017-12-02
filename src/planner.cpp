@@ -15,7 +15,7 @@ Planner::Planner(std::vector<double> global_map) : global_map_(global_map)
 // OUTPUT:  command velocities... angular and linear velocities
 //      geometry_msgs/Twist.h
 //      at any given time you can only rotate or go forward or backward
-Node * Planner::aStar(int goal_row, int goal_col,
+std::vector<int> * Planner::aStar(int goal_row, int goal_col,
 					  int source_row, int source_col) {
 	if (!pointInMap(source_row, source_col, global_width, global_width)) {
         ROS_INFO("Error: source out of map");
@@ -84,8 +84,13 @@ Node * Planner::aStar(int goal_row, int goal_col,
             }
         }
     }
+    if (current_node == NULL) {
+        ROS_INFO("Error: invalid pathfinding attempt");
+        return NULL;
+    }
+
     // at this point, current_node is the goal
-    return current_node;
+    return getPath(current_node);
 }
 
 void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
@@ -128,7 +133,7 @@ void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
 }
 
 // Populate the path_coordinates_ with the path as an array of tuples (coordinates)
-void Planner::getPath(Node * goal) {
+std::vector<int> * Planner::getPath(Node * goal) {
 	// Start pushing from the goal to the source, so will be reverse path
 	Node * current_node = goal;
 	ROS_INFO("Coordinates:");
@@ -143,7 +148,7 @@ void Planner::getPath(Node * goal) {
 	}
 	// path_coordinates member is a 1D array/stack with the path coordinates
 	// pop from top to bottom to go start to finish
-	return;
+	return &path_coordinates_;
 }
 
 bool Planner::isGoal(Node * node, int goal_row, int goal_col) {
