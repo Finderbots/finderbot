@@ -140,47 +140,47 @@ float errorS = 0;
 float prevE = 0;
 
 // /*SPI Variables*/
-// volatile char spi_char;
-// volatile char spi_message[MESSAGE_MAX_SIZE];
-// volatile byte pos;
-// const char ack_byte = '!';
-// const char recv_index = 0;
-// const char start_byte = 's';
-// const char info_req = 'i'; //i = information is being requested
-// const char roll_req = 'r'; //r = I want roll
-// const char pitch_req = 'p'; //p = I want pitch
-// const char yaw_req = 'y'; //y = I want yaw
-// const char left_ir_req = '<'; //< = I want left IR value
-// const char right_ir_req = '>'; //> = I want right IR value
-// const char command_req = 'C'; // command is being sent
-// const char forward_req = 'f'; // move forward command
-// const char backward_req = 'B'; // move backward command
-// const char halt_req = 'h'; // halt command
-// const char rot_left_req = 'L'; // rotate right command
-// const char rot_right_req = 'R'; // rotate left command
-// const char stop_byte = 'e';
-// const char err_byte = 'b';
-// const char ack_byte_stop = 'd'; 
-
-
-
-/*UART Variables*/
-volatile uint8_t usart_rx_char;
-volatile uint8_t usart_tx_char;
-volatile char uart_message[MESSAGE_MAX_SIZE];
+volatile char spi_char;
+volatile char spi_message[MESSAGE_MAX_SIZE];
 volatile byte pos;
 const char ack_byte = '!';
 const char recv_index = 0;
 const char start_byte = 's';
+const char info_req = 'i'; //i = information is being requested
+const char roll_req = 'r'; //r = I want roll
+const char pitch_req = 'p'; //p = I want pitch
+const char yaw_req = 'y'; //y = I want yaw
+const char left_ir_req = '<'; //< = I want left IR value
+const char right_ir_req = '>'; //> = I want right IR value
 const char command_req = 'C'; // command is being sent
 const char forward_req = 'f'; // move forward command
-const char backward_req = 'b'; // move backward command
-const char halt_req = 'H'; // halt command
-const char rot_left_req = 'l'; // rotate right command
-const char rot_right_req = 'r'; // rotate left command
+const char backward_req = 'B'; // move backward command
+const char halt_req = 'h'; // halt command
+const char rot_left_req = 'L'; // rotate right command
+const char rot_right_req = 'R'; // rotate left command
 const char stop_byte = 'e';
-const char err_byte = '?';
+const char err_byte = 'b';
 const char ack_byte_stop = 'd'; 
+
+
+
+/*UART Variables*/
+// volatile uint8_t usart_rx_char;
+// volatile uint8_t usart_tx_char;
+// volatile char uart_message[MESSAGE_MAX_SIZE];
+// volatile byte pos;
+// const char ack_byte = '!';
+// const char recv_index = 0;
+// const char start_byte = 's';
+// const char command_req = 'C'; // command is being sent
+// const char forward_req = 'f'; // move forward command
+// const char backward_req = 'b'; // move backward command
+// const char halt_req = 'H'; // halt command
+// const char rot_left_req = 'l'; // rotate right command
+// const char rot_right_req = 'r'; // rotate left command
+// const char stop_byte = 'e';
+// const char err_byte = '?';
+// const char ack_byte_stop = 'd'; 
 
 #define F_CPU 16000000
 
@@ -354,16 +354,220 @@ ISR(TIMER0_OVF_vect)
 }
 
 
+void init_spi(void)
+{
+    DDRE |= _BV(PE6); //debugging
+
+    SPCR |= _BV(SPE); //enable spi mode
+
+    SPCR &= ~(_BV(MSTR)); //explicitly set spi to slave mode
+
+    DDRB &= ~(_BV(PB0)); //set SS as input explicitly 
+
+    // Set MISO output, all others input 
+    DDRB |= _BV(PB3);
+
+    // Enable spi interrupts 
+    SPCR |= _BV(SPIE); 
+
+    //might need to set _BV(CPOL)(Clk polarity)
+                                // and _BV(CPHA) (clk phase) 
+                                //_BV(DORD) (data order) to match master(ODROID)
+}
+
+// SPI Transmission/reception complete ISR
+ISR(SPI_STC_vect)
+{
+    PORTE |= _BV(PE6); //debugging
+
+    char master_motor_command = '\0';
+
+    spi_char = SPDR;  // grab byte from SPI Data Register
+    
+    if(spi_char == start_byte) {
+        pos = 0;
+    }
+
+    // add to buffer if room
+    if (pos < (sizeof (spi_message) - 1)) {
+        spi_message[pos++] = spi_char;
+    }
+    else
+    {
+        pos = 0;
+        spi_message[pos++] = spi_char;
+    }
+
+    uint8_t byte_to_send;
+
+    switch(spi_char) {
+        case start_byte:
+            //start byte
+            //send ack
+            byte_to_send = ack_byte;
+            break;
+        case info_req: 
+            //master requesting info byte
+            //send ack
+            if (spi_message[0] == start_byte && pos == 2) {
+                byte_to_send = ack_byte;
+            } else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case roll_req:
+            //roll value requested
+            //send roll value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 3) {
+                byte_to_send  = (uint8_t) roll;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case pitch_req: 
+            //pitch value requested
+            //send pitch value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 4) {
+                byte_to_send  = (uint8_t) pitch;
+            }else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case yaw_req: 
+            //yaw value requested
+            //send yaw value on spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 5) {
+                byte_to_send  = (uint8_t) yaw;
+            }
+            else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case left_ir_req:
+            //left ir sensor requested
+            //send that value on the spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 6) {
+                byte_to_send  = (uint8_t) IRleftVal;
+            }else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case right_ir_req:
+            //left ir sensor requested
+            //send that value on the spi line
+            if(spi_message[0] == start_byte && spi_message[1] == info_req && pos == 7) {
+                byte_to_send  = (uint8_t) IRrightVal;
+            }else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case command_req:
+            // master sending motor command
+            // send ack byte back
+            if (spi_message[0] == start_byte && pos == 2) {
+                byte_to_send = ack_byte;
+            } else {
+                byte_to_send = err_byte;
+            }
+            break;
+        case forward_req:
+            // forward command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
+                byte_to_send  = forward_req;
+                master_motor_command = FORWARD;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case backward_req:
+            // forward command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
+                byte_to_send  = backward_req;
+                master_motor_command = BACKWARD;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case halt_req:
+            // halt command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
+                byte_to_send  = halt_req;
+                master_motor_command = STOP;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case rot_left_req:
+            // rotate left command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
+                byte_to_send  = rot_left_req;
+                master_motor_command = LEFT;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case rot_right_req:
+            // right command
+            // echo back command to comfirm to master
+            if(spi_message[0] == start_byte && spi_message[1] == command_req && pos == 3) {
+                byte_to_send  = rot_right_req;
+                master_motor_command = RIGHT;
+            }  else {
+                byte_to_send = err_byte;
+            }          
+            break;
+        case stop_byte:
+            //send ack
+            if (spi_message[0] == start_byte && ((spi_message[1] == info_req && pos == 8)
+                || (spi_message[1] == command_req && pos == 4)))
+            {
+                byte_to_send = ack_byte_stop;
+            } else {
+                byte_to_send = err_byte;
+            }
+            break;
+        default:
+            byte_to_send = err_byte;
+            break;
+    }
+
+    SPDR = byte_to_send;
+
+    if (master_motor_command != '\0' && master_motor_command != command_state)
+    {
+        moveRobot(master_motor_command);
+    }
+
+    if(byte_to_send == err_byte || byte_to_send == ack_byte_stop){
+        pos = 0;
+    }
+
+    PORTE &= ~(_BV(PE6));
+
+      
+}
+
+
 int main(void)
 {
 
     DDRB |= _BV(PB0);
 
     // PORTB |= _BV(PB0);
-    // timing_init();
+    timing_init();
     // PORTB &= ~(_BV(PB0));
 
     DDRE |= _BV(PE6); //debugging
+
+    init_spi();
+
+    while(1) {
+        
+    }
 
     // cli(); //disable interrupts while initializing usart
     // USART_Init();
@@ -399,13 +603,13 @@ int main(void)
     // ,  3  // Priority (low num = low priority)
     // ,  NULL );
 
-    xTaskCreate(
-    TaskIMURead
-    ,  (const portCHAR *)"IMURead"  // A name just for humans
-    ,  512  // This stack size can be checked & adjusted by reading the Stack Highwater
-    ,  NULL
-    ,  2  // Priority (low num = low priority)
-    ,  NULL );
+    // xTaskCreate(
+    // TaskIMURead
+    // ,  (const portCHAR *)"IMURead"  // A name just for humans
+    // ,  512  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // ,  NULL
+    // ,  2  // Priority (low num = low priority)
+    // ,  NULL );
 
     // xTaskCreate(
     // TaskPIDController
