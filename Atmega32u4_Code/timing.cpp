@@ -4,10 +4,6 @@ volatile unsigned long timer0_overflow_count = 0;
 volatile unsigned long timer0_millis = 0;
 unsigned char timer0_fract = 0;
 
-<<<<<<< HEAD
-=======
-
->>>>>>> cad48a88c938e140d179da775c2ad37fb6ae8843
 void timing_init(void)
 {
   // this needs to be called before setup() or some functions won't
