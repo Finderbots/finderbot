@@ -206,6 +206,7 @@ void uart_transmit (unsigned char data)
 
 ISR(USART1_RX_vect)
 {
+    PORTE |= _BV(PE6);
     // Code to be executed when the USART receives a byte here
     usart_rx_char = UDR1;
 
@@ -327,6 +328,7 @@ ISR(USART1_RX_vect)
         pos = 0;
     }
 
+    PORTE &= ~(_BV(PE6));
 }
 
 int main(void)
@@ -339,19 +341,19 @@ int main(void)
 
     // sei();
     //SREG |= (1<<7);
-
+    DDRE |= _BV(PE6);
 
     cli(); //disable interrupts while initializing usart
     USART_Init();
     sei();
 
-    while(1) {
-        uart_transmit('t');
-        delay(1000);
-    }
+    // while(1) {
+    //     uart_transmit('t');
+    //     delay(1000);
+    // }
     
-    volatile int i = 0;
-    volatile int j = 0;
+    // volatile int i = 0;
+    // volatile int j = 0;
 
 //     DDRE |= _BV(PE6); //debugging
 //     DDRD |= _BV(PD3); //debugging
@@ -383,10 +385,10 @@ int main(void)
 
 // } //while 1
 
-    while(1) {
-        i++;
-        j = i;
-    }
+    // while(1) {
+    //     i++;
+    //     j = i;
+    // }
 
     // xTaskCreate(
     // TaskTestTimers
@@ -412,13 +414,13 @@ int main(void)
     // ,  3  // Priority (low num = low priority)
     // ,  NULL );
 
-    // xTaskCreate(
-    // TaskIMURead
-    // ,  (const portCHAR *)"IMURead"  // A name just for humans
-    // ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  2  // Priority (low num = low priority)
-    // ,  NULL );
+    xTaskCreate(
+    TaskIMURead
+    ,  (const portCHAR *)"IMURead"  // A name just for humans
+    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  2  // Priority (low num = low priority)
+    ,  NULL );
 
     // xTaskCreate(
     // TaskPIDController
@@ -957,29 +959,32 @@ void TaskIRSensorRead(void *pvParameters) {
 void updateAngle(void) {
     //PORTD |= _BV(PD2); //debugging
     sixDOF.getYawPitchRoll(angles);
-    prevAngles[prevAngleI] = angles[1];
-    prevAngleI = (prevAngleI + 1) % AvgAngles;
-    float sum = 0;
-    for (int i = 0; i < AvgAngles; i++)
-        sum += prevAngles[i];
-    currAngle = sum / AvgAngles;
-    prevAngle = currAngle;
+    // prevAngles[prevAngleI] = angles[1];
+    // prevAngleI = (prevAngleI + 1) % AvgAngles;
+    // float sum = 0;
+    // for (int i = 0; i < AvgAngles; i++)
+    //     sum += prevAngles[i];
+    // currAngle = sum / AvgAngles;
+    // prevAngle = currAngle;
     //PORTD &= ~(_BV(PD2)); //debugging
 }
 
 void TaskIMURead(void *pvParameters) {
-    Wire.begin();
+    // Wire.begin();
 
-    vTaskDelay(1); //1 tick
-    sixDOF.init(); //Begin the IMU
-    vTaskDelay(1); //1 tick
+    // vTaskDelay(1); //1 tick
+    // sixDOF.init(); //Begin the IMU
+    // vTaskDelay(1); //1 tick 
 
-    DDRD |= _BV(PD2) | _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
- 
+    DDRB |= _BV(PB0);
 
     for(;;) {
-        updateAngle();
-        vTaskDelay(pdMS_TO_TICKS(500));
+        PORTB |= _BV(PB0);
+        //updateAngle();
+
+        uart_transmit('t');
+        PORTB &= ~(_BV(PB0));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
