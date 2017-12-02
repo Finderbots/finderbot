@@ -72,7 +72,7 @@ void growFrontier(const size_t cell,
     }
 }
 
-std::vector<size_t>* pathToFrontier(const frontier_t& frontier,
+std::vector<size_t>* pathToFrontier(frontier_t& frontier,
                                    Planner& planner
                                    )
 {
@@ -98,7 +98,7 @@ std::vector<size_t>* pathToFrontier(const frontier_t& frontier,
         size_t goal_x = map_utils::rowFromOffset(frontier.idxs[i], global_width);
         size_t goal_y = map_utils::colFromOffset(frontier.idxs[i], global_width);
         
-        std::vector<int>* path = planner.aStar(goal_x, goal_y);
+        std::vector<size_t>* path = planner.aStar(goal_x, goal_y);
 
         if (path != nullptr)
         {
@@ -115,6 +115,8 @@ void findMapFrontiers(const Planner& planner,
                  double map_resolution,
                  double min_dist_to_frontier)
 {
+    std::cout << "ENTER findMapFrontiers" << std::endl;
+
     const std::vector<double>* map = planner.getMapPtr();
     const size_t robot_pose_idx = planner.getPoseIdx();
 
@@ -123,6 +125,7 @@ void findMapFrontiers(const Planner& planner,
 
     cellQueue.push(robot_pose_idx);
     visited_idxs.insert(robot_pose_idx);
+
 
     const int num_neighbors = 4;
     const int x_deltas[] = {-1, 1, 0, 0};
@@ -137,16 +140,18 @@ void findMapFrontiers(const Planner& planner,
         size_t x = map_utils::rowFromOffset(next_idx, global_width);
         size_t y = map_utils::colFromOffset(next_idx, global_width);
 
-        for (int i = 0; n < num_neighbors; ++i)
+        std::cout << "next cell (" << x << ", " << y << ")" << std::endl;
+
+        for (int i = 0; i < num_neighbors; ++i)
         {
             size_t neighbor_x = x + x_deltas[i];
             size_t neighbor_y = y + y_deltas[i];
 
-            neighbor_idx = map_utils::getOffsetRowCol(neighbor_x, neighbor_y, global_width);
+            size_t neighbor_idx = map_utils::getOffsetRowCol(neighbor_x, neighbor_y, global_width);
 
             //continue if neighbor already visited or if not in map
             if (visited_idxs.find(neighbor_idx) != visited_idxs.end() 
-                || !map_utils::pointInMap(neighbor_x, neighbor_y, global_width, map.size()/global_width)
+                || !map_utils::pointInMap(neighbor_x, neighbor_y, global_width, map->size()/global_width))
             {
                 continue;
             }
@@ -154,11 +159,13 @@ void findMapFrontiers(const Planner& planner,
             //if point is a frontier, build frontier vector and add to frontiers
             else if (isFrontier(neighbor_idx, map))
             {
-                std::vector<size_t> f;
+
+                std::cout << "FRONTIER AT (" << neighbor_x << ", " << neighbor_y << ")" << std::endl;
+                frontier_t f;
 
                 growFrontier(neighbor_idx, map, f, visited_idxs);
 
-                if (f->size() * map_resolution >= min_dist_to_frontier)
+                if (f.idxs.size() * map_resolution >= min_dist_to_frontier)
                 {
 
                     frontiers.push_back(f);
@@ -173,7 +180,7 @@ void findMapFrontiers(const Planner& planner,
         }
     }
 
-    return frontiers;
+    // return frontiers;
 }
 
 //returns path to nearest frontier
@@ -181,6 +188,7 @@ void findMapFrontiers(const Planner& planner,
 std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers)
 {
     //TODO actual min_dist_to_frontier
+    std::cout << "exploreFrontiers" << std::endl;
     size_t robot_pose_idx = planner.getPoseIdx();
 
     if (frontiers.empty())
@@ -196,11 +204,22 @@ std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& 
     //calculates a path to point farthest from an obstacle
     //pushes that path to the end of paths
     std::transform(frontiers.begin(), frontiers.end(), std::back_inserter(paths),
-        [&planner](const frontier_t& frontier) {return *pathToFrontier(frontier, planner)};)
+        [&planner](frontier_t& frontier) {return *pathToFrontier(frontier, planner);});
 
-    return *(*std::min_element(paths.begin(), paths.end(), 
-            [](const std::vector<size_t>* lhs, const std::vector<size_t>* rhs)
+    std::cout << "global_width = " << global_width << std::endl;
+    std::cout << "GENERATED " << paths.size() << " PATHS" << std::endl;
+
+    for (size_t i = 0; i < paths[0].size(); i++)
+    {
+        size_t x = map_utils::rowFromOffset(paths[0][i], global_width);
+        size_t y = map_utils::colFromOffset(paths[0][i], global_width);
+
+        std::cout << "(" << x << ", " << y << ")" << std::endl;
+
+    }
+    return *std::min_element(paths.begin(), paths.end(), 
+            [](const std::vector<size_t>& lhs, const std::vector<size_t>& rhs)
             {
-                return lhs->size() < rhs->size();
-            }));
+                return lhs.size() < rhs.size();
+            });
 }
