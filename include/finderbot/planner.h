@@ -1,3 +1,6 @@
+#ifndef PLANNER_H_
+#define PLANNER_H_
+
 /* Finderbots: Implementation of A-star algorithm */
 #include <limits.h>
 #include <ros/ros.h>
@@ -56,7 +59,7 @@ class Planner {
 
     void setPose(size_t row, size_t col);
 
-    const size_t getPoseIdx()
+    const size_t getPoseIdx() const
     {
         return map_utils::getOffsetRowCol(source_row, source_col, global_width);
     }
@@ -66,12 +69,12 @@ class Planner {
     // bool pathCb(finderbot::getPath::Request  &req,
     //             finderbot::getPath::Response &res);
 
-    double distAt(size_t idx)
+    double distAt(size_t idx) const
     {
         return obstacle_distance_map_[idx];
     }
 
-    const std::vector<double>* getMapPtr()
+    const std::vector<double>* getMapPtr() const
     {
         return &global_map_;
     }
@@ -84,4 +87,4 @@ class Compare {
     }
 };
 
-
+#endif
