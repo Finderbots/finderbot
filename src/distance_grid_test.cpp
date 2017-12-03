@@ -13,21 +13,21 @@ int main(int argc, char** argv)
 
     size_t global_height = 6;
     size_t global_width = 6;
-
-    distance_grid::DistanceGrid grid(global_width, global_height);
-
     nav_msgs::OccupancyGrid map;
     map.data.resize(9);
     map.data.assign(global_height* global_width,0);
-
     map.data[map_utils::getOffsetRowCol(2,2,global_width)] = 100;
 
-    std::vector<double> vec;
-    for (size_t i = 0; i < map.data.size(); i++)
-    {
-        vec.push_back(map.data[i]);
-    }
-    grid.setDistances(vec);
+    distance_grid::DistanceGrid grid(map);
+
+    
+
+    // std::vector<double> vec;
+    // for (size_t i = 0; i < map.data.size(); i++)
+    // {
+    //     vec.push_back(map.data[i]);
+    // }
+    // grid.setDistances(vec);
 
 
     for (int i = global_height-1 ; i >= 0; i--)

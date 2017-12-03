@@ -58,9 +58,9 @@ class Planner {
     //      geometry_msgs/Twist.h
     //      at any given time you can only rotate or go forward or backward
   public:
-    Planner(std::vector<double> global_map);
+    Planner(const nav_msgs::OccupancyGrid& global_map);
 
-    void updateMap(std::vector<double> global_map);
+    void updateMap(const nav_msgs::OccupancyGrid& global_map);
 
     std::vector<size_t> * aStar(size_t goal_row, size_t goal_col);
 
@@ -88,9 +88,9 @@ class Planner {
         return obstacle_distance_map_[idx];
     }
 
-    const std::vector<size_t>* getMapPtr() const
+    const nav_msgs::OccupancyGrid* getMapPtr() const
     {
-        return &global_map_.data;
+        return &global_map_;
     }
 };
 

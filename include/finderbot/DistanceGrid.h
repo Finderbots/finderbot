@@ -5,6 +5,7 @@
 #include <queue>
 #include <finderbot/map_utils.h>
 #include <iostream>
+#include <nav_msgs/OccupancyGrid.h>
 
 namespace distance_grid{
 
@@ -41,7 +42,6 @@ class DistanceGrid
 
                 // int delta_x = (x_cell == x_obs) ? 0 : std::max(std::abs(x_cell - x_obs) - 1, 0);
                 // int delta_y = (y_cell == y_obs) ? 0 : std::max(std::abs(y_cell - y_obs) - 1, 0);
-
                 distance = map_utils::distance(x_cell, y_cell, x_obs, y_obs);
             }
         }
@@ -49,19 +49,19 @@ class DistanceGrid
 
     std::vector<double> distances;
 
-    void enqueueObstacleCells(const std::vector<double>& map, std::priority_queue<DistNode>& search_queue);
+    void enqueueObstacleCells(const nav_msgs::OccupancyGrid& map, std::priority_queue<DistNode>& search_queue);
 
     void expandNode(const DistNode& node, std::priority_queue<DistNode>& search_queue);
     
 
   public:
 
-    DistanceGrid(size_t global_width, size_t global_height);
+    DistanceGrid(const nav_msgs::OccupancyGrid&);
    
 
     float operator[](size_t idx) const {return distances[idx];}
 
-    void setDistances(const std::vector<double>& map);
+    void setDistances(const nav_msgs::OccupancyGrid& map);
 
 };
 

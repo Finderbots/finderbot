@@ -5,25 +5,27 @@ namespace distance_grid{
 size_t DistanceGrid::global_width = 0;
 size_t DistanceGrid::global_height = 0;
 
-DistanceGrid::DistanceGrid(size_t global_width_, size_t global_height_)
+DistanceGrid::DistanceGrid(const nav_msgs::OccupancyGrid& map)
 {
-    global_width = global_width_;
-    global_height = global_height_;
+    global_width = map.info.width;
+    global_height = map.info.height;
 
     distances.resize(global_width * global_height);
+
+    setDistances(map);
 }
 
 
-void DistanceGrid::setDistances(const std::vector<double>& map)
+void DistanceGrid::setDistances(const nav_msgs::OccupancyGrid& map)
 {
-    assert(map.size() == distances.size());
+    assert(map.data.size() == distances.size());
 
 
-    for (size_t i = 0; i < map.size(); i++)
-    {
-        distances[i] = std::numeric_limits<double>::max();
-    }
-
+    // for (size_t i = 0; i < map.data.size(); i++)
+    // {
+    //     distances[i] = std::numeric_limits<double>::max();
+    // }
+    distances.assign(map.info.width* map.info.height, std::numeric_limits<double>::max());
     std::priority_queue<DistNode> search_queue;
 
     enqueueObstacleCells(map, search_queue);
@@ -42,12 +44,12 @@ void DistanceGrid::setDistances(const std::vector<double>& map)
 
 }
 
-void DistanceGrid::enqueueObstacleCells(const std::vector<double>& map, std::priority_queue<DistNode>& search_queue)
+void DistanceGrid::enqueueObstacleCells(const nav_msgs::OccupancyGrid& map, std::priority_queue<DistNode>& search_queue)
 {
-    for (size_t i = 0; i < map.size(); i++)
+    for (size_t i = 0; i < map.data.size(); i++)
     {
         //if most likely an obstacle, treat it like an obstacle
-        if (map[i] >= 50)
+        if (map.data[i] >= 50)
         {
 
             //if obstacle found then create distnode 

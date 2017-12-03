@@ -42,22 +42,6 @@ class SLAM
 
     tf::TransformBroadcaster br_;
 
-    // inline double convertQuatToAngle(const tf::Quaternion& q)
-    // {
-    //     if(std::fabs(q.x()) > 1e-5 || std::fabs(q.y()) > 1e-5){
-    //         tf::Vector3 axis = q.getAxis();
-    //         // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
-    //             // axis.x(), axis.y(), axis.z());
-    //     }
-
-    //     return 2*std::atan2(q.z(), q.w());
-    // }
-
-    // inline size_t getOffsetRowCol(size_t row, size_t col, size_t ncol)
-    // {
-    //     return (row * ncol) + col;
-    // }
-
 public:
     //(num_particles, std_dev, world_frame_id, laser_frame_id, model_name
     SLAM(int num_particles, double std_dev, std::string world_frame_id, std::string laser_frame_id, std::string model_name)

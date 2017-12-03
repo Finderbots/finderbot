@@ -29,7 +29,12 @@ void printPath(std::vector<size_t> * path) {
 //   [ 0 , 0 ]
 void testSanity() {
 	std::cout << "STARTING SANITY TEST\n";
-	std::vector<double> occupancy_grid(global_width * global_width, 0);
+	// std::vector<double> occupancy_grid(global_width * global_width, 0);
+	nav_msgs::OccupancyGrid occupancy_grid;
+	occupancy_grid.info.width = 1000;
+	occupancy_grid.info.height = 1000;
+	occupancy_grid.data.assign(occupancy_grid.info.width*occupancy_grid.info.height, 0);
+
 	size_t source_x = 0;
 	size_t source_y = 0;
 	size_t goal_x = 0;
@@ -49,7 +54,11 @@ void testSanity() {
 //   [ 10 , 10 , 9 , 9 , ... , 0 , 0 ]
 void testDiagonal() {
 	std::cout << "STARTING DIAGONAL PATH TEST\n";
-	std::vector<double> occupancy_grid(global_width * global_width, 0);
+	nav_msgs::OccupancyGrid occupancy_grid;
+	occupancy_grid.info.width = 1000;
+	occupancy_grid.info.height = 1000;
+	occupancy_grid.data.assign(occupancy_grid.info.width*occupancy_grid.info.height, 0);
+
 	size_t source_x = 0;
 	size_t source_y = 0;
 	size_t goal_x = 10;
@@ -69,13 +78,17 @@ void testDiagonal() {
 //   [ 10 , 3 , ... , 0 , 3 ]
 void testVerticalWall() {
 	std::cout << "STARTING VERTICAL WALL TEST\n";
-	std::vector<double> occupancy_grid(global_width * global_width, 0);
-	occupancy_grid[map_utils::getOffsetRowCol(3, 0, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 1, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 2, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 3, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 4, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 5, global_width)] = 90;
+	nav_msgs::OccupancyGrid occupancy_grid;
+	occupancy_grid.info.width = 1000;
+	occupancy_grid.info.height = 1000;
+	occupancy_grid.data.assign(occupancy_grid.info.width*occupancy_grid.info.height, 0);
+	
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 0, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 1, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 2, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 3, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 4, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 5, global_width)] = 90;
 	size_t source_x = 0;
 	size_t source_y = 3;
 	size_t goal_x = 10;
@@ -95,14 +108,19 @@ void testVerticalWall() {
 //   prints "ERROR: failed pathfinding attempt"
 void testInvalidPath() {
 	std::cout << "STARTING INVALID PATH TEST\n";
-	std::vector<double> occupancy_grid(global_width * global_width, 0);
-	occupancy_grid[map_utils::getOffsetRowCol(3, 0, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 1, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 2, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(3, 3, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(2, 3, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(1, 3, global_width)] = 90;
-	occupancy_grid[map_utils::getOffsetRowCol(0, 3, global_width)] = 90;
+	nav_msgs::OccupancyGrid occupancy_grid;
+	occupancy_grid.info.width = 1000;
+	occupancy_grid.info.height = 1000;
+	occupancy_grid.data.assign(occupancy_grid.info.width*occupancy_grid.info.height, 0);
+	
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 0, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 1, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 2, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 3, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(2, 3, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(1, 3, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(0, 3, global_width)] = 90;
+	
 	size_t source_x = 0;
 	size_t source_y = 0;
 	size_t goal_x = 5;

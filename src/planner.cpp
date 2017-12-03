@@ -18,16 +18,14 @@ void printNode(Node * node) {
     return;
 }
 
-Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obstacle_distance_map_((size_t)global_map_.info.width, (size_t)global_map_.info.width)
+Planner::Planner(const nav_msgs::OccupancyGrid& global_map) : global_map_(global_map) , obstacle_distance_map_(global_map)
 {
 	nodes_.resize(global_map_.data.size());
-
-    obstacle_distance_map_.setDistances(global_map_.data);
 }
 
-void Planner::updateMap(std::vector<double> global_map) {
+void Planner::updateMap(const nav_msgs::OccupancyGrid& global_map) {
     global_map_ = global_map;
-    obstacle_distance_map_.setDistances(global_map_.data);
+    obstacle_distance_map_.setDistances(global_map_);
     return;
 }
 // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
