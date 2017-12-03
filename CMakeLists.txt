@@ -30,6 +30,7 @@ find_package(gazebo REQUIRED)
 add_message_files(
    FILES
    PF_Input.msg
+   Pose.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -94,6 +95,8 @@ include_directories(
   ${SDFormat_INCLUDE_DIRS}
 )
 
+add_executable(mini_mapping_node src/mapping_node.cpp src/mapping.cpp src/ray_caster.cpp)
+
 
 add_executable(SLAM_node src/SLAM_node.cpp)
 add_executable(simple_motion_node src/simple_motion_node.cpp)
@@ -113,7 +116,7 @@ add_executable(exploration_test src/exploration_test.cpp src/exploration.cpp src
 add_executable(path_execution_node src/path_execution_node.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
-add_dependencies(SLAM_node finderbot_generate_messages_cpp )
+add_dependencies(SLAM_node finderbot_generate_messages_cpp)
 
 
 ## Rename C++ executable without prefix
@@ -151,6 +154,10 @@ target_link_libraries(
    ${catkin_LIBRARIES}
 )
 
+target_link_libraries(
+   mini_mapping_node
+   ${catkin_LIBRARIES}
+)
 target_link_libraries(
   simple_motion_node
   ${catkin_LIBRARIES}

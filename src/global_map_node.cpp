@@ -5,7 +5,9 @@
 
 #include <finderbot/global_map_builder.h>
 #include <finderbot/PF_Input.h>
+#include <finderbot/Pose.h>
 #include <finderbot/GetMap.h>
+
 
 #include <string>
 #include <cassert>
@@ -19,10 +21,22 @@ global_mapping::GlobalMapBuilder* global_map_builder;
 
 void handleLaserScan(const sensor_msgs::LaserScan scan)
 {
+    if (!global_map_builder->initialized()) return;
+
+    // std::cout << "GLOBAL MAP: pose inititalized, building map" << std::endl;
     global_map_builder->buildMapFromScan(scan);
     pf_publisher.publish(global_map_builder->getPFData());
     global_map_publisher.publish(global_map_builder->getGlobalMap());
     local_map_publisher.publish(global_map_builder->getLocalMap());
+
+    // std::cout << "published map" << std::endl;
+}
+
+void handlePose(const finderbot::Pose new_pose)
+{
+    // std::cout << "GLOBAL MAP: Got new pose" << std::endl;
+
+    global_map_builder->updatePose(new_pose);
 }
 
 bool sendMap(finderbot::GetMap::Request& req, finderbot::GetMap::Response& res)
@@ -67,6 +81,7 @@ int main(int argc, char** argv)
 
     ros::Subscriber local_map_handler = nh.subscribe<sensor_msgs::LaserScan>("hokuyo_data", 1, handleLaserScan);
 
+    ros::Subscriber pose_handler = nh.subscribe<finderbot::Pose>("finderbot_pose", 1, handlePose);
     global_map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("global_map", 1, true);
 
     local_map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("local_map", 1, true);
@@ -75,5 +90,6 @@ int main(int argc, char** argv)
 
     ros::ServiceServer service = nh.advertiseService("get_finderbot_global_map", sendMap);
 
+    std::cout << "GLOBAL MAP: spinning" << std::endl;
     ros::spin();
 }
