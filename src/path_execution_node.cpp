@@ -92,8 +92,11 @@ void Executor::pathExecution(std::vector<size_t>& path) {
 
 void Executor::handleGlobalMap(const nav_msgs::OccupancyGrid map)
 {
+    ROS_INFO("HANDLING MAP");
+
     if (!map_initialized_)
     {
+        ROS_INFO("INITIALIZING MAP");
         map_initialized_ = true;
         planner_ = new Planner(map);
         
@@ -102,9 +105,11 @@ void Executor::handleGlobalMap(const nav_msgs::OccupancyGrid map)
         tf_listener_.lookupTransform(world_frame_id_, local_frame_id_, 
                                         ros::Time(0), transform);
 
+
         x_init_ = transform.getOrigin().x();
-        y_init_ = transform.getOrigin().y();  
-              
+        y_init_ = transform.getOrigin().y(); 
+
+        ROS_INFO("init = (%f, %f)", x_init_, y_init_);      
         init_map_x_ = map.info.height/2;
         init_map_y_ = map.info.width/2;
               
@@ -140,23 +145,27 @@ int main(int argc, char** argv) {
     ros::Subscriber global_map_handler = nh.subscribe<nav_msgs::OccupancyGrid>("global_map", 1, &Executor::handleGlobalMap, &path_executor);
     
     std::vector<frontier_t> frontiers;
+    ROS_INFO("Execution Node Starting");
 
     while (ros::ok())
     {
         if (!path_executor.initialized()) {
+            ROS_INFO("Map Uninitialized: Continue");
             ros::spinOnce();
             continue;
         }
-
-        findMapFrontiers(path_executor.getPlanner(), frontiers, 2);
+        frontiers.clear();
+        findMapFrontiers(path_executor.getPlanner(), frontiers, 0);
 
         if (frontiers.empty())
         {
-            ROS_INFO("DONE EXPLORING");
-            return 0;
+            continue;
         }
+
+        ROS_INFO("FOUND %zd FRONTIERS", frontiers.size());
         std::vector<size_t> path = exploreFrontiers(path_executor.getPlanner(), frontiers);
 
+        ROS_INFO("EXECUTE PATH OF LENGTH %zd", path.size());
         path_executor.pathExecution(path);
     }
 

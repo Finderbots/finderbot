@@ -1,3 +1,5 @@
+#include <ros/ros.h>
+#include <ros/console.h>
 #include <finderbot/planner.h>
 #include <finderbot/map_utils.h>
 #include <finderbot/exploration.h>
@@ -43,8 +45,7 @@ class Executor
 
 
   public:
-	Executor(std::string world_frame, std::string local_frame) 
-        ;
+	Executor(std::string world_frame, std::string local_frame);
 
     void pathExecution(std::vector<size_t>& path);
     void handleGlobalMap(const nav_msgs::OccupancyGrid);

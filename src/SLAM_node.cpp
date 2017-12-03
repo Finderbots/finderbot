@@ -185,6 +185,7 @@ int main(int argc, char** argv)
     nh.param<int>("pf_num_particles", num_particles, 1000);
     nh.param<double>("pf_std_dev", std_dev, 0.1);
     
+    while ()
     SLAM slamma_jamma(num_particles, std_dev, world_frame_id, laser_frame_id, model_name);
 
     ros::Subscriber pf_handler = nh.subscribe<finderbot::PF_Input>("SLAM_pf", 1, &SLAM::handlePFData, &slamma_jamma);

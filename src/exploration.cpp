@@ -114,7 +114,7 @@ void findMapFrontiers(const Planner& planner,
                  std::vector<frontier_t>& frontiers,
                  double min_dist_to_frontier)
 {
-    std::cout << "ENTER findMapFrontiers" << std::endl;
+    // std::cout << "ENTER findMapFrontiers" << std::endl;
 
     const nav_msgs::OccupancyGrid* map = planner.getMapPtr();
     const size_t robot_pose_idx = planner.getPoseIdx();
@@ -139,7 +139,7 @@ void findMapFrontiers(const Planner& planner,
         size_t x = map_utils::rowFromOffset(next_idx, global_width);
         size_t y = map_utils::colFromOffset(next_idx, global_width);
 
-        std::cout << "next cell (" << x << ", " << y << ")" << std::endl;
+        // std::cout << "next cell (" << x << ", " << y << ")" << std::endl;
 
         for (int i = 0; i < num_neighbors; ++i)
         {
@@ -187,7 +187,7 @@ void findMapFrontiers(const Planner& planner,
 std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers)
 {
     //TODO actual min_dist_to_frontier
-    std::cout << "exploreFrontiers" << std::endl;
+    // std::cout << "exploreFrontiers" << std::endl;
     size_t robot_pose_idx = planner.getPoseIdx();
 
     if (frontiers.empty())
@@ -205,8 +205,8 @@ std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& 
     std::transform(frontiers.begin(), frontiers.end(), std::back_inserter(paths),
         [&planner](frontier_t& frontier) {return *pathToFrontier(frontier, planner);});
 
-    std::cout << "global_width = " << global_width << std::endl;
-    std::cout << "GENERATED " << paths.size() << " PATHS" << std::endl;
+    // std::cout << "global_width = " << global_width << std::endl;
+    // std::cout << "GENERATED " << paths.size() << " PATHS" << std::endl;
 
     for (size_t i = 0; i < paths[0].size(); i++)
     {
