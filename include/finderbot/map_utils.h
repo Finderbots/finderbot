@@ -19,7 +19,7 @@ struct Node
 namespace map_utils{
 
 // Pass 2 sets of row and column
-inline double distance(int row1, int col1, int row2, int col2) {
+inline double distance(size_t row1, size_t col1, size_t row2, size_t col2) {
     // Euclidean distance
     return sqrt(pow(row1-row2,2) + pow(col1-col2,2));
 }

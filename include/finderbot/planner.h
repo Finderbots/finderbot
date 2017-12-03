@@ -23,6 +23,14 @@
 #define global_width 1000
 #define global_height 1000
 
+
+class Compare {
+  public:
+    bool operator() (const Node * node1, const Node * node2) {
+        return node1->f_score > node2->f_score;
+    }
+};
+
 class Planner {
     // probabilities of obstacles in map
     std::vector<double> global_map_;
@@ -31,7 +39,7 @@ class Planner {
     std::vector<Node> nodes_;
     
     // set of pointers to nodes. Needs to be sorted by f_scores
-    std::vector<Node*> visit_queue_;
+    std::priority_queue<Node*, std::vector<Node*>, Compare> visit_queue_;
 
     // A 2-D vector with the coordinates of each point in the map to visit
     std::vector<size_t> path_coordinates_;
@@ -50,6 +58,8 @@ class Planner {
     //      at any given time you can only rotate or go forward or backward
   public:
     Planner(std::vector<double> global_map);
+
+    void updateMap(std::vector<double> global_map);
 
     std::vector<size_t> * aStar(size_t goal_row, size_t goal_col);
 
@@ -83,11 +93,5 @@ class Planner {
     }
 };
 
-class Compare {
-  public:
-    bool operator() (const Node * node1, const Node * node2) {
-        return node1->f_score > node2->f_score;
-    }
-};
 
 #endif

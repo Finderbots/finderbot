@@ -7,11 +7,28 @@ using namespace map_utils;
 
 Planner* path_finding_planner;
 
+
+// DEBUGGING
+void printNode(const Node & node) {
+    std::cerr << "(" << node.row << "," << node.col << ")\n";
+    return;
+}
+void printNode(Node * node) {
+    std::cerr << "(" << node->row << "," << node->col << ")\n";
+    return;
+}
+
 Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obstacle_distance_map_((size_t)global_width, (size_t)global_width)
 {
 	nodes_.resize(global_map_.size());
 
     obstacle_distance_map_.setDistances(global_map_);
+}
+
+void Planner::updateMap(std::vector<double> global_map) {
+    global_map_ = global_map;
+    obstacle_distance_map_.setDistances(global_map_);
+    return;
 }
 // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
 //          an x,y destination
@@ -46,37 +63,35 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
     nodes_[source_idx].h_score = distance(source_row, source_col, goal_row, goal_col);
     nodes_[source_idx].f_score = nodes_[source_idx].g_score + nodes_[source_idx].h_score;
 
-    visit_queue_.push_back(&nodes_[source_idx]);
-    std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
+    visit_queue_.push(&nodes_[source_idx]);
 
     std::vector<Node*> neighbors;
     Node * current_node = &nodes_[source_idx];
     while (!visit_queue_.empty() && !isGoal(current_node, goal_row, goal_col)) {
-        std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
-        current_node = visit_queue_.back();
+        current_node = visit_queue_.top();
         current_node->visited = true;
-        visit_queue_.pop_back();
-        std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
+        visit_queue_.pop();
 
         getNeighbors(*current_node, neighbors);
         for (size_t i = 0; i < neighbors.size(); ++i) {
         	// If this is a neighbor that has not already in the visit_queue_, add it to the visit_queue_
-            if (!std::binary_search(visit_queue_.begin(), visit_queue_.end(), neighbors[i])) {
-                visit_queue_.push_back(neighbors[i]);
-                std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
-            }
             // std::cerr << "EVALUATING (" << neighbors[i]->row << "," << neighbors[i]->col << ")\n";
             // if there exists a neighbor to the n, e, s, w, and ne, se, sw, nw.
-            size_t tentative_g_score = current_node->g_score + distance(*current_node, *neighbors[i]);
-            if (neighbors[i]->g_score > tentative_g_score) {
-				neighbors[i]->g_score = tentative_g_score;
-				neighbors[i]->parent = current_node;
-				if (DBL_MAX == neighbors[i]->h_score) {
-					neighbors[i]->f_score = DBL_MAX;
-				}
-				else {
-					neighbors[i]->f_score = neighbors[i]->g_score + neighbors[i]->h_score;
-				}
+            double tentative_g_score = current_node->g_score + distance(*current_node, *neighbors[i]);
+            // std::cerr << "TENT G SCORE: " << tentative_g_score << "\n";
+            if ((neighbors[i]->g_score > tentative_g_score)/* || !neighbors[i]->visited*/) {
+                neighbors[i]->g_score = tentative_g_score;
+                neighbors[i]->parent = current_node;
+                if (DBL_MAX == neighbors[i]->h_score) {
+                    neighbors[i]->f_score = DBL_MAX;
+                }
+                else {
+                    neighbors[i]->f_score = neighbors[i]->g_score + neighbors[i]->h_score;
+                }
+                visit_queue_.push(neighbors[i]);
+                // std::cerr << "ENQUEUED ";
+                // printNode(neighbors[i]);
+                // std::cerr << "UPDATED G SCORE: " << neighbors[i]->g_score << "\n";
             }
         }
     }
@@ -93,16 +108,9 @@ bool Planner::isValidNeighbor(size_t row, size_t col) {
     size_t idx = getOffsetRowCol(row, col, global_width);
     // if (row > 11 || col > 11) return false;
     // std::cerr << "VISITED? " << nodes_[idx].visited << "\n";
-    std::sort(visit_queue_.begin(), visit_queue_.end(), Compare());
     return pointInMap(row, col, global_width, global_width)
            && (nodes_[idx].visited == false)
-           && (!std::binary_search(visit_queue_.begin(), visit_queue_.end(), &nodes_[idx]))
            && (global_map_[idx] <= 50.0);
-}
-
-void printNode(const Node & node) {
-    std::cerr << "(" << node.row << "," << node.col << ")\n";
-    return;
 }
 
 void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
@@ -121,49 +129,49 @@ void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
 
     
 
-    std::cerr << "ADDING NEIGHBORS OF:";
-    printNode(node);
-    std::cerr << "\n";
+    // std::cerr << "ADDING NEIGHBORS OF:";
+    // printNode(node);
+    // std::cerr << "\n";
 
     // check north neighbor
     if (isValidNeighbor(node.row + 1, node.col)) {
         neighbors.push_back(&nodes_[n_idx]);
-        printNode(nodes_[n_idx]);
+        // printNode(nodes_[n_idx]);
     }
     // check east neighbor
     if (isValidNeighbor(node.row, node.col + 1)) {
         neighbors.push_back(&nodes_[e_idx]);
-        printNode(nodes_[e_idx]);
+        // printNode(nodes_[e_idx]);
     }
     // check south neighbor
     if (isValidNeighbor(node.row - 1, node.col)) {
         neighbors.push_back(&nodes_[s_idx]);
-        printNode(nodes_[s_idx]);
+        // printNode(nodes_[s_idx]);
     }
     // check west neighbor
     if (isValidNeighbor(node.row, node.col - 1)) {
         neighbors.push_back(&nodes_[w_idx]);
-        printNode(nodes_[w_idx]);
+        // printNode(nodes_[w_idx]);
     }
     // check northeast neighbor
     if (isValidNeighbor(node.row + 1, node.col + 1)) {
         neighbors.push_back(&nodes_[ne_idx]);
-        printNode(nodes_[ne_idx]);
+        // printNode(nodes_[ne_idx]);
     }
     // check southeast neighbor
     if (isValidNeighbor(node.row - 1, node.col + 1)) {
         neighbors.push_back(&nodes_[se_idx]);
-        printNode(nodes_[se_idx]);
+        // printNode(nodes_[se_idx]);
     }
     // check southwest neighbor
     if (isValidNeighbor(node.row - 1, node.col - 1)) {
         neighbors.push_back(&nodes_[sw_idx]);
-        printNode(nodes_[sw_idx]);
+        // printNode(nodes_[sw_idx]);
     }
     // check northwest neighbor
     if (isValidNeighbor(node.row + 1, node.col - 1)) {
         neighbors.push_back(&nodes_[nw_idx]);
-        printNode(nodes_[nw_idx]);
+        // printNode(nodes_[nw_idx]);
     }
     return;
 }

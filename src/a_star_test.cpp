@@ -113,7 +113,7 @@ void testInvalidPath() {
 	return;	
 }
 
-int main(size_t argc, char** argv) {
+int main(int argc, char** argv) {
 	testSanity();
 	testDiagonal();
 	testVerticalWall();
