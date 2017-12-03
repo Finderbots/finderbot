@@ -18,16 +18,16 @@ void printNode(Node * node) {
     return;
 }
 
-Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obstacle_distance_map_((size_t)global_width, (size_t)global_width)
+Planner::Planner(std::vector<double> global_map) : global_map_(global_map) , obstacle_distance_map_((size_t)global_map_.info.width, (size_t)global_map_.info.width)
 {
-	nodes_.resize(global_map_.size());
+	nodes_.resize(global_map_.data.size());
 
-    obstacle_distance_map_.setDistances(global_map_);
+    obstacle_distance_map_.setDistances(global_map_.data);
 }
 
 void Planner::updateMap(std::vector<double> global_map) {
     global_map_ = global_map;
-    obstacle_distance_map_.setDistances(global_map_);
+    obstacle_distance_map_.setDistances(global_map_.data);
     return;
 }
 // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
@@ -37,16 +37,16 @@ void Planner::updateMap(std::vector<double> global_map) {
 //      at any given time you can only rotate or go forward or backward
 std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
 	
-    for (size_t i = 0; i < global_map_.size(); ++i)
+    for (size_t i = 0; i < global_map_.data.size(); ++i)
     {
-        nodes_[i].row = i / global_width;
-        nodes_[i].col = i % global_width;
+        nodes_[i].row = i / global_map_.info.width;
+        nodes_[i].col = i % global_map_.info.width;
         nodes_[i].parent = NULL;
         nodes_[i].visited = false;
         nodes_[i].g_score = DBL_MAX;
         // h_score should stay the same as long as the goal does not change as we are moving towards goal
     	// 50 is an arbitrary probability of an obstacle
-    	if (global_map_[i] > 50.0) {
+    	if (global_map_.data[i] > 50.0) {
     		nodes_[i].h_score = DBL_MAX;
             // std::cerr << "OBSTACLE AT (" << nodes_[i].row << "," << nodes_[i].col << ")\n";
     	}
@@ -56,7 +56,7 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
         nodes_[i].f_score = DBL_MAX;
     }
 
-    size_t source_idx = getOffsetRowCol(source_row, source_col, global_width);
+    size_t source_idx = getOffsetRowCol(source_row, source_col, global_map_.info.width);
     nodes_[source_idx].parent = NULL;
     nodes_[source_idx].visited = true;
     nodes_[source_idx].g_score = 0;
@@ -105,12 +105,12 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
 }
 
 bool Planner::isValidNeighbor(size_t row, size_t col) {
-    size_t idx = getOffsetRowCol(row, col, global_width);
+    size_t idx = getOffsetRowCol(row, col, global_map_.info.width);
     // if (row > 11 || col > 11) return false;
     // std::cerr << "VISITED? " << nodes_[idx].visited << "\n";
-    return pointInMap(row, col, global_width, global_width)
+    return pointInMap(row, col, global_map_.info.width, global_map_.info.width)
            && (nodes_[idx].visited == false)
-           && (global_map_[idx] <= 50.0);
+           && (global_map_.data[idx] <= 50.0);
 }
 
 void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
@@ -118,14 +118,14 @@ void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
 	neighbors.clear();
 	// Add neighbord to vector for evaluation if they have not been visited
     //   and if the occupancy is less than 50.0
-    size_t n_idx = getOffsetRowCol(node.row + 1, node.col, global_width);
-    size_t e_idx = getOffsetRowCol(node.row, node.col + 1, global_width);
-    size_t s_idx = getOffsetRowCol(node.row - 1, node.col, global_width);
-    size_t w_idx = getOffsetRowCol(node.row, node.col - 1, global_width);
-    size_t ne_idx = getOffsetRowCol(node.row + 1, node.col + 1, global_width);
-    size_t se_idx = getOffsetRowCol(node.row - 1, node.col + 1, global_width);
-    size_t sw_idx = getOffsetRowCol(node.row - 1, node.col - 1, global_width);
-    size_t nw_idx = getOffsetRowCol(node.row + 1, node.col - 1, global_width);
+    size_t n_idx = getOffsetRowCol(node.row + 1, node.col, global_map_.info.width);
+    size_t e_idx = getOffsetRowCol(node.row, node.col + 1, global_map_.info.width);
+    size_t s_idx = getOffsetRowCol(node.row - 1, node.col, global_map_.info.width);
+    size_t w_idx = getOffsetRowCol(node.row, node.col - 1, global_map_.info.width);
+    size_t ne_idx = getOffsetRowCol(node.row + 1, node.col + 1, global_map_.info.width);
+    size_t se_idx = getOffsetRowCol(node.row - 1, node.col + 1, global_map_.info.width);
+    size_t sw_idx = getOffsetRowCol(node.row - 1, node.col - 1, global_map_.info.width);
+    size_t nw_idx = getOffsetRowCol(node.row + 1, node.col - 1, global_map_.info.width);
 
     
 
@@ -183,9 +183,9 @@ std::vector<size_t> * Planner::getPath(Node * goal) {
 	ROS_INFO("Coordinates:");
 	size_t num_points_in_path = 0;
 	while (NULL != current_node) {
-		size_t offset = getOffsetRowCol(current_node->row, current_node->col, global_width);
+		size_t offset = getOffsetRowCol(current_node->row, current_node->col, global_map_.info.width);
 		path_coordinates_.push_back(offset);
-		ROS_INFO("(%zd, %zd)", (size_t)rowFromOffset(offset, global_width), (size_t)colFromOffset(offset, global_width));
+		ROS_INFO("(%zd, %zd)", (size_t)rowFromOffset(offset, global_map_.info.width), (size_t)colFromOffset(offset, global_map_.info.width));
 
 		current_node = current_node->parent;
 		++num_points_in_path;
@@ -204,7 +204,7 @@ bool Planner::isGoal(Node * node, size_t goal_row, size_t goal_col) {
 
 void Planner::setPose(size_t row, size_t col)
 {
-    assert(pointInMap(row, col, global_width, global_width));
+    assert(pointInMap(row, col, global_map_.info.width, global_map_.info.width));
         
 
     source_row = row;
@@ -232,6 +232,6 @@ void Planner::setPose(size_t row, size_t col)
 // 	// path_coordinates_ member is a 1D array with the path coordinates
 // 	res.path = path_coordinates_;
 // 	for (int i = 0; i < path_coordinates_.size(); ++i)
-// 		ROS_INFO("(%d, %d)", (int)rowFromOffset(i, global_width), (int)colFromOffset(i, global_width));
+// 		ROS_INFO("(%d, %d)", (int)rowFromOffset(i, global_map_.info.width), (int)colFromOffset(i, global_map_.info.width));
 // 	return true;
 // }

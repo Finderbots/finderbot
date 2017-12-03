@@ -12,6 +12,7 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 #include <finderbot/map_utils.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 #include <geometry_msgs/Twist.h>
 #include <math.h>
@@ -33,7 +34,7 @@ class Compare {
 
 class Planner {
     // probabilities of obstacles in map
-    std::vector<double> global_map_;
+    nav_msgs::OccupancyGrid global_map_;
 
     // Nodes each representing a coordinate in the map
     std::vector<Node> nodes_;
@@ -87,9 +88,9 @@ class Planner {
         return obstacle_distance_map_[idx];
     }
 
-    const std::vector<double>* getMapPtr() const
+    const std::vector<size_t>* getMapPtr() const
     {
-        return &global_map_;
+        return &global_map_.data;
     }
 };
 
