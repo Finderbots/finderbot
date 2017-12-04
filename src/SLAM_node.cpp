@@ -102,16 +102,16 @@ public:
         // pose_.theta = -1.5707;
         pose_.theta = map_utils::convertQuatToAngle(pose.orientation);
         
-        std::cout << "SLAM_NODE: initial pose = (" << pose_.x << ", "
-                                                   << pose_.y << ", "
-                                                   << pose_.theta << 
-                                                   ")" << std::endl;
+        // std::cout << "SLAM_NODE: initial pose = (" << pose_.x << ", "
+        //                                            << pose_.y << ", "
+        //                                            << pose_.theta << 
+        //                                            ")" << std::endl;
 
 
         pose_publisher_.publish(pose_);
         
 
-        std::cout << "SLAM_NODE: published initial pose" << std::endl;
+        // std::cout << "SLAM_NODE: published initial pose" << std::endl;
 
 
         // ROS_INFO("init transform (%f, %f, %f)",pose_.x, pose_.y, pose_.theta);

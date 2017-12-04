@@ -12,8 +12,8 @@ static double map_resolution = 0.2;
 
 class Executor
 {
-    int current_row_;
-    int current_col_;
+    size_t current_row_;
+    size_t current_col_;
 
     double x_init_;
     double y_init_;
@@ -25,6 +25,7 @@ class Executor
 
     bool map_initialized_ = false;
     bool pose_initialized_ = false;
+    bool moving_to_point_ = false;
 
     Planner* planner_;
 

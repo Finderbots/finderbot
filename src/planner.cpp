@@ -95,7 +95,7 @@ std::vector<size_t> * Planner::aStar(size_t goal_row, size_t goal_col) {
         }
     }
     if (!isGoal(current_node, goal_row, goal_col)) {
-        ROS_INFO("ERROR: failed pathfinding attempt");
+        ROS_ERROR("ERROR: failed pathfinding attempt");
         return NULL;
     }
 
@@ -179,12 +179,12 @@ void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
 std::vector<size_t> * Planner::getPath(Node * goal) {
 	// Start pushing from the goal to the source, so will be reverse path
 	Node * current_node = goal;
-	ROS_INFO("Coordinates:");
+	// ROS_INFO("Coordinates:");
 	size_t num_points_in_path = 0;
 	while (NULL != current_node) {
 		size_t offset = getOffsetRowCol(current_node->row, current_node->col, global_map_.info.width);
 		path_coordinates_.push_back(offset);
-		ROS_INFO("(%zd, %zd)", (size_t)rowFromOffset(offset, global_map_.info.width), (size_t)colFromOffset(offset, global_map_.info.width));
+		// ROS_INFO("(%zd, %zd)", (size_t)rowFromOffset(offset, global_map_.info.width), (size_t)colFromOffset(offset, global_map_.info.width));
 
 		current_node = current_node->parent;
 		++num_points_in_path;
