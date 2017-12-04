@@ -113,7 +113,7 @@ add_executable(a_star_test src/a_star_test.cpp src/planner.cpp src/DistanceGrid.
 
 add_executable(exploration_test src/exploration_test.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
-add_executable(path_execution_node src/path_execution_node.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
+add_executable(path_execution_node src/path_execution_node.cpp src/path_execution.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
 add_executable(test_path_exec_node src/test_path_exec_node.cpp src/path_execution_node.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 

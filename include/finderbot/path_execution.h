@@ -3,9 +3,7 @@
 #include <finderbot/planner.h>
 #include <finderbot/map_utils.h>
 #include <finderbot/exploration.h>
-
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
+#include <finderbot/Pose.h>
 
 #include <math.h>
 #include <string>
@@ -33,7 +31,6 @@ class Executor
     std::string world_frame_id_;
     std::string local_frame_id_;
 
-    tf::TransformListener tf_listener_;
     ros::Publisher command_velocities_pub_; 
 
     void turnTheta(double goal_theta);
@@ -41,7 +38,7 @@ class Executor
 
     bool thetaCloseEnough(double threshold, double goal_theta);
     void goToNextNodeInPath(size_t goal_row, size_t goal_col);
-    void getPose();
+    // void getPose();
 
 
   public:
@@ -49,6 +46,7 @@ class Executor
 
     void pathExecution(std::vector<size_t>& path);
     void handleGlobalMap(const nav_msgs::OccupancyGrid);
+    void handlePose(const finderbot::Pose);
 
     Planner& getPlanner() {return *planner_;}
     bool initialized() {return map_initialized_;}
