@@ -1,14 +1,14 @@
+#ifndef PATH_EXECUTION_H_
+#define PATH_EXECUTION_H_
+
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <finderbot/planner.h>
 #include <finderbot/map_utils.h>
-#include <finderbot/exploration.h>
 #include <finderbot/Pose.h>
 
 #include <math.h>
 #include <string>
-
-static double map_resolution = 0.2;
 
 class Executor
 {
@@ -55,3 +55,4 @@ class Executor
 	// ~Executor();
 	
 };
+#endif

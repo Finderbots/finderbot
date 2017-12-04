@@ -11,6 +11,8 @@ struct frontier_t
     std::vector<size_t> idxs;
 };
 
+// extern nav_msgs::OccupancyGrid G_FRONTIER_MAP;
+
 //planner stores map and initialized obstacle distance grid
 std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers);
 

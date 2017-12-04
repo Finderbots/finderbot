@@ -111,7 +111,7 @@ add_executable(distance_grid_test_node src/distance_grid_test.cpp src/DistanceGr
 
 add_executable(a_star_test src/a_star_test.cpp src/planner.cpp src/DistanceGrid.cpp)
 
-add_executable(exploration_test src/exploration_test.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
+#add_executable(exploration_test src/exploration_test.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
 add_executable(path_execution_node src/path_execution_node.cpp src/path_execution.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
@@ -145,10 +145,10 @@ add_dependencies(path_execution_node finderbot_generate_messages_cpp)
 #)
 
 
-target_link_libraries(
-  exploration_test
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries(
+#  exploration_test
+#  ${catkin_LIBRARIES}
+#)
 
 target_link_libraries(
   path_execution_node
