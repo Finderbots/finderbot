@@ -1,7 +1,10 @@
 #include <finderbot/exploration.h>
+#include <nav_msgs/OccupancyGrid.h>
 
+#define FREE_THRESH 25
 
 //cell is a frontier if it is unexplored (-1) and neighbor is free (0)
+
 bool isFrontier(const size_t idx, const nav_msgs::OccupancyGrid* map)
 {
     //using prob map not log odds
@@ -22,16 +25,20 @@ bool isFrontier(const size_t idx, const nav_msgs::OccupancyGrid* map)
         return false;
     }
 
-    const int num_neighbors = 4;
-    const int x_deltas[] = {-1, 1, 0, 0};
-    const int y_deltas[] = {0, 0, 1, -1};
+    // const int num_neighbors = 4;
+    // const int x_deltas[] = {-1, 1, 0, 0};
+    // const int y_deltas[] = {0, 0, 1, -1};
+    const int num_neighbors = 8;
+    const int x_deltas[] = {-1,-1, -1, 1, 1, 1, 0, 0 };
+    const int y_deltas[] = { 0, 1, -1, 0, 1,-1, 1,-1 };
 
-    //if the point is unexplored and neighbors an explored space, then it is a frontier cell
+    //if the point is unexplored and neighbors a free explored space, then it is a frontier cell
     for (int i = 0; i < num_neighbors; i++)
     {
         size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y+y_deltas[i], map->info.width);
-        if (map->data[neighbor_idx] == 0)
+        if ((map->data[neighbor_idx] < FREE_THRESH) && (map->data[neighbor_idx] != -1))
         {
+            // G_FRONTIER_MAP.data[neighbor_idx] = 0;
             return true;
         }
     }
@@ -49,6 +56,7 @@ void growFrontier(const size_t cell,
         ROS_ERROR("EXPLORE: growFrontier map is null");
         return;
     }
+
     std::queue <size_t> cell_queue;
     cell_queue.push(cell);
     visited_frontiers.insert(cell);
@@ -57,8 +65,8 @@ void growFrontier(const size_t cell,
     const int x_deltas[] = { -1, -1, -1, 1, 1, 1, 0, 0 };
     const int y_deltas[] = { 0, 1, -1, 0, 1, -1, 1, -1 };
 
-    
-
+    //cellQueue consists of cells we want to add to frontier
+    //visited_idxs we have evaluated as either frontiers or not
     while (!cell_queue.empty())
     {
         size_t next_cell = cell_queue.front();
@@ -72,15 +80,17 @@ void growFrontier(const size_t cell,
         for (int i = 0; i < num_neighbors; i++)
         {
             size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y + y_deltas[i],
-                                                    map->info.width);
+                                                        map->info.width);
+
 
             //if not explored already  and is frontier then add to this frontier
             if (visited_frontiers.find(neighbor_idx) == visited_frontiers.end()
                     && isFrontier(neighbor_idx, map))
             {
-                visited_frontiers.insert(neighbor_idx);
                 cell_queue.push(neighbor_idx);
+                visited_frontiers.insert(neighbor_idx);
             }
+
         }
     }
 }
@@ -129,13 +139,18 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
 
 void findMapFrontiers(const Planner& planner,
                  std::vector<frontier_t>& frontiers,
-                 double min_dist_to_frontier)
+                 double min_frontier_len)
 {
     // std::cout << "ENTER findMapFrontiers" << std::endl;
-
     const nav_msgs::OccupancyGrid* map = planner.getMapPtr();
-    if (map == nullptr){
-        ROS_ERROR("EXPLORE: growFrontier map is null";
+    // G_FRONTIER_MAP.info = map->info;
+
+    // assert(G_FRONTIER_MAP.info.width = map->info.width);
+    // G_FRONTIER_MAP.data.assign(G_FRONTIER_MAP.info.width* G_FRONTIER_MAP.info.height, -1);
+    // std::cout << (int)G_FRONTIER_MAP.data[0] << std::endl;
+    if (map == nullptr)
+    {
+        ROS_ERROR("EXPLORE: growFrontier map is null");
         return;
     }
     const size_t robot_pose_idx = planner.getPoseIdx();
@@ -177,7 +192,7 @@ void findMapFrontiers(const Planner& planner,
             
             //continue if neighbor already visited or if not in map
             if (visited_idxs.find(neighbor_idx) != visited_idxs.end() 
-                || !map_utils::pointInMap(neighbor_x, neighbor_y, map->info.width, map->info.height))
+                || !map_utils::pointInMap(neighbor_x, neighbor_y, map->info.height, map->info.width))
             {
                 continue;
             }
@@ -189,16 +204,17 @@ void findMapFrontiers(const Planner& planner,
                 // ROS_INFO("FRONTIER AT (%zd, %zd)", neighbor_x, neighbor_y);
                 frontier_t f;
 
+                // ROS_INFO("FOUND NEW FRONTIER");
                 growFrontier(neighbor_idx, map, f, visited_idxs);
 
-                if (f.idxs.size() * map->info.resolution >= min_dist_to_frontier)
+                if ((double)f.idxs.size() * map->info.resolution >= min_frontier_len)
                 {
-
+                    ROS_INFO("found frontier of %zd cells with len %f", f.idxs.size(), f.idxs.size()*map->info.resolution);
                     frontiers.push_back(f);
                 }
             }
 
-            else if (map->data[neighbor_idx] < 50)
+            else if ((map->data[neighbor_idx] < FREE_THRESH) && (map->data[neighbor_idx] != -1))
             {
                 visited_idxs.insert(neighbor_idx);
                 cellQueue.push(neighbor_idx);

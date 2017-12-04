@@ -6,11 +6,11 @@
 void Executor::turnTheta(double goal_theta) {
     if (goal_theta > current_theta_) {
         // ROS_INFO("TURN LEFT");
-        cmd_.angular.z = -0.03; // LEFT
+        cmd_.angular.z = -0.05; // LEFT
     }
     else if (goal_theta < current_theta_) {
         // ROS_INFO("TURN RIGHT");
-        cmd_.angular.z = 0.03; // RIGHT
+        cmd_.angular.z = 0.05; // RIGHT
     }
     command_velocities_pub_.publish(cmd_);
     
@@ -19,7 +19,7 @@ void Executor::turnTheta(double goal_theta) {
 
 // Returns a command velocity to move forward distance in feet (negative for backwards)
 void Executor::drive(int goal_row, int goal_col) {
-    cmd_.linear.x = -0.03;
+    cmd_.linear.x = -0.05;
     // ROS_INFO("FORWARD");
     command_velocities_pub_.publish(cmd_);
     return;
@@ -36,23 +36,24 @@ bool Executor::thetaCloseEnough(double threshold, double goal_theta) {
 }
 
 void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
-    // getPose();
-    double dx = goal_row - current_row_;
-    double dy = goal_col - current_col_;
-    double goal_theta = atan(dy/dx); // RAD->DEGREE CONVERSION
+    double dx = (int)goal_row - (int)current_row_;
+    double dy = (int)goal_col - (int)current_col_;
+
+    double goal_theta = std::atan2(dx, -1*dy);
 
     // while (!closeEnoughToGoal(0.5, goal_row, goal_col)) {
     moving_to_point_ = true;
     ROS_INFO("Goal pos (%zd, %zd, %f)", goal_row, goal_col, goal_theta);
-    ROS_INFO("Start pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
+    ROS_INFO("Curr pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
 
-    while ((current_row_ != goal_row) && (current_col_ != goal_col))
+    while ((current_row_ != goal_row) || (current_col_ != goal_col))
     {
         // getPose();
 
         cmd_.linear.x = 0;
         cmd_.angular.z = 0;
-
+        // ROS_INFO("Goal pos (%zd, %zd, %f)", goal_row, goal_col, goal_theta);
+        // ROS_INFO("Curr pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
         // We rotate to aim straight at the next point in the path then go straight to it
         // Do we need to wait till you finish turning? Or does it queue commands?
         // Is there a way to have it queue instead of one at a time?
@@ -69,6 +70,11 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
 
     }
 
+    // if (current_row_ != goal_row || current_col_ != goal_col)
+    // {
+    //     ROS_ERROR("WTF your'e at (%zd, %zd), should be at *(%zd,%zd)", current_row_, current_col_, goal_row, goal_col);
+    // }
+
     moving_to_point_ = false;
     cmd_.linear.x = 0;
     cmd_.linear.y = 0;
@@ -84,7 +90,7 @@ void Executor::pathExecution(std::vector<size_t>& path) {
 
     size_t map_width = planner_->getMapPtr()->info.width;
 
-    ROS_INFO("PATH TO POINT (%zd, %zd)", map_utils::rowFromOffset(path.front(), map_width), map_utils::rowFromOffset(path.front(), map_width))
+    ROS_INFO("PATH TO POINT (%zd, %zd)", map_utils::rowFromOffset(path.front(), map_width), map_utils::rowFromOffset(path.front(), map_width));
     int max_path_length = 5;
     int count = 0;
 
@@ -140,6 +146,7 @@ void Executor::handleGlobalMap(const nav_msgs::OccupancyGrid map)
 
 void Executor::handlePose(const finderbot::Pose new_pose)
 {
+    // ROS_INFO("handlePOSe");
     if (!map_initialized_) 
     {
         // ROS_INFO("POSE BUT NO MAP");
@@ -155,6 +162,8 @@ void Executor::handlePose(const finderbot::Pose new_pose)
 
     }
 
+    double map_resolution = planner_->getMapPtr()->info.resolution;
+
     const double dx = new_pose.x - x_init_;
     const double dy = new_pose.y - y_init_;
 
@@ -162,7 +171,7 @@ void Executor::handlePose(const finderbot::Pose new_pose)
     current_col_ = (dy / map_resolution) + init_map_y_;
 
     current_theta_ = new_pose.theta + M_PI/2;
-
+    // ROS_INFO("NEW POSE = (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
     planner_->setPose(current_row_, current_col_);
 }
 
