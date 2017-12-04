@@ -34,17 +34,17 @@ volatile uint8_t pos = 0;
  const char err_byte = 'b';
  const char ack_byte_stop = 'd'; 
 
-// void vApplicationStackOverflowHook( TaskHandle_t xTask,
-//                                     signed char *pcTaskName ) {
-//     DDRD |= _BV(PD6);
-//     PORTD ^= _BV(PD6);
-// }
+void vApplicationStackOverflowHook( TaskHandle_t xTask,
+                                    signed char *pcTaskName ) {
+    DDRD |= _BV(PD3);
+    PORTD ^= _BV(PD3);
+}
 
 void TaskMotorCommand(void *pvParameters);
 
 void TaskIRSensorRead(void *pvParameters);
 
-void updateAngle(void);
+//void updateAngle(void);
 
 void TaskIMURead(void *pvParameters);
 
@@ -59,7 +59,7 @@ void TaskTestTimers(void *pvParameters);
 int main(void)
 {
 
-    DDRD |= _BV(PD3);
+    DDRD |= _BV(PD2);
 
     // PORTB |= _BV(PB0);
     timing_init();
@@ -89,21 +89,21 @@ int main(void)
     // ,  5  // Priority (low num = low priority)
     // ,  NULL );
 
-    xTaskCreate(
-    TaskIRSensorRead
-    ,  (const portCHAR *)"IRSensorRead"  // A name just for humans
-    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    ,  NULL
-    ,  3  // Priority (low num = low priority)
-    ,  NULL );
-
     // xTaskCreate(
-    // TaskIMURead
-    // ,  (const portCHAR *)"IMURead"  // A name just for humans
-    // ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // TaskIRSensorRead
+    // ,  (const portCHAR *)"IRSensorRead"  // A name just for humans
+    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
     // ,  NULL
-    // ,  2  // Priority (low num = low priority)
+    // ,  3  // Priority (low num = low priority)
     // ,  NULL );
+
+    xTaskCreate(
+    TaskIMURead
+    ,  (const portCHAR *)"IMURead"  // A name just for humans
+    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  2  // Priority (low num = low priority)
+    ,  NULL );
 
     // xTaskCreate(
     // TaskPIDController
@@ -153,17 +153,15 @@ void TaskMotorCommand( void *pvParameters)  // This is a Task.
 
 
 void TaskIRSensorRead(void *pvParameters) {
-    PORTD |= _BV(PD3);
     init_IR_pins();
-    PORTD &= _BV(PD3);
     for(;;) {
-        PORTE |= _BV(PE6);
+        //PORTE |= _BV(PE6);
         left_IR_read();
         right_IR_read();
-        PORTE &= _BV(PE6);
+        //PORTE &= ~(_BV(PE6));
 
         if(IRrightVal > 90) {
-            //PORTE |= _BV(PE6); //debugging
+           //PORTE |= _BV(PE6); //debugging
             cli(); //disable interrupts
             stop_bot();
             sei(); //enable interrupts
@@ -173,19 +171,22 @@ void TaskIRSensorRead(void *pvParameters) {
             //PORTE &= ~ _BV(PE6);
         }
 
+        vTaskDelay(pdMS_TO_TICKS(500));
+
      
     }
 }
 
 
 void TaskIMURead(void *pvParameters) {
-    
+    PORTE |= _BV(PE6);
     init_imu();
-    
-    for(;;) {
-        
-        updateAngle();
+    PORTE &= ~(_BV(PE6));
 
+    for(;;) {
+        PORTD |= _BV(PD2);
+        updateAngle();
+        PORTD &= ~(_BV(PD2));
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
@@ -399,7 +400,7 @@ ISR(SPI_STC_vect)
         pos = 0;
     }
 
-    PORTE &= ~(_BV(PE6));
+   //PORTE &= ~(_BV(PE6));
 
       
 }

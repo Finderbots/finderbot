@@ -17,13 +17,10 @@ void left_IR_read() {
     /*******left ir sensor*********/
     ADMUX &= ~(_BV(MUX0)); //choose channel_0
 
-
     SMCR |= _BV(SM0); //enter adc noise reduction (sleep) mode
     SMCR |= _BV(SE); //enable sleep mode
     sleep_cpu();
     SMCR &= ~(_BV(SE)); //disable sleep mode
-
-    IRleftVal = ADCH; //only need 8 bit precision
 }
 
 void right_IR_read() {
@@ -34,6 +31,4 @@ void right_IR_read() {
     SMCR |= _BV(SE); //enter sleep mode
     sleep_cpu();
     SMCR &= ~(_BV(SE)); //disable sleep mode
-
-    IRrightVal = ADCH; //only need 8 bit precision
 }

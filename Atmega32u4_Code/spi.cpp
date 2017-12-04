@@ -5,8 +5,6 @@
 
 void init_spi(void)
 {
-    DDRE |= _BV(PE6); //debugging
-
     SPCR |= _BV(SPE); //enable spi mode
 
     SPCR &= ~(_BV(MSTR)); //explicitly set spi to slave mode
