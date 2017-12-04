@@ -117,6 +117,7 @@ add_executable(path_execution_node src/path_execution_node.cpp src/path_executio
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
 add_dependencies(SLAM_node finderbot_generate_messages_cpp)
+add_dependencies(path_execution_node finderbot_generate_messages_cpp)
 
 
 ## Rename C++ executable without prefix

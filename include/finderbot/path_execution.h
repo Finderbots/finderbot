@@ -23,7 +23,8 @@ class Executor
 
     double current_theta_;
 
-    bool map_initialized_;
+    bool map_initialized_ = false;
+    bool pose_initialized_ = false;
 
     Planner* planner_;
 
@@ -31,6 +32,7 @@ class Executor
     std::string world_frame_id_;
     std::string local_frame_id_;
 
+    ros::NodeHandle nh;
     ros::Publisher command_velocities_pub_; 
 
     void turnTheta(double goal_theta);
@@ -38,7 +40,6 @@ class Executor
 
     bool thetaCloseEnough(double threshold, double goal_theta);
     void goToNextNodeInPath(size_t goal_row, size_t goal_col);
-    // void getPose();
 
 
   public:
@@ -49,7 +50,7 @@ class Executor
     void handlePose(const finderbot::Pose);
 
     Planner& getPlanner() {return *planner_;}
-    bool initialized() {return map_initialized_;}
+    bool initialized() {return pose_initialized_;}
 	// ~Executor();
 	
 };

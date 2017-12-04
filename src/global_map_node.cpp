@@ -28,8 +28,6 @@ void handleLaserScan(const sensor_msgs::LaserScan scan)
     pf_publisher.publish(global_map_builder->getPFData());
     global_map_publisher.publish(global_map_builder->getGlobalMap());
     local_map_publisher.publish(global_map_builder->getLocalMap());
-
-    // std::cout << "published map" << std::endl;
 }
 
 void handlePose(const finderbot::Pose new_pose)

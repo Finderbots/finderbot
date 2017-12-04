@@ -141,6 +141,7 @@ public:
              tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
              pose_.theta = map_utils::convertQuatToAngle(q);
         }
+        
         else ROS_INFO("boooo gazebo");
         // ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
         //fill particles vector by sampling from N(pose, std_dev) num_particles times

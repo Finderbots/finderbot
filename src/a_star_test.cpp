@@ -4,7 +4,7 @@
 #include <vector>
 
 
-void printPath(std::vector<size_t> * path) {
+void printPath(std::vector<size_t> * path, size_t global_width) {
 	if (path == NULL) {
 		std::cout << "No Path to Print\n";
 		return;
@@ -29,7 +29,7 @@ void printPath(std::vector<size_t> * path) {
 //   [ 0 , 0 ]
 void testSanity() {
 	std::cout << "STARTING SANITY TEST\n";
-	// std::vector<double> occupancy_grid(global_width * global_width, 0);
+	// std::vector<double> occupancy_grid(occupancy_grid.info.width * occupancy_grid.info.width, 0);
 	nav_msgs::OccupancyGrid occupancy_grid;
 	occupancy_grid.info.width = 1000;
 	occupancy_grid.info.height = 1000;
@@ -41,7 +41,7 @@ void testSanity() {
 	size_t goal_y = 0;
 	Planner * planner = new Planner(occupancy_grid);
 	planner->setPose(source_x, source_y);
-	printPath(planner->aStar(goal_x, goal_y));
+	printPath(planner->aStar(goal_x, goal_y), occupancy_grid.info.width);
 	return;
 }
 
@@ -65,7 +65,7 @@ void testDiagonal() {
 	size_t goal_y = 10;
 	Planner * planner = new Planner(occupancy_grid);
 	planner->setPose(source_x, source_y);
-	printPath(planner->aStar(goal_x, goal_y));
+	printPath(planner->aStar(goal_x, goal_y),occupancy_grid.info.width);
 	return;
 }
 
@@ -83,19 +83,19 @@ void testVerticalWall() {
 	occupancy_grid.info.height = 1000;
 	occupancy_grid.data.assign(occupancy_grid.info.width*occupancy_grid.info.height, 0);
 	
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 0, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 1, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 2, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 3, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 4, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 5, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 0, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 1, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 2, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 3, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 4, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 5, occupancy_grid.info.width)] = 90;
 	size_t source_x = 0;
 	size_t source_y = 3;
 	size_t goal_x = 10;
 	size_t goal_y = 3;
 	Planner * planner = new Planner(occupancy_grid);
 	planner->setPose(source_x, source_y);
-	printPath(planner->aStar(goal_x, goal_y));
+	printPath(planner->aStar(goal_x, goal_y),occupancy_grid.info.width);
 	return;
 }
 
@@ -113,13 +113,13 @@ void testInvalidPath() {
 	occupancy_grid.info.height = 1000;
 	occupancy_grid.data.assign(occupancy_grid.info.width*occupancy_grid.info.height, 0);
 	
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 0, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 1, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 2, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(3, 3, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(2, 3, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(1, 3, global_width)] = 90;
-	occupancy_grid.data[map_utils::getOffsetRowCol(0, 3, global_width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 0, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 1, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 2, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(3, 3, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(2, 3, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(1, 3, occupancy_grid.info.width)] = 90;
+	occupancy_grid.data[map_utils::getOffsetRowCol(0, 3, occupancy_grid.info.width)] = 90;
 	
 	size_t source_x = 0;
 	size_t source_y = 0;
@@ -127,7 +127,7 @@ void testInvalidPath() {
 	size_t goal_y = 5;
 	Planner * planner = new Planner(occupancy_grid);
 	planner->setPose(source_x, source_y);
-	printPath(planner->aStar(goal_x, goal_y));
+	printPath(planner->aStar(goal_x, goal_y),occupancy_grid.info.width);
 	return;	
 }
 
