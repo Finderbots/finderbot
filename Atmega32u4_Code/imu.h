@@ -5,6 +5,8 @@
 #include "FIMU_ITG3200.h"
 #include "FreeSixIMU.h"
 
+#include "i2c_master.h"
+
 extern FreeSixIMU sixDOF;
 
 /* odometry data read from IMU. Updated by IMURead. Sent via SPI to XU4 */

@@ -64,15 +64,23 @@ void ADXL345::get_Gxyz(float *xyz){
     xyz[i] = xyz_int[i] * gains[i];
   }
 }
-
+#include <avr/io.h>
 // Writes val to address register on device
 void ADXL345::writeTo(byte address, byte val) {
+          
+
   Wire.beginTransmission(_dev_address); // start transmission to device
+
   Wire.write(address);             // send register address
+
   Wire.write(val);                 // send value to write
+  //PORTD |= _BV(PD2);
+
   Wire.endTransmission();         // end transmission
+      //PORTD &= ~(_BV(PD2));
+
 }
-#include <avr/io.h>
+
 // Reads num bytes starting from address register on device in to _buff array
 void ADXL345::readFrom(byte address, int num, byte _buff[]) {
 

@@ -184,9 +184,9 @@ void TaskIMURead(void *pvParameters) {
     PORTE &= ~(_BV(PE6));
 
     for(;;) {
-        PORTD |= _BV(PD2);
+        //PORTD |= _BV(PD2);
         updateAngle();
-        PORTD &= ~(_BV(PD2));
+        //PORTD &= ~(_BV(PD2));
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }

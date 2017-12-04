@@ -209,19 +209,19 @@ uint8_t twi_writeTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t wait
   // wait until twi is ready, become master transmitter
     // switch(twi_state){
     //   case TWI_READY:
-    //     PORTD |= _BV(PD2);
+    //     //PORTD |= _BV(PD2);
     //     break;
     //   case TWI_MRX:
     //     PORTD |= _BV(PD3);
     //     break;
     //   case TWI_MTX:
-    //     PORTD |= _BV(PD4);
+    //     PORTE |= _BV(PE6);
     //     break;
     //   case TWI_SRX:
-    //     PORTD |= _BV(PD5);
+    //     PORTD |= _BV(PD3);
     //     break;
     //   case TWI_STX: 
-    //     PORTD |= _BV(PD6);
+    //     PORTD |= _BV(PD2);
     //     break;
     // }
 
@@ -241,9 +241,9 @@ uint8_t twi_writeTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t wait
     //   PORTD |= _BV(PD6);
     // }
 
-    if(twi_state > 4) {
+    //if(twi_state > 4) {
       twi_state = TWI_READY;
-    }
+   // }
 
   while(TWI_READY != twi_state){
     continue;
