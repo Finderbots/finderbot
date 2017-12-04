@@ -117,9 +117,9 @@ add_executable(path_execution_node src/path_execution_node.cpp src/path_executio
 
 add_executable(test_path_exec_node src/test_path_exec_node.cpp src/path_execution_node.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
-## add_executable(dummy_map_node src/dummy_map_node.cpp src/mapping.cpp src/ray_caster.cpp)
+add_executable(dummy_map_node src/dummy_map_node.cpp src/global_map_builder.cpp src/ray_caster.cpp)
 
-## add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
+add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
 add_dependencies(SLAM_node finderbot_generate_messages_cpp)
 
 
@@ -182,15 +182,15 @@ target_link_libraries(
   ${catkin_LIBRARIES}
 )
 
-## target_link_libraries(
-##   test_path_exec_node
-##   ${catkin_LIBRARIES}
-## )
+target_link_libraries(
+  test_path_exec_node
+  ${catkin_LIBRARIES}
+)
 
-## target_link_libraries(
-##   dummy_map_node
-##   ${catkin_LIBRARIES}
-## )
+target_link_libraries(
+  dummy_map_node
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

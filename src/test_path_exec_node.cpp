@@ -15,8 +15,8 @@ void printPath(std::vector<size_t> * path) {
 	size_t col = 0;
 	std::cout << "PRINTING PATH:\n";
 	while (!path->empty()) {
-		row = map_utils::rowFromOffset(path->back(), global_width);
-		col = map_utils::colFromOffset(path->back(), global_width);
+		row = map_utils::rowFromOffset(path->back(), global_map.info.width);
+		col = map_utils::colFromOffset(path->back(), global_map.info.width);
 		path->pop_back();
 		std::cout << "(" << row << "," << col << ")\n";
 	}
@@ -104,7 +104,7 @@ void testStraightDiagonal() {
 void buildVerticalWall(size_t row, size_t col_start, size_t col_end, nav_msgs::OccupancyGrid & occupancy_grid) {
 	for (int i = col_start; i < col_end - col_start; ++i)
 	{
-		occupancy_grid.data[map_utils::getOffsetRowCol(row, i, global_width)] = 90;
+		occupancy_grid.data[map_utils::getOffsetRowCol(row, i, global_map.info.width)] = 90;
 	}
 	return;
 }
