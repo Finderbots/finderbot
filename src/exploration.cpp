@@ -46,7 +46,7 @@ void growFrontier(const size_t cell,
 
 {
     if (map == nullptr){
-        std::cout <<"EXPLORE: growFrontier map is null";
+        ROS_ERROR("EXPLORE: growFrontier map is null");
         return;
     }
     std::queue <size_t> cell_queue;
@@ -93,7 +93,7 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
     const nav_msgs::OccupancyGrid* map = planner.getMapPtr();
 
     if (map == nullptr){
-        std::cout <<"EXPLORE: pathToFrontier map is null";
+        ROS_ERROR("EXPLORE: pathToFrontier map is null");
         return nullptr;
     }
     size_t robot_pose_idx = planner.getPoseIdx();
@@ -135,7 +135,7 @@ void findMapFrontiers(const Planner& planner,
 
     const nav_msgs::OccupancyGrid* map = planner.getMapPtr();
     if (map == nullptr){
-        std::cout <<"EXPLORE: growFrontier map is null";
+        ROS_ERROR("EXPLORE: growFrontier map is null";
         return;
     }
     const size_t robot_pose_idx = planner.getPoseIdx();
@@ -154,7 +154,7 @@ void findMapFrontiers(const Planner& planner,
     size_t x = map_utils::rowFromOffset(robot_pose_idx, map->info.width);
     size_t y = map_utils::colFromOffset(robot_pose_idx, map->info.width);
 
-    std::cout << "EXPLORE: growFRontierstart cell (" << x << ", " << y << ")" << std::endl;
+    // std::cout << "EXPLORE: growFRontierstart cell (" << x << ", " << y << ")" << std::endl;
 
     while (!cellQueue.empty())
     {
@@ -186,7 +186,7 @@ void findMapFrontiers(const Planner& planner,
             else if (isFrontier(neighbor_idx, map))
             {
 
-                std::cout << "FRONTIER AT (" << neighbor_x << ", " << neighbor_y << ")" << std::endl;
+                // ROS_INFO("FRONTIER AT (%zd, %zd)", neighbor_x, neighbor_y);
                 frontier_t f;
 
                 growFrontier(neighbor_idx, map, f, visited_idxs);
@@ -239,9 +239,6 @@ std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& 
     {
         size_t x = map_utils::rowFromOffset(paths[0][i], global_width);
         size_t y = map_utils::colFromOffset(paths[0][i], global_width);
-
-        std::cout << "(" << x << ", " << y << ")" << std::endl;
-
     }
     return *std::min_element(paths.begin(), paths.end(), 
             [](const std::vector<size_t>& lhs, const std::vector<size_t>& rhs)

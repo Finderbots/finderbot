@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
             ros::spinOnce();
             continue;
         }
-        ROS_INFO("INITIALIZED");
+        // ROS_INFO("INITIALIZED");
         ros::spinOnce();
 
         frontiers.clear();
