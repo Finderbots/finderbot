@@ -1,4 +1,4 @@
-#include <finderbot/path_execution_node.h>
+#include <finderbot/path_execution.h>
 #include <finderbot/planner.h>
 #include <finderbot/map_utils.h>
 #include <iostream>

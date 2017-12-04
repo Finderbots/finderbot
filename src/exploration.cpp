@@ -5,10 +5,19 @@
 bool isFrontier(const size_t idx, const nav_msgs::OccupancyGrid* map)
 {
     //using prob map not log odds
+    if (map == nullptr){
+        std::cout <<"EXPLORE: isFrontier map is null";
+        return false;
+    }
     size_t x = map_utils::rowFromOffset(idx, map->info.width);
     size_t y = map_utils::colFromOffset(idx, map->info.width);
 
-    if (!map_utils::pointInMap(x, y, map->info.width, map->data.size()/ global_width) || map->data[idx] != -1)
+    if (!map_utils::pointInMap(x, y, map->info.width, map->info.height))
+    {
+        return false;
+    }
+
+    if(map->data[idx] != -1)
     {
         return false;
     }
@@ -36,6 +45,10 @@ void growFrontier(const size_t cell,
                   std::set<size_t>& visited_frontiers)
 
 {
+    if (map == nullptr){
+        std::cout <<"EXPLORE: growFrontier map is null";
+        return;
+    }
     std::queue <size_t> cell_queue;
     cell_queue.push(cell);
     visited_frontiers.insert(cell);
@@ -53,13 +66,13 @@ void growFrontier(const size_t cell,
 
         frontier.idxs.push_back(next_cell);
 
-        size_t x = map_utils::rowFromOffset(next_cell, global_width);
-        size_t y = map_utils::colFromOffset(next_cell, global_width);
+        size_t x = map_utils::rowFromOffset(next_cell, map->info.width);
+        size_t y = map_utils::colFromOffset(next_cell, map->info.width);
 
         for (int i = 0; i < num_neighbors; i++)
         {
             size_t neighbor_idx = map_utils::getOffsetRowCol(x + x_deltas[i], y + y_deltas[i],
-                                                    global_width);
+                                                    map->info.width);
 
             //if not explored already  and is frontier then add to this frontier
             if (visited_frontiers.find(neighbor_idx) == visited_frontiers.end()
@@ -79,6 +92,10 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
     assert(!frontier.idxs.empty());
     const nav_msgs::OccupancyGrid* map = planner.getMapPtr();
 
+    if (map == nullptr){
+        std::cout <<"EXPLORE: pathToFrontier map is null";
+        return nullptr;
+    }
     size_t robot_pose_idx = planner.getPoseIdx();
 
     //sort frontier so that the cell that is furthest from obstacles is first
@@ -95,8 +112,8 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
     for (size_t i = 0; i < frontier.idxs.size(); i++)
     {
 
-        size_t goal_x = map_utils::rowFromOffset(frontier.idxs[i], global_width);
-        size_t goal_y = map_utils::colFromOffset(frontier.idxs[i], global_width);
+        size_t goal_x = map_utils::rowFromOffset(frontier.idxs[i], map->info.width);
+        size_t goal_y = map_utils::colFromOffset(frontier.idxs[i], map->info.width);
         
         std::vector<size_t>* path = planner.aStar(goal_x, goal_y);
 
@@ -117,6 +134,10 @@ void findMapFrontiers(const Planner& planner,
     // std::cout << "ENTER findMapFrontiers" << std::endl;
 
     const nav_msgs::OccupancyGrid* map = planner.getMapPtr();
+    if (map == nullptr){
+        std::cout <<"EXPLORE: growFrontier map is null";
+        return;
+    }
     const size_t robot_pose_idx = planner.getPoseIdx();
 
     std::set<size_t> visited_idxs;
@@ -130,14 +151,19 @@ void findMapFrontiers(const Planner& planner,
     const int x_deltas[] = {-1, 1, 0, 0};
     const int y_deltas[] = {0, 0, 1, -1};
 
+    size_t x = map_utils::rowFromOffset(robot_pose_idx, map->info.width);
+    size_t y = map_utils::colFromOffset(robot_pose_idx, map->info.width);
+
+    std::cout << "EXPLORE: growFRontierstart cell (" << x << ", " << y << ")" << std::endl;
+
     while (!cellQueue.empty())
     {
         size_t next_idx = cellQueue.front();
         cellQueue.pop();
 
         //TODO work these out for realz
-        size_t x = map_utils::rowFromOffset(next_idx, global_width);
-        size_t y = map_utils::colFromOffset(next_idx, global_width);
+        size_t x = map_utils::rowFromOffset(next_idx, map->info.width);
+        size_t y = map_utils::colFromOffset(next_idx, map->info.width);
 
         // std::cout << "next cell (" << x << ", " << y << ")" << std::endl;
 
@@ -146,11 +172,12 @@ void findMapFrontiers(const Planner& planner,
             size_t neighbor_x = x + x_deltas[i];
             size_t neighbor_y = y + y_deltas[i];
 
-            size_t neighbor_idx = map_utils::getOffsetRowCol(neighbor_x, neighbor_y, global_width);
-
+            size_t neighbor_idx = map_utils::getOffsetRowCol(neighbor_x, neighbor_y, map->info.width);
+            // std::cout << "map[" << x << ", " << y << "] = " << (int)map->data[neighbor_idx] << std::endl;
+            
             //continue if neighbor already visited or if not in map
             if (visited_idxs.find(neighbor_idx) != visited_idxs.end() 
-                || !map_utils::pointInMap(neighbor_x, neighbor_y, global_width, map->data.size()/map->info.width))
+                || !map_utils::pointInMap(neighbor_x, neighbor_y, map->info.width, map->info.height))
             {
                 continue;
             }
@@ -189,7 +216,7 @@ std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& 
     //TODO actual min_dist_to_frontier
     // std::cout << "exploreFrontiers" << std::endl;
     size_t robot_pose_idx = planner.getPoseIdx();
-
+    size_t global_width = planner.getMapPtr()->info.width;
     if (frontiers.empty())
     {
         std::vector <size_t> emptyPath;

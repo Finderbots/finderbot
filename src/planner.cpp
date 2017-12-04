@@ -24,7 +24,8 @@ Planner::Planner(const nav_msgs::OccupancyGrid& global_map) : global_map_(global
 }
 
 void Planner::updateMap(const nav_msgs::OccupancyGrid& global_map) {
-    global_map_ = global_map;
+    // if (exploring_map_) return;
+    global_map_.data.assign(global_map.data.begin(), global_map.data.end());
     obstacle_distance_map_.setDistances(global_map_);
     return;
 }

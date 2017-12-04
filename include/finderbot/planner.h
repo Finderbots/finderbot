@@ -21,8 +21,6 @@
 
 #include <finderbot/DistanceGrid.h>
 
-#define global_width 1000
-#define global_height 1000
 
 
 class Compare {
@@ -52,6 +50,8 @@ class Planner {
 
     size_t source_row;
     size_t source_col;
+
+    bool exploring_map_;
     // INPUT:   nav_messages_occupancy_grid as a 1-D vector (graph)
     //          an x,y destination
     // OUTPUT:  command velocities... angular and linear velocities
@@ -75,7 +75,7 @@ class Planner {
 
     const size_t getPoseIdx() const
     {
-        return map_utils::getOffsetRowCol(source_row, source_col, global_width);
+        return map_utils::getOffsetRowCol(source_row, source_col, global_map_.info.width);
     }
 
     bool isGoal(Node * node, size_t goal_row, size_t goal_col);

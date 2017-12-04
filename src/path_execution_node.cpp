@@ -1,6 +1,7 @@
 #include <finderbot/path_execution.h>
 #include <ros/ros.h>
-
+#include <nav_msgs/OccupancyGrid.h>
+#include <iostream>
 // subscribes to both the slam and the explore nodes
 // might as well just have this be the explorer
 
@@ -11,8 +12,7 @@
 int main(int argc, char** argv) {
     ros::init(argc, argv, "path_execution");
     ros::NodeHandle nh;
-    // command_velocities_pub = nh.advertise<geometry_msgs::Twist>("command_velocities", 1, true);
-    ros::Rate loop_rate(10);
+
     Executor path_executor("world", "laser_frame");
 
     ros::Subscriber global_map_handler = nh.subscribe<nav_msgs::OccupancyGrid>("global_map", 1, &Executor::handleGlobalMap, &path_executor);
@@ -23,19 +23,22 @@ int main(int argc, char** argv) {
     while (ros::ok())
     {
         if (!path_executor.initialized()) {
-            ROS_INFO("Map Uninitialized: Continue");
+            // ROS_INFO("Map Uninitialized: Continue");
             ros::spinOnce();
             continue;
         }
+        ROS_INFO("INITIALIZED");
+        ros::spinOnce();
+
         frontiers.clear();
-        findMapFrontiers(path_executor.getPlanner(), frontiers, 0);
+        findMapFrontiers(path_executor.getPlanner(), frontiers, 1);
+        ROS_INFO("EXECUTE: FOUND %zd FRONTIERS", frontiers.size());
 
         if (frontiers.empty())
         {
             continue;
         }
 
-        ROS_INFO("FOUND %zd FRONTIERS", frontiers.size());
         std::vector<size_t> path = exploreFrontiers(path_executor.getPlanner(), frontiers);
 
         ROS_INFO("EXECUTE PATH OF LENGTH %zd", path.size());
