@@ -3,9 +3,6 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 
-#include <finderbot/global_map_builder.h>
-#include <finderbot/PF_Input.h>
-#include <finderbot/Pose.h>
 #include <finderbot/GetMap.h>
 
 
