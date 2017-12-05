@@ -53,6 +53,8 @@ void TaskTestTimers(void *pvParameters);
 
 #define F_CPU 16000000
 
+#define BNO055_SAMPLERATE_DELAY_MS (100)
+
 #include "i2c_master.h"
 
 int main(void)
@@ -190,7 +192,7 @@ void TaskIMURead(void *pvParameters) {
         //PORTD |= _BV(PD2);
         updateAngle();
         //PORTD &= ~(_BV(PD2));
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(BNO055_SAMPLERATE_DELAY_MS));
     }
 }
 

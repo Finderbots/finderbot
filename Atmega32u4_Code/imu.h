@@ -1,13 +1,14 @@
 #ifndef IMU_h
 #define IMU_h
 
-#include "FIMU_ADXL345.h"
-#include "FIMU_ITG3200.h"
-#include "FreeSixIMU.h"
-
+// #include "FIMU_ADXL345.h"
+// #include "FIMU_ITG3200.h"
+// #include "FreeSixIMU.h"
+#include "Adafruit_BNO055.h"
 //#include "i2c_master.h"
 
-extern FreeSixIMU sixDOF;
+//extern FreeSixIMU sixDOF;
+extern Adafruit_BNO055 bno;
 
 /* odometry data read from IMU. Updated by IMURead. Sent via SPI to XU4 */
 extern uint8_t roll;

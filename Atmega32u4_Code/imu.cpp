@@ -1,6 +1,7 @@
 #include "imu.h"
 
-FreeSixIMU sixDOF = FreeSixIMU();
+// FreeSixIMU sixDOF = FreeSixIMU();
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 float angles[5];
 
@@ -18,16 +19,23 @@ uint8_t yaw = 0;
 void init_imu() {
     
     //Wire.begin();
-    i2c_init();
+    //i2c_init();
     
-    delay(1); //1 ms
-    sixDOF.init(); //Begin the IMU
-    delay(1); //1 ms 
+    // delay(1); //1 ms
+    // sixDOF.init(); //Begin the IMU
+    // delay(1); //1 ms 
+
+    bno.begin();
+    
+     delay(1000);
+
+    /* Use external crystal for better accuracy */
+    bno.setExtCrystalUse(true);
 }
 
 void updateAngle(void) {
     //PORTD |= _BV(PD2); //debugging
-    sixDOF.getYawPitchRoll(angles);
+    // sixDOF.getYawPitchRoll(angles);
     // prevAngles[prevAngleI] = angles[1];
     // prevAngleI = (prevAngleI + 1) % AvgAngles;
     // float sum = 0;
@@ -36,4 +44,10 @@ void updateAngle(void) {
     // currAngle = sum / AvgAngles;
     // prevAngle = currAngle;
     //PORTD &= ~(_BV(PD2)); //debugging
+
+    sensors_event_t event;
+    bno.getEvent(&event);
+    roll = event.orientation.x;
+    pitch = event.orientation.y;
+    yaw = event.orientation.z;
 }
