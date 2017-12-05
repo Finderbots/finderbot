@@ -28,6 +28,7 @@
 #ifndef FIMU_ITG3200_h
 #define FIMU_ITG3200_h
  #include <util/delay.h>
+#include "i2c_master.h"
 
 inline void delay( int ms )
 {
@@ -42,7 +43,7 @@ inline void delay( int ms )
 
 #define byte uint8_t
 
-#include "Wire.h"
+//#include "Wire.h"
 
 #define ITG3200_ADDR_AD0_HIGH  0x69   //AD0=1 0x69 I2C address when AD0 is connected to HIGH (VCC) - default for sparkfun breakout
 #define ITG3200_ADDR_AD0_LOW   0x68   //AD0=0 0x68 I2C address when AD0 is connected to LOW (GND)

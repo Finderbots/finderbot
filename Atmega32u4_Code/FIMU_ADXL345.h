@@ -16,7 +16,8 @@
 #ifndef FIMU_ADXL345_h
 #define FIMU_ADXL345_h
 
- #include <inttypes.h>
+ #include <stdint.h>
+ #include "i2c_master.h"
 
  #define byte uint8_t
 

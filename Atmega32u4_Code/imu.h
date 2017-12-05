@@ -5,7 +5,7 @@
 #include "FIMU_ITG3200.h"
 #include "FreeSixIMU.h"
 
-#include "i2c_master.h"
+//#include "i2c_master.h"
 
 extern FreeSixIMU sixDOF;
 

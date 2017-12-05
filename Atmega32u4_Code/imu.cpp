@@ -17,11 +17,11 @@ uint8_t yaw = 0;
 
 void init_imu() {
     
-    Wire.begin();
+    //Wire.begin();
+    i2c_init();
+    
     delay(1); //1 ms
     sixDOF.init(); //Begin the IMU
-
-
     delay(1); //1 ms 
 }
 

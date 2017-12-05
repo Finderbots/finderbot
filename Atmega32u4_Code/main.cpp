@@ -34,17 +34,15 @@ volatile uint8_t pos = 0;
  const char err_byte = 'b';
  const char ack_byte_stop = 'd'; 
 
-void vApplicationStackOverflowHook( TaskHandle_t xTask,
-                                    signed char *pcTaskName ) {
-    DDRD |= _BV(PD3);
-    PORTD ^= _BV(PD3);
-}
+// void vApplicationStackOverflowHook( TaskHandle_t xTask,
+//                                     signed char *pcTaskName ) {
+//     DDRD |= _BV(PD3);
+//     PORTD |= _BV(PD3);
+// }
 
 void TaskMotorCommand(void *pvParameters);
 
 void TaskIRSensorRead(void *pvParameters);
-
-//void updateAngle(void);
 
 void TaskIMURead(void *pvParameters);
 
@@ -55,23 +53,28 @@ void TaskTestTimers(void *pvParameters);
 
 #define F_CPU 16000000
 
+#include "i2c_master.h"
 
 int main(void)
 {
-
     DDRD |= _BV(PD2);
-
-    // PORTB |= _BV(PB0);
-    timing_init();
-    // PORTB &= ~(_BV(PB0));
-
     DDRE |= _BV(PE6); //debugging
 
-    init_spi();
+ //   timing_init();
 
-    // while(1) {
+ //   init_spi();
+    //PORTE |= _BV(PE6);
+    //i2c_init();
+    //PORTE &= ~(_BV(PE6));
 
-    // }
+    //TWCR = 0;
+    // transmit START condition 
+    //TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
+    // wait for end of transmission
+    //PORTD |= _BV(PD2);
+    //while( !(TWCR & (1<<TWINT)) );
+    //PORTD &= ~(_BV(PD2));
+
 
     // xTaskCreate(
     // TaskTestTimers
@@ -81,7 +84,7 @@ int main(void)
     // ,  5  // Priority (low num = low priority)
     // ,  NULL );
 
-    // xTaskCreate(
+  //xTaskCreate(
     // TaskMotorCommand
     // ,  (const portCHAR *)"MotorCommand"  // A name just for humans
     // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
@@ -114,7 +117,7 @@ int main(void)
     // ,  NULL );
 
 
-    vTaskStartScheduler();
+   vTaskStartScheduler();
 
     return 0;               /* never reached */
 }
@@ -179,9 +182,9 @@ void TaskIRSensorRead(void *pvParameters) {
 
 
 void TaskIMURead(void *pvParameters) {
-    PORTE |= _BV(PE6);
+    //PORTE |= _BV(PE6);
     init_imu();
-    PORTE &= ~(_BV(PE6));
+    //PORTE &= ~(_BV(PE6));
 
     for(;;) {
         //PORTD |= _BV(PD2);

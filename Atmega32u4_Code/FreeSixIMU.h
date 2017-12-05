@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef FreeSixIMU_h
 #define FreeSixIMU_h
 
-#include "Wire.h"
+//#include "Wire.h"
 #include <avr/io.h>
 #include "timing.h"
 

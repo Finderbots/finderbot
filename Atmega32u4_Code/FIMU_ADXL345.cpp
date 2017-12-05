@@ -14,8 +14,10 @@
  ***************************************************************************/
 
 #include "FIMU_ADXL345.h"
-#include "Wire.h"
+// #include "Wire.h"
+
 #include <math.h>
+
 
 #define TO_READ (6)      // num of bytes we are going to read each time (two bytes for each axis)
 
@@ -69,44 +71,67 @@ void ADXL345::get_Gxyz(float *xyz){
 void ADXL345::writeTo(byte address, byte val) {
           
 
-  Wire.beginTransmission(_dev_address); // start transmission to device
+  // Wire.beginTransmission(_dev_address); // start transmission to device
 
-  Wire.write(address);             // send register address
+  // Wire.write(address);             // send register address
 
-  Wire.write(val);                 // send value to write
-  //PORTD |= _BV(PD2);
+  // Wire.write(val);                 // send value to write
+ 
 
-  Wire.endTransmission();         // end transmission
-      //PORTD &= ~(_BV(PD2));
+  // Wire.endTransmission();         // end transmission
+
+  i2c_start(_dev_address);
+  PORTD |= _BV(PD2);
+
+  i2c_write(address);
+    PORTD &= ~(_BV(PD2));
+
+ //PORTE |= _BV(PE6);
+  i2c_write(val);
+  //PORTE &= ~(_BV(PE6));
+
+ 
+  i2c_stop();
 
 }
 
 // Reads num bytes starting from address register on device in to _buff array
 void ADXL345::readFrom(byte address, int num, byte _buff[]) {
 
-  Wire.beginTransmission(_dev_address); // start transmission to device
+  // Wire.beginTransmission(_dev_address); // start transmission to device
 
-  Wire.write(address);             // sends address to read from
+  // Wire.write(address);             // sends address to read from
         
-  Wire.endTransmission();         // end transmission
+  // Wire.endTransmission();         // end transmission
+
+  i2c_start((uint8_t) _dev_address);
+  i2c_write((uint8_t)address);
+  i2c_stop();
 
 
-  Wire.beginTransmission(_dev_address); // start transmission to device
-  Wire.requestFrom(_dev_address, num);    // request 6 bytes from device
+  // Wire.beginTransmission(_dev_address); // start transmission to device
+  // Wire.requestFrom(_dev_address, num);    // request 6 bytes from device
+   // int i = 0;
+  // while(Wire.available())         // device may send less than requested (abnormal)
+  // {
+  //   _buff[i] = Wire.read();    // receive a byte
+  //   i++;
+  // }
 
-  int i = 0;
-  while(Wire.available())         // device may send less than requested (abnormal)
-  {
-    _buff[i] = Wire.read();    // receive a byte
-    i++;
-  }
+  // if(i != num){
+  //   status = ADXL345_ERROR;
+  //   error_code = ADXL345_READ_ERROR;
+  // }
 
+    i2c_start((uint8_t)_dev_address);
+    i2c_receive((uint8_t) _dev_address, (uint8_t*) _buff, (uint16_t)num);
+  // while(i < num) {
+  //     _buff[i] = i2c_readAck();
+  //     i++;
+  // }
 
-  if(i != num){
-    status = ADXL345_ERROR;
-    error_code = ADXL345_READ_ERROR;
-  }
-  Wire.endTransmission();         // end transmission
+  // Wire.endTransmission();         // end transmission
+  i2c_stop();
 }
 
 // Gets the range setting and return it into rangeSetting

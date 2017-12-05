@@ -302,24 +302,40 @@ void ITG3200::setClockSource(byte _CLKsource) {
 }
 
 void ITG3200::writemem(uint8_t _addr, uint8_t _val) {
-  Wire.beginTransmission(_dev_address);   // start transmission to device 
-  Wire.write(_addr); // send register address
-  Wire.write(_val); // send value to write
-  Wire.endTransmission(); // end transmission
+  // Wire.beginTransmission(_dev_address);   // start transmission to device 
+  // Wire.write(_addr); // send register address
+  // Wire.write(_val); // send value to write
+  // Wire.endTransmission(); // end transmission
+  i2c_start(_dev_address);
+  i2c_write(_addr);
+  i2c_write(_val);
+  i2c_stop();
 }
 
 void ITG3200::readmem(uint8_t _addr, uint8_t _nbytes, uint8_t __buff[]) {
-  Wire.beginTransmission(_dev_address); // start transmission to device 
-  Wire.write(_addr); // sends register address to read from
-  Wire.endTransmission(); // end transmission
+  // Wire.beginTransmission(_dev_address); // start transmission to device 
+  // Wire.write(_addr); // sends register address to read from
+  // Wire.endTransmission(); // end transmission
+
+  i2c_start(_dev_address);
+  i2c_write(_addr);
+  i2c_stop();
   
-  Wire.beginTransmission(_dev_address); // start transmission to device 
-  Wire.requestFrom(_dev_address, _nbytes);// send data n-bytes read
-  uint8_t i = 0; 
-  while (Wire.available()) {
-    __buff[i] = Wire.read(); // receive DATA
-    i++;
-  }
-  Wire.endTransmission(); // end transmission
+  // Wire.beginTransmission(_dev_address); // start transmission to device 
+  // Wire.requestFrom(_dev_address, _nbytes);// send data n-bytes read
+   // uint8_t i = 0; 
+  // while (Wire.available()) {
+  //   __buff[i] = Wire.read(); // receive DATA
+  //   i++;
+  // }
+  // Wire.endTransmission(); // end transmission
+
+  i2c_start(_dev_address);
+  i2c_receive(_dev_address, __buff, _nbytes);
+  //   while(i < _nbytes) {
+  //     __buff[i] = i2c_readAck();
+  //     i++;
+  // }
+  i2c_stop();
 }
 

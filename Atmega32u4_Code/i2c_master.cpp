@@ -37,7 +37,12 @@ uint8_t i2c_start(uint8_t address)
 	
 	// check if the device has acknowledged the READ / WRITE mode
 	uint8_t twst = TW_STATUS & 0xF8;
-	if ( (twst != TW_MT_SLA_ACK) && (twst != TW_MR_SLA_ACK) ) return 1;
+	if ( (twst != TW_MT_SLA_ACK) && (twst != TW_MR_SLA_ACK) ) {
+		PORTE |= _BV(PE6);
+	}//return 1;
+	else {
+		PORTE &= ~(_BV(PE6));
+	}
 	
 	return 0;
 }

@@ -3,6 +3,7 @@
 
 #define I2C_READ 0x01
 #define I2C_WRITE 0x00
+#include <inttypes.h>
 
 void i2c_init(void);
 uint8_t i2c_start(uint8_t address);
