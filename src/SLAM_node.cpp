@@ -11,7 +11,7 @@
 
 #include <gazebo_msgs/ModelState.h>
 #include <geometry_msgs/Pose.h>
-
+#include <std_msgs/Float32.h>
 #include <random>
 #include <string>
 
@@ -35,12 +35,14 @@ inline float wrap_to_pi(float angle)
 class SLAM
 {
     finderbot::Pose pose_;
+    finderbot::PF_Input pfInput;
     double std_dev_;
 
     size_t global_width_;
     size_t global_height_;
 
     int num_particles_;
+    bool new_pf_data = false;
     std::vector<finderbot::Pose> particles_;
 
     ros::ServiceClient client_;
@@ -65,8 +67,6 @@ public:
 
         pose_publisher_ = nh.advertise<finderbot::Pose>("finderbot_pose", 1, true);
 
-  
-
         /////////GET MODEL STATE ///////////
         client_ = nh.serviceClient<gazebo_msgs::GetModelState>("/gazebo_launch/get_model_state");
         model_state_.request.model_name = model_name;
@@ -77,8 +77,6 @@ public:
         geometry_msgs::Pose start_pose;
         start_pose.position.x = 0.0;
         start_pose.position.y = 0.0;
-
-        
 
         tf::Quaternion q(0, 0, 0, 0);
         q.setRPY(0, 0, -1.5707);
@@ -107,7 +105,6 @@ public:
         pose = model_state_.response.pose;
         pose_.x = pose.position.x;
         pose_.y = pose.position.y;
-        // pose_.theta = -1.5707;
 
         pose_.theta = map_utils::convertQuatToAngle(pose.orientation);
         
@@ -116,44 +113,11 @@ public:
                                                    << pose_.theta << 
                                                    ")" << std::endl;
 
-
         pose_publisher_.publish(pose_);
-        
-
-        // std::cout << "SLAM_NODE: published initial pose" << std::endl;
-
-
-        // ROS_INFO("init transform (%f, %f, %f)",pose_.x, pose_.y, pose_.theta);
-        // tf::Transform transform;
-
-        // q.setRPY(0, 0, pose_.theta);
-        // transform.setRotation(q);
-
-        // // tf::Vector3 position(pose.position.x, pose.position.y, 0);
-        // tf::Vector3 position(pose_.x, pose_.y, 0);
-        // transform.setOrigin(position);
-        // br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
-        //                                         world_frame_id_, laser_frame_id_));
-        
     }
 
-
-    void handlePFData(const finderbot::PF_Input pfInput)
+    void generateParticles()
     {
-        // get deltas from IMU, get abs pose from sim
-        geometry_msgs::Pose pose;
-        if (client_.call(model_state_))
-        {
-             pose = model_state_.response.pose;
-             pose_.x = pose.position.x;
-             pose_.y = pose.position.y;
-             tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-             pose_.theta = map_utils::convertQuatToAngle(q);
-        }
-        
-        else ROS_INFO("boooo gazebo");
-        // ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
-        //fill particles vector by sampling from N(pose, std_dev) num_particles times
         std::default_random_engine generator;
         std::normal_distribution<double> x_distribution(pose_.x, std_dev_);
         std::normal_distribution<double> y_distribution(pose_.y, std_dev_);
@@ -164,14 +128,16 @@ public:
         {
             finderbot::Pose particle;
 
-            particle.x = x_distribution(generator);
-            particle.y = y_distribution(generator);
-            particle.theta = theta_distribution(generator);
+            particle.x = (float) x_distribution(generator);
+            particle.y = (float) y_distribution(generator);
+            particle.theta = (float) theta_distribution(generator);
 
             particles_.push_back(particle);
         }
-        
-        //loop through particles
+    }
+
+    finderbot::Pose getMLPose()
+    {
         finderbot::Pose max_pose;
         double max_score = 0.0;
         double score;
@@ -204,31 +170,55 @@ public:
                 max_pose = particles_[i];
             }
         }
-        
-        // ROS_INFO("pf_pose = (%f, %f, %f", max_pose.x, max_pose.y, max_pose.theta);
-        //select particle with highest pose, update pose
-        pose_ = max_pose;
-        std::cout << "SLAM: new pose = ("<< pose_.x << ", "
-                                       << pose_.y << ", "
-                                       << pose_.theta << 
-                                       ")" << std::endl;
-        // std::cout << "hey wassup hello" <<std::endl;
-        pose_publisher_.publish(pose_);
-        //publish transform with pose data
-        // tf::Transform transform;
-        
-        // // tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-        // tf::Quaternion q;
-        // q.setRPY(0, 0, pose_.theta);
-        // transform.setRotation(q);
-
-        // // tf::Vector3 position(pose.position.x, pose.position.y, 0);
-        // tf::Vector3 position(pose_.x, pose_.y, 0);
-        // transform.setOrigin(position);
-        // br_.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
-        //                                         world_frame_id_, laser_frame_id_));
+        return max_pose;
     }
 
+    void generatePose()
+    {
+        if (!new_pf_data) return;
+        geometry_msgs::Pose pose;
+        if (client_.call(model_state_))
+        {
+             pose = model_state_.response.pose;
+             pose_.x = pose.position.x;
+             pose_.y = pose.position.y;
+             tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+             pose_.theta = map_utils::convertQuatToAngle(q);
+        }
+        
+        else ROS_INFO("boooo gazebo");
+        // ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
+        //fill particles vector by sampling from N(pose, std_dev) num_particles times
+        generateParticles();
+        
+        //loop through particles
+        //select particle with highest pose, update pose
+        finderbot::Pose max_pose = getMLPose();
+        
+        // pose_ = max_pose;
+        pose_.x = (float) max_pose.x;
+        pose_.y = (float) max_pose.y;
+        pose_.theta = (float) max_pose.theta;
+
+        // std::cout << "SLAM: new pose = ("<< pose_.x << ", "
+        //                                << pose_.y << ", "
+        //                                << pose_.theta << 
+        //                                ")" << std::endl;
+        // std::cout << "hey wassup hello" <<std::endl;
+        pose_publisher_.publish(pose_);
+    }
+
+
+    void handlePFData(const finderbot::PF_Input pfData)
+    {
+        pfInput.map_width = pfData.map_width;
+        pfInput.map_height = pfData.map_height;
+        pfInput.map_resolution = pfData.map_resolution;
+        pfInput.log_odds.assign(pfData.log_odds.begin(), pfData.log_odds.end());
+        pfInput.scan_ranges.assign(pfData.scan_ranges.begin(), pfData.scan_ranges.end());
+        pfInput.scan_angles.assign(pfData.scan_angles.begin(), pfData.scan_angles.end());
+        new_pf_data = true;
+    }
 };
 
 
@@ -252,7 +242,16 @@ int main(int argc, char** argv)
     SLAM slamma_jamma(num_particles, std_dev, world_frame_id, laser_frame_id, model_name);
 
     ros::Subscriber pf_handler = nh.subscribe<finderbot::PF_Input>("SLAM_pf", 1, &SLAM::handlePFData, &slamma_jamma);
-   
-    ros::spin(); 
+    
+    ros::Rate loop_rate(100);
+    while (ros::ok())
+    {
+        slamma_jamma.generatePose();
+
+        ros::spinOnce();
+
+        loop_rate.sleep();
+    }
+    // ros::spin(); 
 
 }
