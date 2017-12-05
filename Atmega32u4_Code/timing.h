@@ -2,6 +2,15 @@
 #define TIMING_H
 
 #include <avr/interrupt.h>
+#include <util/delay.h>
+
+ inline void delay( int ms )
+  {
+    for (int i = 0; i < ms; i++)
+    {
+       _delay_ms(1);
+    }
+ }
 
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))

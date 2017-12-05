@@ -21,7 +21,7 @@ DEVICE     = atmega32u4
 CLOCK      = 16000000
 PROGRAMMER = -c usbtiny
 #PROGRAMMER = -c avr109 -P /dev/cu.usbmodem1421
-OBJECTS    = main.o croutine.o event_groups.o heap_3.o list.o port.o queue.o tasks.o timers.o hooks.o i2c_master.o Adafruit_BNO055.o  PID_v1.o timing.o motor.o imu.o ir.o spi.o 
+OBJECTS    = main.o croutine.o event_groups.o heap_3.o list.o port.o queue.o tasks.o timers.o hooks.o Adafruit_BNO055.o  PID_v1.o timing.o motor.o imu.o ir.o spi.o twi.o Wire.o 
 #FUSES      = -U lfuse:w:0xFF:m -U hfuse:w:0xD8:m -U efuse:w:0xCB:m
 #FUSES 		= 	-U lfuse:w:0xFF:m 	-U hfuse:w:0xDF:m 	-U efuse:w:0xFF:m 
 

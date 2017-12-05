@@ -20,21 +20,25 @@
 #ifndef __ADAFRUIT_BNO055_H__
 #define __ADAFRUIT_BNO055_H__
 
+  #define boolean bool 
+  #define byte uint8_t
+  #include "timing.h"
+
+// #if (ARDUINO >= 100)
+//  #include "Arduino.h"
+// #else
+//  #include "WProgram.h"
+// #endif
+
+// #ifdef __AVR_ATtiny85__
+//  #include <TinyWireM.h>
+//  #define Wire TinyWireM
+// #else
+ #include "Wire.h"
+// #endif
+
 #include "Adafruit_Sensor.h"
 #include "utility/imumaths.h"
- #include <util/delay.h>
-#include "i2c_master.h"
-#include "timing.h"
-
-inline void delay( int ms )
-{
-   for (int i = 0; i < ms; i++)
-   {
-      _delay_ms(1);
-   }
-}
-
-
 
 #define BNO055_ADDRESS_A (0x28)
 #define BNO055_ADDRESS_B (0x29)
@@ -289,7 +293,7 @@ class Adafruit_BNO055 //: public Adafruit_Sensor
     void  setMode             ( adafruit_bno055_opmode_t mode );
     void  getRevInfo          ( adafruit_bno055_rev_info_t* );
     void  displayRevInfo      ( void );
-    void  setExtCrystalUse    ( bool usextal );
+    void  setExtCrystalUse    ( boolean usextal );
     void  getSystemStatus     ( uint8_t *system_status,
                                 uint8_t *self_test_result,
                                 uint8_t *system_error);
@@ -312,9 +316,9 @@ class Adafruit_BNO055 //: public Adafruit_Sensor
     bool  isFullyCalibrated(void);
 
   private:
-    uint8_t  read8   ( adafruit_bno055_reg_t );
-    bool  readLen ( adafruit_bno055_reg_t, uint8_t* buffer, uint16_t len );
-    bool  write8  ( adafruit_bno055_reg_t, uint8_t value );
+    byte  read8   ( adafruit_bno055_reg_t );
+    bool  readLen ( adafruit_bno055_reg_t, byte* buffer, uint8_t len );
+    bool  write8  ( adafruit_bno055_reg_t, byte value );
 
     uint8_t _address;
     int32_t _sensorID;

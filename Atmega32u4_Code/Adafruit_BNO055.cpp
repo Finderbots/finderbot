@@ -17,6 +17,11 @@
   MIT license, all text above must be included in any redistribution
  ***************************************************************************/
 
+// #if ARDUINO >= 100
+//  #include "Arduino.h"
+// #else
+//  #include "WProgram.h"
+// #endif
 
 #include <math.h>
 #include <limits.h>
@@ -50,8 +55,7 @@ Adafruit_BNO055::Adafruit_BNO055(int32_t sensorID, uint8_t address)
 bool Adafruit_BNO055::begin(adafruit_bno055_opmode_t mode)
 {
   /* Enable I2C */
-  //Wire.begin();
-  i2c_init();
+  Wire.begin();
 
   // BNO055 clock stretches for 500us or more!
 #ifdef ESP8266
@@ -130,7 +134,7 @@ void Adafruit_BNO055::setMode(adafruit_bno055_opmode_t mode)
     @brief  Use the external 32.768KHz crystal
 */
 /**************************************************************************/
-void Adafruit_BNO055::setExtCrystalUse(bool usextal)
+void Adafruit_BNO055::setExtCrystalUse(boolean usextal)
 {
   adafruit_bno055_opmode_t modeback = _mode;
 
@@ -555,23 +559,17 @@ bool Adafruit_BNO055::isFullyCalibrated(void)
     @brief  Writes an 8 bit value over I2C
 */
 /**************************************************************************/
-bool Adafruit_BNO055::write8(adafruit_bno055_reg_t reg, uint8_t value)
+bool Adafruit_BNO055::write8(adafruit_bno055_reg_t reg, byte value)
 {
-  //Wire.beginTransmission(_address);
-  i2c_start(_address);
-
+  Wire.beginTransmission(_address);
   // #if ARDUINO >= 100
-  //   Wire.write((uint8_t)reg);
-  //   Wire.write((uint8_t)value);
+    Wire.write((uint8_t)reg);
+    Wire.write((uint8_t)value);
   // #else
   //   Wire.send(reg);
   //   Wire.send(value);
   // #endif
-  i2c_write((uint8_t) reg);
-  i2c_write((uint8_t) value);
-
-  // Wire.endTransmission();
-  i2c_stop();
+  Wire.endTransmission();
 
   /* ToDo: Check for error! */
   return true;
@@ -582,34 +580,25 @@ bool Adafruit_BNO055::write8(adafruit_bno055_reg_t reg, uint8_t value)
     @brief  Reads an 8 bit value over I2C
 */
 /**************************************************************************/
-uint8_t Adafruit_BNO055::read8(adafruit_bno055_reg_t reg )
+byte Adafruit_BNO055::read8(adafruit_bno055_reg_t reg )
 {
-  uint8_t *value = 0;
-  uint8_t value_return;
+  byte value = 0;
 
-  // Wire.beginTransmission(_address);
-  i2c_start(_address);
-
+  Wire.beginTransmission(_address);
   // #if ARDUINO >= 100
-  //   Wire.write((uint8_t)reg);
+    Wire.write((uint8_t)reg);
   // #else
   //   Wire.send(reg);
   // #endif
-  i2c_write((uint8_t) reg);
-
-  // Wire.endTransmission();
-  i2c_stop();
-
-  // Wire.requestFrom(_address, (byte)1);
-  i2c_receive(_address, value, 1);
+  Wire.endTransmission();
+  Wire.requestFrom(_address, (byte)1);
   // #if ARDUINO >= 100
-  //   value = Wire.read();
+    value = Wire.read();
   // #else
   //   value = Wire.receive();
   // #endif
-  value_return = *value;
 
-  return value_return;
+  return value;
 }
 
 /**************************************************************************/
@@ -617,32 +606,25 @@ uint8_t Adafruit_BNO055::read8(adafruit_bno055_reg_t reg )
     @brief  Reads the specified number of bytes over I2C
 */
 /**************************************************************************/
-bool Adafruit_BNO055::readLen(adafruit_bno055_reg_t reg, uint8_t * buffer, uint16_t len)
+bool Adafruit_BNO055::readLen(adafruit_bno055_reg_t reg, byte * buffer, uint8_t len)
 {
-  // Wire.beginTransmission(_address);
-  i2c_start(_address);
-
+  Wire.beginTransmission(_address);
   // #if ARDUINO >= 100
-  //   Wire.write((uint8_t)reg);
+    Wire.write((uint8_t)reg);
   // #else
   //   Wire.send(reg);
   // #endif
-  i2c_write((uint8_t)reg);
+  Wire.endTransmission();
+  Wire.requestFrom(_address, (byte)len);
 
-  // Wire.endTransmission();
-  i2c_stop();
-
-  // Wire.requestFrom(_address, (byte)len);
-
-  // for (uint8_t i = 0; i < len; i++)
-  // {
-  //   #if ARDUINO >= 100
-  //     buffer[i] = Wire.read();
-  //   #else
-  //     buffer[i] = Wire.receive();
-  //   #endif
-  // }
-  i2c_receive(_address, buffer, len);
+  for (uint8_t i = 0; i < len; i++)
+  {
+    // #if ARDUINO >= 100
+      buffer[i] = Wire.read();
+    // #else
+    //   buffer[i] = Wire.receive();
+    // #endif
+  }
 
   /* ToDo: Check for errors! */
   return true;

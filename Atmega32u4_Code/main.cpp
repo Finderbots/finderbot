@@ -55,28 +55,15 @@ void TaskTestTimers(void *pvParameters);
 
 #define BNO055_SAMPLERATE_DELAY_MS (100)
 
-#include "i2c_master.h"
 
 int main(void)
 {
     DDRD |= _BV(PD2);
     DDRE |= _BV(PE6); //debugging
 
- //   timing_init();
+   timing_init();
 
- //   init_spi();
-    //PORTE |= _BV(PE6);
-    //i2c_init();
-    //PORTE &= ~(_BV(PE6));
-
-    //TWCR = 0;
-    // transmit START condition 
-    //TWCR = (1<<TWINT) | (1<<TWSTA) | (1<<TWEN);
-    // wait for end of transmission
-    //PORTD |= _BV(PD2);
-    //while( !(TWCR & (1<<TWINT)) );
-    //PORTD &= ~(_BV(PD2));
-
+   init_spi();
 
     // xTaskCreate(
     // TaskTestTimers
