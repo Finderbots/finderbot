@@ -51,7 +51,6 @@ void DistanceGrid::enqueueObstacleCells(const nav_msgs::OccupancyGrid& map, std:
         //if most likely an obstacle, treat it like an obstacle
         if (map.data[i] >= 50)
         {
-
             //if obstacle found then create distnode 
             //to expand around and add to searchQueue
             expandNode(DistNode(i,i), search_queue);
@@ -70,7 +69,6 @@ void DistanceGrid::expandNode(const DistNode& node, std::priority_queue<DistNode
 
     for (int i = 0; i < 4; i++)
     {
-
         //if adjaacent cell is in map
         if (map_utils::pointInMap(x + x_deltas[i], y+y_deltas[i], global_width, global_height))
         {

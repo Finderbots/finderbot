@@ -1,6 +1,6 @@
 <launch>
     
-    <node pkg="gazebo_ros" name="gazebo_launch" type="gzserver" args="/home/jon/catkin_ws/src/finderbot/FinderBot_Gazebo/simple_maze.world"/>
+    <node pkg="gazebo_ros" name="gazebo_launch" type="gazebo" args="/home/jon/catkin_ws/src/finderbot/FinderBot_Gazebo/simple_maze.world"/>
 
     <node pkg="finderbot" name="global_mapping" type="global_map_node" output="screen" />
     

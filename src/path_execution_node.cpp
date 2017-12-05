@@ -54,7 +54,6 @@ int main(int argc, char** argv) {
         }
 
         // std::cout << "frontier_map [0] = " << G_FRONTIER_MAP.data[0] << std::endl;
-        front_pub.publish(front_map);
 
         ROS_INFO("EXECUTE: FOUND %zd FRONTIERS", frontiers.size());
 
@@ -63,7 +62,15 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        std::vector<size_t> path = exploreFrontiers(path_executor.getPlanner(), frontiers);
+        std::vector<size_t> path = exploreFrontiers(path_executor.getPlanner(), frontiers, 0);
+        for (size_t i = 0; i < path.size(); i++)
+        {
+            ROS_INFO("(%zd, %zd)", map_utils::rowFromOffset(path[i], front_map.info.width),
+                                   map_utils::colFromOffset(path[i], front_map.info.width));
+            front_map.data[path[i]] = 100;
+        }
+
+        front_pub.publish(front_map);
 
         ROS_INFO("EXECUTE PATH OF LENGTH %zd", path.size());
         path_executor.pathExecution(path);

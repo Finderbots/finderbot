@@ -1,16 +1,43 @@
 #include <finderbot/path_execution.h>
 
 #define PI 3.14159265
-
+#define DIST_THRESH 2
 // Applies command velocities until you are within a threshold of desired angle
-void Executor::turnTheta(double goal_theta) {
-    if (goal_theta > current_theta_) {
-        // ROS_INFO("TURN LEFT");
-        cmd_.angular.z = -0.05; // LEFT
+
+inline double angle_diff(double leftAngle, double rightAngle)
+{
+    double diff = leftAngle - rightAngle;
+    if(fabs(diff) > PI)
+    {
+        diff -= (diff > 0) ? PI*2 : PI*-2;
     }
-    else if (goal_theta < current_theta_) {
+
+    return diff;
+}
+
+inline float wrap_to_pi(float angle)
+{
+    if(angle < -M_PI)
+    {
+        for(; angle < -M_PI; angle += 2.0*M_PI);
+    }
+    else if(angle > M_PI)
+    {
+        for(; angle > M_PI; angle -= 2.0*M_PI);
+    }
+
+    return angle;
+}
+
+void Executor::turnTheta(double error) {
+
+    if (error > 0) {
+        // ROS_INFO("TURN LEFT");
+        cmd_.angular.z = -0.03; // LEFT
+    }
+    else if (error < 0) {
         // ROS_INFO("TURN RIGHT");
-        cmd_.angular.z = 0.05; // RIGHT
+        cmd_.angular.z = 0.03; // RIGHT
     }
     command_velocities_pub_.publish(cmd_);
     
@@ -18,7 +45,7 @@ void Executor::turnTheta(double goal_theta) {
 }
 
 // Returns a command velocity to move forward distance in feet (negative for backwards)
-void Executor::drive(int goal_row, int goal_col) {
+void Executor::drive() {
     cmd_.linear.x = -0.05;
     // ROS_INFO("FORWARD");
     command_velocities_pub_.publish(cmd_);
@@ -26,30 +53,49 @@ void Executor::drive(int goal_row, int goal_col) {
 }
 
 
-// // Input is a radius to the goal that you consider close enough
-// bool Executor::closeEnoughToGoal(int radius, int goal_row, int goal_col) {
-//     return distance(goal_row, goal_col, current_row_, current_col_) < radius;
-// }
+// Input is a radius to the goal that you consider close enough
+bool Executor::closeEnoughToGoal(double radius, int goal_row, int goal_col) {
 
-bool Executor::thetaCloseEnough(double threshold, double goal_theta) {
-    return fabs(goal_theta - current_theta_) < threshold;
+    double dist = map_utils::distance(goal_row, goal_col, current_row_, current_col_); 
+    // ROS_INFO("dist = %f", dist);
+    return dist < radius;
 }
 
+// bool Executor::thetaCloseEnough(double threshold, double goal_theta) {
+//     return fabs(goal_theta - current_theta_) < threshold;
+// }
+
 void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
+    
     double dx = (int)goal_row - (int)current_row_;
     double dy = (int)goal_col - (int)current_col_;
 
-    double goal_theta = std::atan2(dx, -1*dy);
-
+    double goal_theta = std::atan2(dy, dx);
     // while (!closeEnoughToGoal(0.5, goal_row, goal_col)) {
     moving_to_point_ = true;
     ROS_INFO("Goal pos (%zd, %zd, %f)", goal_row, goal_col, goal_theta);
-    ROS_INFO("Curr pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
+    ROS_INFO("start pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
 
-    while ((current_row_ != goal_row) || (current_col_ != goal_col))
+    size_t print_count = 0;
+    while (!closeEnoughToGoal(3, goal_row, goal_col))
     {
-        // getPose();
+        dx = (int)goal_row - (int)current_row_;
+        dy = (int)goal_col - (int)current_col_;
 
+        goal_theta = std::atan2(dy, dx);
+        double dist = map_utils::distance(goal_row, goal_col, current_row_, current_col_); 
+
+        double angle_error = angle_diff(goal_theta, current_theta_);
+        
+      
+        ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
+        
+        // getPose();
+        if (print_count > 5000)
+        {
+            // ROS_INFO("Curr pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
+            print_count = 0;
+        }
         cmd_.linear.x = 0;
         cmd_.angular.z = 0;
         // ROS_INFO("Goal pos (%zd, %zd, %f)", goal_row, goal_col, goal_theta);
@@ -57,15 +103,15 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         // We rotate to aim straight at the next point in the path then go straight to it
         // Do we need to wait till you finish turning? Or does it queue commands?
         // Is there a way to have it queue instead of one at a time?
-        if (!thetaCloseEnough(0.05, goal_theta)) 
+        if (fabs(angle_error) > 0.2) 
         {
-            turnTheta(goal_theta);
+            turnTheta(angle_error);
         }
         else
         {
-            drive(goal_row, goal_col);
+            drive();
         }
-        
+        print_count++;
         ros::spinOnce();
 
     }
@@ -76,6 +122,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
     // }
 
     moving_to_point_ = false;
+    ros::spinOnce();
     cmd_.linear.x = 0;
     cmd_.linear.y = 0;
     command_velocities_pub_.publish(cmd_);
@@ -90,8 +137,9 @@ void Executor::pathExecution(std::vector<size_t>& path) {
 
     size_t map_width = planner_->getMapPtr()->info.width;
 
-    ROS_INFO("PATH TO POINT (%zd, %zd)", map_utils::rowFromOffset(path.front(), map_width), map_utils::rowFromOffset(path.front(), map_width));
-    int max_path_length = 5;
+    ROS_INFO("PATH TO POINT (%zd, %zd)", map_utils::rowFromOffset(path.front(), map_width), map_utils::colFromOffset(path.front(), map_width));
+    
+    // int max_path_length = 10;
     int count = 0;
 
     while (!path.empty() && ros::ok()) {
@@ -100,17 +148,18 @@ void Executor::pathExecution(std::vector<size_t>& path) {
         path.pop_back();
 
         goToNextNodeInPath(goal_row, goal_col);
-        if (count == max_path_length) 
-        {   
-            ROS_INFO("Get New Path");
-            return; 
-        }
+        // if (count >= max_path_length) 
+        // {   
+        //     ROS_INFO("Get New Path");
+        //     return; 
+        // }
 
         count++;
         ros::spinOnce();
     }
 
     ROS_INFO("Get New Path");
+    ros::spinOnce();
     return;
 }
 
@@ -133,6 +182,8 @@ void Executor::handleGlobalMap(const nav_msgs::OccupancyGrid map)
               
         // return;
     }
+
+    ROS_INFO("UPDATE MAP");
     // for (size_t i = 0; i < map.data.size(); i++)
     // {
     //     std::coutca << (int)map.data[i] << std::endl;
@@ -170,7 +221,7 @@ void Executor::handlePose(const finderbot::Pose new_pose)
     current_row_ = (dx / map_resolution) + init_map_x_;
     current_col_ = (dy / map_resolution) + init_map_y_;
 
-    current_theta_ = new_pose.theta + M_PI/2;
+    current_theta_ = wrap_to_pi(new_pose.theta + M_PI/2);
     // ROS_INFO("NEW POSE = (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
     planner_->setPose(current_row_, current_col_);
 }

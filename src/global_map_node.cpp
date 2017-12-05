@@ -57,16 +57,25 @@ int main(int argc, char** argv)
     int global_map_height;
     int local_map_width;
     int local_map_height;
-    double map_resolution;
+    double map_resolution_param;
     std::string local_frame_id;
 
+    int global_map_length_m = 15;
+    int local_map_length_m = 5;
+    double map_resolution = 0.05;
 
-    nh.param<int>("global_map_width", global_map_width, 1000);
-    nh.param<int>("global_map_height", global_map_height, 1000);
-    nh.param<int>("local_map_height", local_map_height, 200);
-    nh.param<int>("local_map_width", local_map_width, 200);
+    int default_global_cells = global_map_length_m / map_resolution;
+    int default_local_cells = local_map_length_m / map_resolution;
 
-    nh.param<double>("map_resolution", map_resolution, 0.020);
+    ROS_INFO("GLOBAL MAP length: %d", default_global_cells);
+    ROS_INFO("LOCAL MAP length: %d", default_local_cells);
+
+    nh.param<int>("global_map_width", global_map_width, default_global_cells);
+    nh.param<int>("global_map_height", global_map_height, default_global_cells);
+    nh.param<int>("local_map_height", local_map_height, default_local_cells);
+    nh.param<int>("local_map_width", local_map_width, default_local_cells);
+
+    nh.param<double>("map_resolution", map_resolution_param, map_resolution);
     nh.param<std::string>("local_frame_id", local_frame_id, "laser_frame");
 
 
@@ -74,7 +83,7 @@ int main(int argc, char** argv)
                                                               global_map_height,
                                                               local_map_width,
                                                               local_map_height, 
-                                                              map_resolution, 
+                                                              map_resolution_param, 
                                                               local_frame_id);
 
     ros::Subscriber local_map_handler = nh.subscribe<sensor_msgs::LaserScan>("hokuyo_data", 1, handleLaserScan);

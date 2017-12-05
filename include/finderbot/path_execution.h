@@ -37,11 +37,11 @@ class Executor
     ros::Publisher command_velocities_pub_; 
 
     void turnTheta(double goal_theta);
-    void drive(int goal_row, int goal_col);
+    void drive();
 
     bool thetaCloseEnough(double threshold, double goal_theta);
     void goToNextNodeInPath(size_t goal_row, size_t goal_col);
-
+    bool closeEnoughToGoal(double radius, int goal_row, int goal_col);
 
   public:
 	Executor(std::string world_frame, std::string local_frame);
