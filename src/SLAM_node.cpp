@@ -18,11 +18,19 @@
 //job of SLAM is to make sure that position is correct
 //by choosing pose that makes the raw lidar data correlate best with the map
 
-// struct Pose{
-//     double x;
-//     double y;
-//     double theta;
-// };
+inline float wrap_to_pi(float angle)
+{
+    if(angle < -M_PI)
+    {
+        for(; angle < -M_PI; angle += 2.0*M_PI);
+    }
+    else if(angle > M_PI)
+    {
+        for(; angle > M_PI; angle -= 2.0*M_PI);
+    }
+
+    return angle;
+}
 
 class SLAM
 {
@@ -100,12 +108,13 @@ public:
         pose_.x = pose.position.x;
         pose_.y = pose.position.y;
         // pose_.theta = -1.5707;
+
         pose_.theta = map_utils::convertQuatToAngle(pose.orientation);
         
-        // std::cout << "SLAM_NODE: initial pose = (" << pose_.x << ", "
-        //                                            << pose_.y << ", "
-        //                                            << pose_.theta << 
-        //                                            ")" << std::endl;
+        std::cout << "SLAM_NODE: initial pose = (" << pose_.x << ", "
+                                                   << pose_.y << ", "
+                                                   << pose_.theta << 
+                                                   ")" << std::endl;
 
 
         pose_publisher_.publish(pose_);
@@ -199,10 +208,10 @@ public:
         // ROS_INFO("pf_pose = (%f, %f, %f", max_pose.x, max_pose.y, max_pose.theta);
         //select particle with highest pose, update pose
         pose_ = max_pose;
-        std::cout << "SLAM: new pose = ("<< pose_.x << ", "
-                                       << pose_.y << ", "
-                                       << pose_.theta << 
-                                       ")" << std::endl;
+        // std::cout << "SLAM: new pose = ("<< pose_.x << ", "
+        //                                << pose_.y << ", "
+        //                                << pose_.theta << 
+        //                                ")" << std::endl;
         pose_publisher_.publish(pose_);
         //publish transform with pose data
         // tf::Transform transform;

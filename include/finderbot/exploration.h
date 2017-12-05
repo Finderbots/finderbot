@@ -14,13 +14,13 @@ struct frontier_t
 // extern nav_msgs::OccupancyGrid G_FRONTIER_MAP;
 
 //planner stores map and initialized obstacle distance grid
-std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers);
+std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers, size_t min_dist_to_frontier);
 
 
 
 
 void findMapFrontiers(const Planner& planner,
                       std::vector<frontier_t>& frontiers,
-                      double min_dist_to_frontier);
+                      double min_frontier_len);
 
 #endif

@@ -21,7 +21,9 @@ namespace map_utils{
 // Pass 2 sets of row and column
 inline double distance(size_t row1, size_t col1, size_t row2, size_t col2) {
     // Euclidean distance
-    return sqrt(pow(row1-row2,2) + pow(col1-col2,2));
+    double dx = (double) row1 - (double)row2;
+    double dy = (double) col1 - (double) col2;
+    return sqrt(pow(dx,2) + pow(dy,2));
 }
 
 // Pass 2 nodes

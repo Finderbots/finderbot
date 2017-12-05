@@ -178,13 +178,14 @@ void Planner::getNeighbors(const Node & node, std::vector<Node*> &neighbors) {
 // Populate the path_coordinates_ with the path as an array of tuples (coordinates)
 std::vector<size_t> * Planner::getPath(Node * goal) {
 	// Start pushing from the goal to the source, so will be reverse path
+    path_coordinates_.clear();
 	Node * current_node = goal;
 	// ROS_INFO("Coordinates:");
 	size_t num_points_in_path = 0;
 	while (NULL != current_node) {
 		size_t offset = getOffsetRowCol(current_node->row, current_node->col, global_map_.info.width);
 		path_coordinates_.push_back(offset);
-		ROS_INFO("(%zd, %zd)", (size_t)rowFromOffset(offset, global_map_.info.width), (size_t)colFromOffset(offset, global_map_.info.width));
+		// ROS_INFO("(%zd, %zd)", (size_t)rowFromOffset(offset, global_map_.info.width), (size_t)colFromOffset(offset, global_map_.info.width));
 
 		current_node = current_node->parent;
 		++num_points_in_path;

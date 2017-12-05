@@ -117,7 +117,8 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
                 return planner.distAt(lhs) > planner.distAt(rhs); 
               });
 
-
+    std::cout << "distAt front = " << planner.distAt(frontier.idxs.front()) << std::endl; 
+    std::cout << "distAt back = "<< planner.distAt(frontier.idxs.back()) << std::endl;
     //go through vector return first valid path
     for (size_t i = 0; i < frontier.idxs.size(); i++)
     {
@@ -129,6 +130,7 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
 
         if (path != nullptr)
         {
+            ROS_INFO("LENGTH of path is %zd", path->size());
             return path;
         }
     }
@@ -227,7 +229,7 @@ void findMapFrontiers(const Planner& planner,
 
 //returns path to nearest frontier
 // if no valid path, returns its own pose
-std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers)
+std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers, size_t min_dist_to_frontier)
 {
     //TODO actual min_dist_to_frontier
     // std::cout << "exploreFrontiers" << std::endl;
@@ -256,9 +258,37 @@ std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& 
         size_t x = map_utils::rowFromOffset(paths[0][i], global_width);
         size_t y = map_utils::colFromOffset(paths[0][i], global_width);
     }
-    return *std::min_element(paths.begin(), paths.end(), 
-            [](const std::vector<size_t>& lhs, const std::vector<size_t>& rhs)
-            {
+
+    // return *std::min_element(paths.begin(), paths.end(), 
+    //         [](const std::vector<size_t>& lhs, const std::vector<size_t>& rhs)
+    //         {
+    //             return lhs.size() < rhs.size();
+    //         });
+
+    // std::sort(frontier.idxs.begin(), 
+    //           frontier.idxs.end(),
+    //           [&planner](size_t lhs, size_t rhs) -> 
+    //           bool {
+    //             return planner.distAt(lhs) > planner.distAt(rhs); 
+    //           });
+
+    ROS_INFO("FRONT PATH LEN = %zd", paths.front().size());
+    ROS_INFO("BACK PATH LEN = %zd", paths.back().size());
+
+    std::sort(paths.begin(), paths.end(),
+            [](const std::vector<size_t>& lhs, const std::vector<size_t>& rhs) -> bool{
                 return lhs.size() < rhs.size();
             });
+
+   
+    ROS_INFO("FRONT PATH LEN = %zd", paths.front().size());
+    ROS_INFO("BACK PATH LEN = %zd", paths.back().size());
+    
+    for (auto path_it = paths.begin(); path_it != paths.end(); path_it++)
+    {
+        if (path_it->size() >= min_dist_to_frontier)
+        {
+            return *path_it;
+        }
+    }
 }
