@@ -208,10 +208,11 @@ public:
         // ROS_INFO("pf_pose = (%f, %f, %f", max_pose.x, max_pose.y, max_pose.theta);
         //select particle with highest pose, update pose
         pose_ = max_pose;
-        // std::cout << "SLAM: new pose = ("<< pose_.x << ", "
-        //                                << pose_.y << ", "
-        //                                << pose_.theta << 
-        //                                ")" << std::endl;
+        std::cout << "SLAM: new pose = ("<< pose_.x << ", "
+                                       << pose_.y << ", "
+                                       << pose_.theta << 
+                                       ")" << std::endl;
+        // std::cout << "hey wassup hello" <<std::endl;
         pose_publisher_.publish(pose_);
         //publish transform with pose data
         // tf::Transform transform;
