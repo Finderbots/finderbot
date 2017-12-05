@@ -115,14 +115,13 @@ add_executable(a_star_test src/a_star_test.cpp src/planner.cpp src/DistanceGrid.
 
 add_executable(path_execution_node src/path_execution_node.cpp src/path_execution.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
-## add_executable(test_path_exec_node src/test_path_exec_node.cpp src/path_execution.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
+##(test_path_exec_node src/test_path_exec_node.cpp src/path_execution_node.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
-## add_executable(dummy_map_node src/dummy_map_node.cpp src/ray_caster.cpp)
+## add_executable(dummy_map_node src/dummy_map_node.cpp src/mapping.cpp src/ray_caster.cpp)
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
 add_dependencies(SLAM_node finderbot_generate_messages_cpp)
-## add_dependencies(test_path_exec_node finderbot_generate_messages_cpp)
-## add_dependencies(dummy_map_node finderbot_generate_messages_cpp)
+add_dependencies(path_execution_node finderbot_generate_messages_cpp)
 
 
 ## Rename C++ executable without prefix
