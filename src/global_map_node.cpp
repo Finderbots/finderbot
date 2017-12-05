@@ -23,7 +23,6 @@ void handleLaserScan(const sensor_msgs::LaserScan scan)
 {
     if (!global_map_builder->initialized()) return;
 
-    // std::cout << "GLOBAL MAP: pose inititalized, building map" << std::endl;
     global_map_builder->buildMapFromScan(scan);
     pf_publisher.publish(global_map_builder->getPFData());
     global_map_publisher.publish(global_map_builder->getGlobalMap());
@@ -32,8 +31,6 @@ void handleLaserScan(const sensor_msgs::LaserScan scan)
 
 void handlePose(const finderbot::Pose new_pose)
 {
-    // std::cout << "GLOBAL MAP: Got new pose" << std::endl;
-
     global_map_builder->updatePose(new_pose);
 }
 
@@ -41,8 +38,7 @@ bool sendMap(finderbot::GetMap::Request& req, finderbot::GetMap::Response& res)
 {
     for (size_t i = 0; i < global_map_builder->getGlobalMap().data.size(); i++)
     {
-    res.map.push_back(global_map_builder->getGlobalMap().data[i]);
-
+        res.map.push_back(global_map_builder->getGlobalMap().data[i]);
     }
     
     return true;
