@@ -6,6 +6,7 @@
 #include <finderbot/planner.h>
 #include <finderbot/map_utils.h>
 #include <finderbot/Pose.h>
+#include <geometry_msgs/Twist.h>
 
 #include <math.h>
 #include <string>

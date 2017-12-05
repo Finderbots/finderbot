@@ -103,7 +103,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         // We rotate to aim straight at the next point in the path then go straight to it
         // Do we need to wait till you finish turning? Or does it queue commands?
         // Is there a way to have it queue instead of one at a time?
-        if (fabs(angle_error) > 0.2) 
+        if (fabs(angle_error) > 0.25) 
         {
             turnTheta(angle_error);
         }
