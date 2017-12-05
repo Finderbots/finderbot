@@ -195,16 +195,12 @@ public:
         //select particle with highest pose, update pose
         finderbot::Pose max_pose = getMLPose();
         
-        // pose_ = max_pose;
-        pose_.x = (float) max_pose.x;
-        pose_.y = (float) max_pose.y;
-        pose_.theta = (float) max_pose.theta;
+        pose_ = max_pose;
+        // pose_.x = (float) max_pose.x;
+        // pose_.y = (float) max_pose.y;
+        // pose_.theta = (float) max_pose.theta;
 
-        // std::cout << "SLAM: new pose = ("<< pose_.x << ", "
-        //                                << pose_.y << ", "
-        //                                << pose_.theta << 
-        //                                ")" << std::endl;
-        // std::cout << "hey wassup hello" <<std::endl;
+        
         pose_publisher_.publish(pose_);
     }
 
@@ -224,7 +220,7 @@ public:
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "laser_frame_transformer");
+    ros::init(argc, argv, "SLAM");
     ros::NodeHandle nh;
 
     std::string world_frame_id;
@@ -236,7 +232,7 @@ int main(int argc, char** argv)
     nh.param<std::string>("world_frame_id", world_frame_id, "world");
     nh.param<std::string>("laser_frame_id", laser_frame_id, "laser_frame");
     nh.param<std::string>("model_name", model_name, "Finderbot_Lidar");
-    nh.param<int>("pf_num_particles", num_particles, 1000);
+    nh.param<int>("pf_num_particles", num_particles, 10000);
     nh.param<double>("pf_std_dev", std_dev, 0.1);
     
     SLAM slamma_jamma(num_particles, std_dev, world_frame_id, laser_frame_id, model_name);
