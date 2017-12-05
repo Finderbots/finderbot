@@ -73,8 +73,8 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
     double goal_theta = std::atan2(dy, dx);
     // while (!closeEnoughToGoal(0.5, goal_row, goal_col)) {
     moving_to_point_ = true;
-    ROS_INFO("Goal pos (%zd, %zd, %f)", goal_row, goal_col, goal_theta);
-    ROS_INFO("start pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
+    // ROS_INFO("Goal pos (%zd, %zd, %f)", goal_row, goal_col, goal_theta);
+    // ROS_INFO("start pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
 
     size_t print_count = 0;
     while (!closeEnoughToGoal(3, goal_row, goal_col))
@@ -88,7 +88,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         double angle_error = angle_diff(goal_theta, current_theta_);
         
       
-        ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
+        // ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
         
         // getPose();
         if (print_count > 5000)
