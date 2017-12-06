@@ -63,8 +63,8 @@ int main(int argc, char** argv)
     int default_global_cells = global_map_length_m / map_resolution;
     int default_local_cells = local_map_length_m / map_resolution;
 
-    ROS_INFO("GLOBAL MAP length: %d", default_global_cells);
-    ROS_INFO("LOCAL MAP length: %d", default_local_cells);
+    // ROS_INFO("GLOBAL MAP length: %d", default_global_cells);
+    // ROS_INFO("LOCAL MAP length: %d", default_local_cells);
 
     nh.param<int>("global_map_width", global_map_width, default_global_cells);
     nh.param<int>("global_map_height", global_map_height, default_global_cells);
@@ -74,13 +74,14 @@ int main(int argc, char** argv)
     nh.param<double>("map_resolution", map_resolution_param, map_resolution);
     nh.param<std::string>("local_frame_id", local_frame_id, "laser_frame");
 
-
+    ROS_INFO("GLOBAL MAP: width = %d", global_map_width);
     global_map_builder = new global_mapping::GlobalMapBuilder(global_map_width, 
                                                               global_map_height,
                                                               local_map_width,
                                                               local_map_height, 
                                                               map_resolution_param, 
                                                               local_frame_id);
+
 
     ros::Subscriber local_map_handler = nh.subscribe<sensor_msgs::LaserScan>("hokuyo_data", 1, handleLaserScan);
 

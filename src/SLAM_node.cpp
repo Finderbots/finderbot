@@ -43,24 +43,21 @@ class SLAM
 
     int num_particles_;
     bool new_pf_data = false;
+    bool simulated_env_;
     std::vector<finderbot::Pose> particles_;
 
     ros::ServiceClient client_;
     gazebo_msgs::GetModelState model_state_;
 
-    std::string world_frame_id_;
-    std::string laser_frame_id_;
-
     ros::Publisher pose_publisher_;
 
 public:
     //(num_particles, std_dev, world_frame_id, laser_frame_id, model_name
-    SLAM(int num_particles, double std_dev, std::string world_frame_id, std::string laser_frame_id, std::string model_name)
+    SLAM(bool simulated_env, int num_particles, double std_dev, std::string model_name)
         : 
+        simulated_env_(simulated_env),
         num_particles_(num_particles),
-        std_dev_(std_dev),
-        world_frame_id_(world_frame_id),
-        laser_frame_id_(laser_frame_id)
+        std_dev_(std_dev)
     {
         particles_.reserve(num_particles_);
         ros::NodeHandle nh;
@@ -68,51 +65,59 @@ public:
         pose_publisher_ = nh.advertise<finderbot::Pose>("finderbot_pose", 1, true);
 
         /////////GET MODEL STATE ///////////
-        client_ = nh.serviceClient<gazebo_msgs::GetModelState>("/gazebo_launch/get_model_state");
-        model_state_.request.model_name = model_name;
-
-        while(!client_.call(model_state_));
-
-        ///////SET MODEL STATE//////////
-        geometry_msgs::Pose start_pose;
-        start_pose.position.x = 0.0;
-        start_pose.position.y = 0.0;
-
-        tf::Quaternion q(0, 0, 0, 0);
-        q.setRPY(0, 0, -1.5707);
-
-        start_pose.orientation.x = (double) q.x();
-        start_pose.orientation.y = (double) q.y();
-        start_pose.orientation.z = (double) q.z();
-        start_pose.orientation.w = (double) q.w();
-
-        gazebo_msgs::ModelState modelstate;
-        modelstate.model_name = model_name;
-        modelstate.pose = start_pose;
-
-        ros::ServiceClient client = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo_launch/set_model_state");
-        gazebo_msgs::SetModelState setmodelstate;
-        setmodelstate.request.model_state = modelstate;
-        while(!client.call(setmodelstate));
-
-        if (!client_.call(model_state_))
+        if (simulated_env_)
         {
-            std::cout <<"fuck you gazebo" << std::endl;
+            client_ = nh.serviceClient<gazebo_msgs::GetModelState>("/gazebo_launch/get_model_state");
+            model_state_.request.model_name = model_name;
+
+            while(!client_.call(model_state_));
+
+            ///////SET MODEL STATE//////////
+            geometry_msgs::Pose start_pose;
+            start_pose.position.x = 0.0;
+            start_pose.position.y = 0.0;
+
+            tf::Quaternion q(0, 0, 0, 0);
+            q.setRPY(0, 0, -1.5707);
+
+            start_pose.orientation.x = (double) q.x();
+            start_pose.orientation.y = (double) q.y();
+            start_pose.orientation.z = (double) q.z();
+            start_pose.orientation.w = (double) q.w();
+
+            gazebo_msgs::ModelState modelstate;
+            modelstate.model_name = model_name;
+            modelstate.pose = start_pose;
+
+            ros::ServiceClient client = nh.serviceClient<gazebo_msgs::SetModelState>("/gazebo_launch/set_model_state");
+            gazebo_msgs::SetModelState setmodelstate;
+            setmodelstate.request.model_state = modelstate;
+            while(!client.call(setmodelstate));
+
+            if (!client_.call(model_state_))
+            {
+                ROS_ERROR("fuck you gazebo");
+            }
+
+            //rosservice call 0, 0 pi/2
+            geometry_msgs::Pose pose;
+            pose = model_state_.response.pose;
+            pose_.x = pose.position.x;
+            pose_.y = pose.position.y;
+
+            pose_.theta = map_utils::convertQuatToAngle(pose.orientation);
+        
+        }
+        
+        else {
+            pose_.x = 0;
+            pose_.y = 0;
+            pose_.theta = 0;
         }
 
-        //rosservice call 0, 0 pi/2
-        geometry_msgs::Pose pose;
-        pose = model_state_.response.pose;
-        pose_.x = pose.position.x;
-        pose_.y = pose.position.y;
-
-        pose_.theta = map_utils::convertQuatToAngle(pose.orientation);
-        
-        std::cout << "SLAM_NODE: initial pose = (" << pose_.x << ", "
-                                                   << pose_.y << ", "
-                                                   << pose_.theta << 
-                                                   ")" << std::endl;
-
+        ROS_INFO("SLAM_NODE: initial pose = (%f, %f, %f)",pose_.x, 
+                                                         pose_.y,
+                                                         pose_.theta);
         pose_publisher_.publish(pose_);
     }
 
@@ -173,22 +178,26 @@ public:
         return max_pose;
     }
 
-    void generatePose()
+    void generateSLAMPose()
     {
         if (!new_pf_data) return;
-        geometry_msgs::Pose pose;
-        if (client_.call(model_state_))
+
+        if(!simulated_env_)
         {
-             pose = model_state_.response.pose;
-             pose_.x = pose.position.x;
-             pose_.y = pose.position.y;
-             tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
-             pose_.theta = map_utils::convertQuatToAngle(q);
-        }
+            geometry_msgs::Pose pose;
+            if (client_.call(model_state_))
+            {
+                 pose = model_state_.response.pose;
+                 pose_.x = pose.position.x;
+                 pose_.y = pose.position.y;
+                 tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+                 pose_.theta = map_utils::convertQuatToAngle(q);
+            }
+            
+            else ROS_ERROR("boooo gazebo");
+        } //else pose_ is updated by callback
         
-        else ROS_INFO("boooo gazebo");
-        // ROS_INFO("abs_pose = (%f, %f, %f", pose_.x, pose_.y, pose_.theta);
-        //fill particles vector by sampling from N(pose, std_dev) num_particles times
+        //fill particles vector by sampling num_particles times from N(pose, std_dev)
         generateParticles();
         
         //loop through particles
@@ -196,15 +205,13 @@ public:
         finderbot::Pose max_pose = getMLPose();
         
         pose_ = max_pose;
-        // pose_.x = (float) max_pose.x;
-        // pose_.y = (float) max_pose.y;
-        // pose_.theta = (float) max_pose.theta;
-
         
+        //publish data to global map builder
+        //and to path execution node
         pose_publisher_.publish(pose_);
     }
 
-
+    //update local pf data
     void handlePFData(const finderbot::PF_Input pfData)
     {
         pfInput.map_width = pfData.map_width;
@@ -215,6 +222,13 @@ public:
         pfInput.scan_angles.assign(pfData.scan_angles.begin(), pfData.scan_angles.end());
         new_pf_data = true;
     }
+
+    //spi node will publish pose data calculated from IMU,
+    //handleIMU Pose will provide pose to sample from 
+    // void handleIMUPose(const finderbot::Pose)
+    // {
+
+    // }
 };
 
 
@@ -228,26 +242,29 @@ int main(int argc, char** argv)
     std::string model_name;
     int num_particles;
     double std_dev;
+    bool simulated_env;
 
     nh.param<std::string>("world_frame_id", world_frame_id, "world");
     nh.param<std::string>("laser_frame_id", laser_frame_id, "laser_frame");
     nh.param<std::string>("model_name", model_name, "Finderbot_Lidar");
     nh.param<int>("pf_num_particles", num_particles, 10000);
     nh.param<double>("pf_std_dev", std_dev, 0.1);
+    nh.param<bool>("simulated_env", simulated_env, false);
     
-    SLAM slamma_jamma(num_particles, std_dev, world_frame_id, laser_frame_id, model_name);
+    if (simulated_env) ROS_INFO("USING SIMULATED DATA");
+
+    SLAM slamma_jamma(simulated_env, num_particles, std_dev, model_name);
 
     ros::Subscriber pf_handler = nh.subscribe<finderbot::PF_Input>("SLAM_pf", 1, &SLAM::handlePFData, &slamma_jamma);
     
     ros::Rate loop_rate(100);
     while (ros::ok())
     {
-        slamma_jamma.generatePose();
+        slamma_jamma.generateSLAMPose();
 
         ros::spinOnce();
 
         loop_rate.sleep();
     }
-    // ros::spin(); 
 
 }
