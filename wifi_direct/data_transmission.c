@@ -23,6 +23,8 @@ int robot_sock_image;
 
 struct sockaddr_in base_audio_out_addr;
 struct sockaddr_in robot_audio_in_addr;
+struct sockaddr_in base_audio_in_addr;
+struct sockaddr_in robot_audio_out_addr;
 struct sockaddr_in base_image_addr;
 struct sockaddr_in robot_image_addr;
 
@@ -213,6 +215,53 @@ int recv_map_at_base()
 }
 */
 
+int base_init_audio_in()
+{
+        struct sockaddr_in address;
+        int addrlen = sizeof(address);
+        int opt = 1;
+
+        // Creating socket file descriptor
+        if ((base_sock_audio_in = socket(AF_INET, SOCK_DGRAM, 0)) == 0)
+        {
+                printf("socket failed\n");
+                return -1;
+        }
+
+        if (setsockopt(base_sock_audio_in, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
+        {
+                printf("setsockopt failed\n");
+                return -1;
+        }
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = inet_addr(IP_BASE);
+        address.sin_port = htons(BASE_PORT_AUDIO_IN);
+
+        // Forcefully attaching socket to PORT_MAP
+        if (bind(base_sock_audio_in, (struct sockaddr *)&address, sizeof(address))<0)
+        {
+                printf("bind failed\n");
+                return -1;
+        }
+
+        // set up for recvfrom
+        addrlen = sizeof(robot_audio_out_addr);
+        memset(&robot_audio_out_addr, '0', sizeof(robot_audio_out_addr));
+
+        robot_audio_out_addr.sin_family = AF_INET;
+        robot_audio_out_addr.sin_port = htons(ROBOT_PORT_AUDIO_OUT);
+
+        // Convert IPv4 and IPv6 addresses from text to binary form
+        if(inet_pton(AF_INET, IP_BASE, &robot_audio_out_addr.sin_addr)<=0)
+        {
+                printf("Invalid address/ Address not supported \n");
+                return -1;
+        }
+
+        setup_speaker_base();
+}
+
+
 int base_init_audio_out()
 {
 	if ((base_sock_audio_out = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -271,8 +320,8 @@ int robot_init_audio_in()
 	addrlen = sizeof(base_audio_out_addr);
 	memset(&base_audio_out_addr, '0', sizeof(base_audio_out_addr));
   
-	robot_image_addr.sin_family = AF_INET;
-	robot_image_addr.sin_port = htons(BASE_PORT_AUDIO_OUT);
+	base_audio_out_addr.sin_family = AF_INET;
+	base_audio_out_addr.sin_port = htons(BASE_PORT_AUDIO_OUT);
 	  
 	// Convert IPv4 and IPv6 addresses from text to binary form
 	if(inet_pton(AF_INET, IP_BASE, &base_audio_out_addr.sin_addr)<=0) 
@@ -282,6 +331,31 @@ int robot_init_audio_in()
 	}
 
 	setup_speaker_robot();
+}
+
+int robot_init_audio_out()
+{
+        if ((robot_sock_audio_out = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+        {
+                printf("Socket creation error \n");
+                return -1;
+        }
+
+        memset(&base_audio_in_addr, '0', sizeof(base_audio_in_addr));
+
+        base_audio_in_addr.sin_family = AF_INET;
+        base_audio_in_addr.sin_port = htons(BASE_PORT_AUDIO_IN);
+          
+        // Convert IPv4 and IPv6 addresses from text to binary form
+        if(inet_pton(AF_INET, IP_ROBOT, &base_audio_in_addr.sin_addr)<=0)
+        {
+                printf("Invalid address/ Address not supported \n");
+                return -1;
+        }
+
+        setup_mic_robot();
+
+        return 0;
 }
 
 void base_send_audio()
@@ -302,6 +376,49 @@ void base_send_audio()
 		}
 	}
 }
+
+void robot_send_audio()
+{
+        int buf_frame = 128;
+        int buf_len = buf_frame * snd_pcm_format_width(SND_PCM_FORMAT_S16_LE) / 8 * 2;
+        uint16_t buf[buf_len];
+        int err = 0;
+
+        while (1)
+        {
+                robot_capture(buf, buf_frame);
+
+                if (sendto(robot_sock_audio_out, buf, buf_len, 0, (struct sockaddr *) &base_audio_in_addr, sizeof(base_audio_in_addr)) < 0)
+                {
+                        printf("ERROR in sendto");
+                        exit(1);
+                }
+        }
+}
+
+void base_recv_audio()
+{
+        int buf_frame = 128;
+        int buf_len = buf_frame * snd_pcm_format_width(SND_PCM_FORMAT_S16_LE) / 8 * 2;
+        uint16_t buf[buf_len];
+        int err = 0;
+        int robot_audio_out_addr_len = sizeof(robot_audio_out_addr);
+
+        while (1)
+        {
+                // recv audio
+                memset(buf, 0, buf_len);
+                int bytes_recv = recvfrom(base_sock_audio_in, buf, buf_len, 0, (struct sockaddr *) &robot_audio_out_addr, &robot_audio_out_addr_len);
+                if (bytes_recv <= 0)
+                {
+                        printf("ERROR in recvfrom");
+                        exit(1);
+                }
+
+                base_playback(buf, buf_frame);
+        }
+}
+
 
 void robot_recv_audio()
 {

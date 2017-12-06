@@ -32,6 +32,18 @@ void robot_image()
 	printf("robot done\n");
 }
 
+void base_audio_in()
+{
+        connect_base();
+        printf("base connected\n");
+
+        base_init_audio_in();
+        printf("base init success\n");
+
+       // base_recv_audio();
+        printf("base done\n");
+}
+
 void base_audio_out()
 {
 	connect_base();
@@ -56,10 +68,23 @@ void robot_audio_in()
 	printf("robot done\n");
 }
 
+void robot_audio_out()
+{
+        connect_robot();
+        printf("robot connected\n");
+
+        robot_init_audio_out();
+        printf("robot init success\n");
+
+        //robot_send_audio();
+        printf("robot done\n");
+}
+
+
 int main()
 {
 	// call func for device running on
-	robot_image();
+	robot_audio_in();
 
 
     return 0;

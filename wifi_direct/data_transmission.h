@@ -45,7 +45,7 @@ int base_init_audio_in();
 int robot_init_audio_out();
 
 // sends audio data from the robot to the base via udp socket 
-int robot_send_audio();
+void robot_send_audio();
 
 // receives audio data at the base from the robot via udp socket
 void base_recv_audio();

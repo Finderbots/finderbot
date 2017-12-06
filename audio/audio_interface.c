@@ -317,7 +317,8 @@ void base_playback(uint16_t* buf, int buf_frame)
 {
 	int err;
 	if ((err = snd_pcm_writei (base_playback_handle, buf, buf_frame)) != buf_frame) {
-		fprintf (stderr, "read from audio interface failed (%s)\n",
+
+		fprintf (stderr, "write to audio interface failed (%s)\n",
 			 snd_strerror (err));
 		exit(1);
 	}
@@ -337,7 +338,8 @@ void robot_playback(uint16_t* buf, int buf_frame)
 {
 	int err;
 	if ((err = snd_pcm_writei (robot_playback_handle, buf, buf_frame)) != buf_frame) {
-		fprintf (stderr, "read from audio interface failed (%s)\n",
+
+		fprintf (stderr, "write to  audio interface failed (%s)\n",
 			 snd_strerror (err));
 		exit(1);
 	}
