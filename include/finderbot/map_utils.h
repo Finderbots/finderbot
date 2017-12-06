@@ -7,9 +7,9 @@
 
 struct Node
 {
-    int row;
-    int col;
-    int dist;
+    size_t row;
+    size_t col;
+    size_t dist;
     struct Node * parent;
     bool visited;
     double g_score;
@@ -19,9 +19,11 @@ struct Node
 namespace map_utils{
 
 // Pass 2 sets of row and column
-inline double distance(int row1, int col1, int row2, int col2) {
+inline double distance(size_t row1, size_t col1, size_t row2, size_t col2) {
     // Euclidean distance
-    return sqrt(pow(row1-row2,2) + pow(col1-col2,2));
+    double dx = (double) row1 - (double)row2;
+    double dy = (double) col1 - (double) col2;
+    return sqrt(pow(dx,2) + pow(dy,2));
 }
 
 // Pass 2 nodes
@@ -77,6 +79,16 @@ inline double convertQuatToAngle(const tf::Quaternion& q)
     return 2*std::atan2(q.z(), q.w());
 }
 
+inline double convertQuatToAngle(const geometry_msgs::Quaternion& q)
+{
+    if(std::fabs(q.x > 1e-5) || std::fabs(q.y > 1e-5)) {
+        // tf::Vector3 axis = q.getAxis();
+        // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
+            // axis.x(), axis.y(), axis.z());
+    }
+
+    return 2*std::atan2(q.z, q.w);
+}
 
 /* Return the world coordinates of the map point at given index
  *

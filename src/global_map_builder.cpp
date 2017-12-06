@@ -7,17 +7,6 @@ namespace global_mapping
     const double default_max_log_odds = 100;
     const double default_belief_threshold = 20;
 
-    // double convertQuatToAngle(const tf::Quaternion& q)
-    // {
-    //     if(std::fabs(q.x()) > 1e-5 || std::fabs(q.y()) > 1e-5){
-    //         tf::Vector3 axis = q.getAxis();
-    //         // ROS_WARN("Laser frame rotation is not around the z-axis (axis = [%f, %f, %f], just pretending it is",
-    //             // axis.x(), axis.y(), axis.z());
-    //     }
-
-    //     return 2*std::atan2(q.z(), q.w());
-    // }
-
     GlobalMapBuilder::GlobalMapBuilder(int global_width, int global_height, 
                                     int local_width, int local_height, 
                                     double resolution, std::string laser_frame_id)
@@ -73,7 +62,7 @@ namespace global_mapping
 
     void GlobalMapBuilder::buildMapFromScan(const sensor_msgs::LaserScan& scan)
     {
-        updatePosition();
+        // updatePosition();
 
         pf_.scan_ranges.clear();
         pf_.scan_angles.clear();
@@ -123,55 +112,26 @@ namespace global_mapping
         return obstacle_in_map;
     }
 
-
-    void GlobalMapBuilder::updatePosition()
+    void GlobalMapBuilder::updatePose(const finderbot::Pose& new_pose)
     {
-        if (!transform_initialized)
+        if (!pose_initialized_)
         {
-            ROS_INFO("transform uninitialized");
-            tf::StampedTransform transform;
-            try
-            {
-                //gazebo takes a while to startup so dont wait too long for a transform
-                // tf_listener_.waitForTransform(world_frame_id_, laser_frame_id_, ros::Time(0), ros::Duration(1000.0));
-                tf_listener_.lookupTransform(world_frame_id_, laser_frame_id_,
-                                ros::Time(0), transform);
-            }
-            catch(tf::TransformException ex)
-            {
-                ROS_ERROR("%s", ex.what());
-                return;
-            }
+            x_init_ = new_pose.x;
+            y_init_ = new_pose.y;
 
-            x_init_ = transform.getOrigin().x();
-            y_init_ = transform.getOrigin().y();
-
-
-            transform_initialized = true;
-            //robot initialized in center of map
             init_map_x_ = global_map_.info.height/2;
             init_map_y_ = global_map_.info.width/2;
+
+            pose_initialized_ = true;
         }
 
-        tf::StampedTransform new_transform;
-        try
-        {
-            tf_listener_.lookupTransform(world_frame_id_, laser_frame_id_,
-                            ros::Time(0), new_transform);
-        }
-        catch(tf::TransformException ex)
-        {
-            ROS_ERROR("%s", ex.what());
-            return;
-        }
+        const double dx = new_pose.x - x_init_;
+        const double dy = new_pose.y - y_init_;
 
-        const double dx = new_transform.getOrigin().x() - x_init_;
-        const double dy = new_transform.getOrigin().y() - y_init_;
-
-        map_x_ = (dx / global_map_.info.resolution) + init_map_x_;
+        map_x_ = (dx/ global_map_.info.resolution) + init_map_x_;
         map_y_ = (dy / global_map_.info.resolution) + init_map_y_;
 
-        theta_ = map_utils::convertQuatToAngle(new_transform.getRotation()) + M_PI/2;
+        theta_ = new_pose.theta + M_PI/2;
     }
 
     void GlobalMapBuilder::updateLocalOccupancy(bool occupied, size_t idx)
@@ -217,10 +177,6 @@ namespace global_mapping
                 // The last point is the point with obstacle.
                 updateLocalOccupancy(true, pts.back());
 
-                // ROS_INFO("occupancy val at (%zd,%zd) = %d", ray_caster::rowFromOffset(pts.back(), ncol),
-                //                                     ray_caster::colFromOffset(pts.back(), ncol), 
-                //                                     map_.data[pts.back()]);
-
                 //this data is used to cast rays to global map in pf
                 
                 pts.pop_back();
@@ -249,7 +205,7 @@ namespace global_mapping
     void GlobalMapBuilder::addLocalMapToGlobal()
     {
         assert(global_map_.info.resolution == local_map_.info.resolution);
-        updatePosition();
+        // updatePosition();
 
         size_t local_ncol = local_map_.info.width;
         size_t local_nrow = local_map_.info.height;

@@ -1,50 +1,80 @@
-#include <path_execution_node.h>
-
-void path_execution() {
-	int current_row = 0;
-	int current_col = 0;
-	int goal_row = 0;
-	int goal_col = 0;
-	while (!path_coordinates_.empty()) {
-		// Pop from the end so you get column first then row
-		goal_col = path_coordinates_.back();
-		path_coordinates_.pop_back();
-		goal_row = path_coordinates_.back();
-		path_coordinates_.pop_back();
-		while ((current_row != goal_row) && (current_col != goal_col)) {
-			// UPDATE Current position everytime
-			// 	current_row and current_col will come from readings from the SLAM algorithm
-			// 	convert the values from slam using the reverse ray caster function below
-
-			// We rotate to point straight at the next point in the path then go straight to it
-			// If there is error in theta from current position to goal
-			// correct that
-			// Else if there is error in x,y from current position to goal
-			// correct that
-		}
-		path_coordinates_.
-	}
-}
-
+#include <finderbot/path_execution.h>
+#include <finderbot/exploration.h>
+#include <ros/ros.h>
+#include <nav_msgs/OccupancyGrid.h>
+#include <finderbot/map_utils.h>
+#include <iostream>
 // subscribes to both the slam and the explore nodes
-// 	 gets the pose from slam
+// might as well just have this be the explorer
+
+//   gets the pose from slam
 //   gets the destination from the explore node
+
+//assumes can overwrite global map in planner
 int main(int argc, char** argv) {
     ros::init(argc, argv, "path_execution");
     ros::NodeHandle nh;
 
-    // Just made a 1000 x 1000 map with no obstacles
-    std::vector<int> global_map(global_width * global_width, 0);
-    // Initialize nodes array to the size of the map
-	Planner* planner = new Planner(global_map);
+    Executor path_executor("world", "laser_frame");
 
-	ros::ServiceServer service = nh.advertiseService("get_path", planner->pathCb);
-	ROS_INFO("Ready to print path coordinates.");
-    ros::spin();
+    ros::Subscriber global_map_handler = nh.subscribe<nav_msgs::OccupancyGrid>("global_map", 1, &Executor::handleGlobalMap, &path_executor);
+    ros::Subscriber pose_handler = nh.subscribe<finderbot::Pose>("finderbot_pose", 1, &Executor::handlePose, &path_executor);
+    ros::Publisher front_pub = nh.advertise<nav_msgs::OccupancyGrid>("frontier_map", 1, true);
+    std::vector<frontier_t> frontiers;
+    ROS_INFO("Execution Node Starting");
+
+    nav_msgs::OccupancyGrid front_map;
+
+    while (ros::ok())
+    {
+        if (!path_executor.initialized()) {
+            // ROS_INFO("Map Uninitialized: Continue");
+            ros::spinOnce();
+            continue;
+        }
+        // ROS_INFO("INITIALIZED");
+        ros::spinOnce();
+        front_map.info = path_executor.getPlanner().getMapPtr()->info;
+
+        frontiers.clear();
+        findMapFrontiers(path_executor.getPlanner(), frontiers, 3);
+        std::cout << "done with frontiers" << std::endl;
+
+
+        front_map.data.assign(front_map.info.width*front_map.info.height, -1);
+        for (size_t i = 0; i < frontiers.size(); i++)
+        {
+            for (size_t j =0; j < frontiers[i].idxs.size(); j++)
+            {
+                size_t idx = frontiers[i].idxs[j];
+                front_map.data[idx] = 0;
+
+                // ROS_INFO("front at %zd)", idx);
+            }
+        }
+
+        // std::cout << "frontier_map [0] = " << G_FRONTIER_MAP.data[0] << std::endl;
+
+        ROS_INFO("EXECUTE: FOUND %zd FRONTIERS", frontiers.size());
+
+        if (frontiers.empty())
+        {
+            continue;
+        }
+
+        std::vector<size_t> path = exploreFrontiers(path_executor.getPlanner(), frontiers, 0);
+        for (size_t i = 0; i < path.size(); i++)
+        {
+            ROS_INFO("(%zd, %zd)", map_utils::rowFromOffset(path[i], front_map.info.width),
+                                   map_utils::colFromOffset(path[i], front_map.info.width));
+            front_map.data[path[i]] = 100;
+        }
+
+        front_pub.publish(front_map);
+
+        ROS_INFO("EXECUTE PATH OF LENGTH %zd", path.size());
+        path_executor.pathExecution(path);
+    }
 
     return 0;
 }
-
-// Make a function that does the reverse of the ray caster code's functionality
-//   ray caster takes a (row,col) coordinate and outputs the meters
-//   make something that does the opposite, takes in (x,y) meters and output (row,col)

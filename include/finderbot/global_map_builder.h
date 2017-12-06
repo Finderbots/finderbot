@@ -6,8 +6,9 @@
 
 #include <nav_msgs/OccupancyGrid.h>
 #include <finderbot/PF_Input.h>
-#include <tf/tf.h>
-#include <tf/transform_listener.h>
+#include <finderbot/Pose.h>
+// #include <tf/tf.h>
+// #include <tf/transform_listener.h>
 
 #include <finderbot/ray_caster.h>
 #include <finderbot/map_utils.h>
@@ -33,7 +34,7 @@ class GlobalMapBuilder
     std::string laser_frame_id_;
     std::string world_frame_id_;
 
-    tf::TransformListener tf_listener_;
+    // tf::TransformListener tf_listener_;
     ros::Publisher map_publisher_;
 
     size_t mini_map_width_;
@@ -56,10 +57,10 @@ class GlobalMapBuilder
     double max_log_odds_;
     double belief_threshold_;
 
-    bool transform_initialized;
+    bool pose_initialized_;
     bool has_frame_id_;
 
-    void updatePosition();
+    // void updatePosition();
     void updateProbOccupied(bool occupied, size_t idx);
     void updateLocalOccupancy(bool occupied, size_t idx);
     void vec_updateLocalOccupancy(bool occupied, std::vector<size_t>& ray);
@@ -75,6 +76,10 @@ public:
                     double resolution, std::string laser_frame_id);
 
     void buildMapFromScan(const sensor_msgs::LaserScan& scan);
+
+    void updatePose(const finderbot::Pose& new_pose);
+
+    bool initialized() {return pose_initialized_; }
 
     const nav_msgs::OccupancyGrid& getGlobalMap()
     {
