@@ -182,7 +182,7 @@ public:
     {
         if (!new_pf_data) return;
 
-        if(!simulated_env_)
+        if(simulated_env_)
         {
             geometry_msgs::Pose pose;
             if (client_.call(model_state_))
@@ -193,9 +193,9 @@ public:
                  tf::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
                  pose_.theta = map_utils::convertQuatToAngle(q);
             }
-            
             else ROS_ERROR("boooo gazebo");
-        } //else pose_ is updated by callback
+        }
+         //else pose_ is updated by callback
         
         //fill particles vector by sampling num_particles times from N(pose, std_dev)
         generateParticles();

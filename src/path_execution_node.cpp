@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
 
     nav_msgs::OccupancyGrid front_map;
 
+    ros::Rate rate(100);
+
     while (ros::ok())
     {
         if (!path_executor.initialized()) {
@@ -48,8 +50,6 @@ int main(int argc, char** argv) {
             {
                 size_t idx = frontiers[i].idxs[j];
                 front_map.data[idx] = 0;
-
-                // ROS_INFO("front at %zd)", idx);
             }
         }
 
