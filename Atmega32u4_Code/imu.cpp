@@ -12,11 +12,6 @@ float_bytes heading;
 uint8_t sys_calib;
 
 
-//Location PID CONTROL 
-float_bytes Kp;
-float_bytes Ki;
-float_bytes Kd;
-
 
 void init_imu() {
     //cli();
@@ -31,17 +26,20 @@ void init_imu() {
 
 void update_vals(void) {
 
-    sensors_event_t event;
-    // cli();
-    bno.getEvent(&event);
-    heading.num_float = event.orientation.x;
-    // sei();
-
-
     /* Also send calibration data for each sensor. */
     uint8_t sys, gyro, accel, mag = 0;
-    // cli();
     bno.getCalibration(&sys, &gyro, &accel, &mag);
     sys_calib = sys;
-    // sei();
+
+    if(gyro >= 2) { //check for valid data
+        imu::Vector<3> accelerations = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+        lin_accel.num_float = accelerations.x();
+        y_accel.num_float = accelerations.y();
+    }
+    if(mag >= 2) { //check for valid data
+        sensors_event_t event;
+        bno.getEvent(&event);
+        heading.num_float = event.orientation.x;
+    }
+
 }

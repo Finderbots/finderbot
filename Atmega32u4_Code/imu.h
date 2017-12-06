@@ -31,11 +31,6 @@ extern float_bytes heading;
 extern uint8_t sys_calib;
 
 
-//Location PID CONTROL 
-extern float_bytes Kp;
-extern float_bytes Ki;
-extern float_bytes Kd;
-
 void update_vals(void);
 void init_imu();
 

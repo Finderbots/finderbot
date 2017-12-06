@@ -9,6 +9,8 @@ extern volatile int speedFR;
 extern volatile int speedBL;
 extern volatile int speedBR;
 
+#define MAX_SPEED 200
+#define MIN_SPEED 50
 
 // /* Motor enable pins */
 // #define EN1  PD7

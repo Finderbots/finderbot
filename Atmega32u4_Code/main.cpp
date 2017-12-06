@@ -9,6 +9,7 @@
 #include "spi.h"
 #include "ir.h"
 #include "imu.h"
+#include "pid.h"
 
 volatile char spi_char ='\0';
 volatile char spi_message[10];
@@ -41,7 +42,6 @@ const char ack_byte = '!';
 const char err_byte = 'b';
 const char ack_byte_stop = 'd'; 
 
-float_bytes desired_heading_num;
 
 // void vApplicationStackOverflowHook( TaskHandle_t xTask,
 //                                     signed char *pcTaskName ) {
@@ -135,6 +135,29 @@ void TaskIMURead(void *pvParameters) {
 }
 
 void TaskPIDController(void *pvParameters) {
+
+    init_pid();
+
+    for(;;) {
+        if(heading.num_float) {
+            Input = (double) heading.num_float;
+        }
+        else {
+            Input = 0;
+        }
+        myPID.Compute();
+
+        speedFL += Output;
+        speedBL += Output;
+        speedFR -= Output;
+        speedBR -= Output;
+
+        limit_speeds();
+
+        cli();
+        update_speed();
+        sei();
+    }
     
 }
 
