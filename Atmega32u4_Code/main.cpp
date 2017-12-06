@@ -208,9 +208,8 @@ ISR(SPI_STC_vect)
         valid_lin_accel = (valid_start && (spi_message[1] == linear_accel_req));
         valid_y_accel = (valid_start && (spi_message[1] == y_accel_req));
         valid_heading = (valid_start && (spi_message[1] == heading_req));
-        valid_desired_heading = (valid_start && (spi_message[1] == desired_heading) && pos < 7 && pos > 2);
+        valid_desired_heading = (valid_start && (spi_message[1] == desired_heading) && (pos < 7) && (pos > 2));
     }
-
 
     if(valid_desired_heading) {
         switch(desired_heading_byte_num) {
@@ -235,7 +234,7 @@ ISR(SPI_STC_vect)
                 byte_to_send = spi_char;
                 break;
             default:
-                desired_heading_byte_num = -1;
+                desired_heading_byte_num = 0;
                 byte_to_send = err_byte;
                 break;
 
@@ -280,6 +279,7 @@ ISR(SPI_STC_vect)
                 } else {
                     byte_to_send = err_byte;
                 }
+                 break;
             case first_byte: 
                 if(pos == 3 && valid_lin_accel) {
                     byte_to_send  = lin_accel.bytes.first;
