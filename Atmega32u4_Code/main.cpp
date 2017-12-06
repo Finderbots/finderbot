@@ -10,9 +10,8 @@
 #include "ir.h"
 #include "imu.h"
 
-
 volatile char spi_char ='\0';
-volatile char spi_message[MESSAGE_MAX_SIZE];
+volatile char spi_message[10];
 volatile uint8_t pos = 0;
 
 // const char recv_index = 0;
@@ -46,8 +45,6 @@ const char ack_byte_stop = 'd';
 //     PORTD |= _BV(PD3);
 // }
 
-void TaskMotorCommand(void *pvParameters);
-
 void TaskIRSensorRead(void *pvParameters);
 
 void TaskIMURead(void *pvParameters);
@@ -77,37 +74,21 @@ int main(void)
 
     reset_speeds();
 
-    // xTaskCreate(
-    // TaskTestTimers
-    // ,  (const portCHAR *)"TimerTest"  // A name just for humans
-    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  5  // Priority (low num = low priority)
-    // ,  NULL );
-
-  //xTaskCreate(
-    // TaskMotorCommand
-    // ,  (const portCHAR *)"MotorCommand"  // A name just for humans
-    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  5  // Priority (low num = low priority)
-    // ,  NULL );
-
-    // xTaskCreate(
-    // TaskIRSensorRead
-    // ,  (const portCHAR *)"IRSensorRead"  // A name just for humans
-    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  3  // Priority (low num = low priority)
-    // ,  NULL );
-
     xTaskCreate(
-    TaskIMURead
-    ,  (const portCHAR *)"IMURead"  // A name just for humans
-    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    TaskIRSensorRead
+    ,  (const portCHAR *)"IRSensorRead"  // A name just for humans
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
     ,  NULL
-    ,  2  // Priority (low num = low priority)
+    ,  3  // Priority (low num = low priority)
     ,  NULL );
+
+    // xTaskCreate(
+    // TaskIMURead
+    // ,  (const portCHAR *)"IMURead"  // A name just for humans
+    // ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // ,  NULL
+    // ,  2  // Priority (low num = low priority)
+    // ,  NULL );
 
     // xTaskCreate(
     // TaskPIDController
@@ -122,39 +103,6 @@ int main(void)
 
     return 0;               /* never reached */
 }
-
-
-
-// void TaskMotorCommand( void *pvParameters)  // This is a Task.
-// {
-//     init_pwm();
-
-//     init_motor_pins();
-
-//     reset_speeds();
-
-//     for (;;) // A Task shall never return or exit. 
-//     {
-//         //for testing
-//         moveRobot(FORWARD);
-//         vTaskDelay(pdMS_TO_TICKS(500));
-
-//         moveRobot(STOP);
-//         vTaskDelay(pdMS_TO_TICKS(500));
-
-//         reset_speeds();
-
-//         moveRobot(BACKWARD);
-//         vTaskDelay(pdMS_TO_TICKS(500));
-
-//         moveRobot(STOP);
-//         vTaskDelay(pdMS_TO_TICKS(500));
-
-//         reset_speeds();
-
-//     }
-// }
-
 
 
 void TaskIRSensorRead(void *pvParameters) {
@@ -194,6 +142,7 @@ void TaskPIDController(void *pvParameters) {
 }
 
 /*********ISRs******************************************/
+
 //TImer0 ISR 
 ISR(TIMER0_OVF_vect)
 {
@@ -226,11 +175,10 @@ ISR(ADC_vect)
     }
 }
 
-
 // SPI Transmission/reception complete ISR
 ISR(SPI_STC_vect)
 {
-    //PORTE |= _BV(PE6); //debugging
+    PORTE |= _BV(PE6); //debugging
 
     char master_motor_command = '\0';
 
@@ -259,9 +207,9 @@ ISR(SPI_STC_vect)
     bool valid_heading = false;
     if(pos >1) {
         valid_command = (valid_start && (spi_message[1] == command_req));
-        valid_lin_accel = (valid_start && (spi_message[2] == linear_accel_req));
-        valid_y_accel = (valid_start && (spi_message[2] == y_accel_req));
-        valid_heading = (valid_start && (spi_message[2] == heading_req));
+        valid_lin_accel = (valid_start && (spi_message[1] == linear_accel_req));
+        valid_y_accel = (valid_start && (spi_message[1] == y_accel_req));
+        valid_heading = (valid_start && (spi_message[1] == heading_req));
     }
 
     switch(spi_char) {
@@ -452,32 +400,7 @@ ISR(SPI_STC_vect)
         pos = 0;
     }
 
-   //PORTE &= ~(_BV(PE6));
+   PORTE &= ~(_BV(PE6));
 
       
 }
-
-
-// void TaskTestTimers(void *pvParameters) {
-    
-//     init_pwm();
-
-//     DDRD |= _BV(PD0); //just for testing
-
-//     speedFR = 0x7F; //set initial 50% duty cycle 
-//     speedBR = 0x7F; //set initial 50% duty cycle
-//     speedFL = 0x7F; //set initial 50% duty cycle 
-//     speedBL = 0x7F; //set initial 50% duty cycle
-//     update_speed();
-
-//     for(;;)
-//     {
-//         // OCR3A = 0x7F; //set duty cycle for PC6 - TOP is 0xFF by default. 
-//         // OCR4A = 0x7F; //set duty cycle for PC7 
-//         // OCR4B = 0x7F; //set duty cycle for PB6
-//         // OCR4D = 0x7F; //set duty cycle for PB7
-
-//         vTaskDelay(pdMS_TO_TICKS(100));
-//         PORTD ^= _BV(PD0);    /* toggle the LED */
-//     }
-// }

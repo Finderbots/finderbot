@@ -19,24 +19,29 @@ float_bytes Kd;
 
 
 void init_imu() {
-    
+    //cli();
     bno.begin();
     
      delay(1000);
 
     /* Use external crystal for better accuracy */
     bno.setExtCrystalUse(true);
+    //sei();
 }
 
 void update_vals(void) {
 
     sensors_event_t event;
+    // cli();
     bno.getEvent(&event);
     heading.num_float = event.orientation.x;
+    // sei();
 
 
     /* Also send calibration data for each sensor. */
     uint8_t sys, gyro, accel, mag = 0;
+    // cli();
     bno.getCalibration(&sys, &gyro, &accel, &mag);
     sys_calib = sys;
+    // sei();
 }
