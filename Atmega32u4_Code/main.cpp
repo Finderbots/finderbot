@@ -13,10 +13,12 @@
 volatile char spi_char ='\0';
 volatile char spi_message[10];
 volatile uint8_t pos = 0;
+volatile uint8_t desired_heading_byte_num = 0;
 
 // const char recv_index = 0;
 const char start_byte = 's';
 const char calib_req = 'v'; 
+const char desired_heading = 'H';
 const char linear_accel_req = 'X'; //r = I want roll
 const char y_accel_req = 'y'; //p = I want pitch
 const char heading_req = 'T'; //y = I want yaw
@@ -38,6 +40,8 @@ const char dummy_byte = '_';
 const char ack_byte = '!';
 const char err_byte = 'b';
 const char ack_byte_stop = 'd'; 
+
+float_bytes desired_heading_num;
 
 // void vApplicationStackOverflowHook( TaskHandle_t xTask,
 //                                     signed char *pcTaskName ) {
@@ -82,13 +86,6 @@ int main(void)
     ,  3  // Priority (low num = low priority)
     ,  NULL );
 
-    // xTaskCreate(
-    // TaskIMURead
-    // ,  (const portCHAR *)"IMURead"  // A name just for humans
-    // ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  2  // Priority (low num = low priority)
-    // ,  NULL );
 
     // xTaskCreate(
     // TaskPIDController
@@ -205,183 +202,224 @@ ISR(SPI_STC_vect)
     bool valid_lin_accel = false;
     bool valid_y_accel = false;
     bool valid_heading = false;
+    bool valid_desired_heading = false;
     if(pos >1) {
         valid_command = (valid_start && (spi_message[1] == command_req));
         valid_lin_accel = (valid_start && (spi_message[1] == linear_accel_req));
         valid_y_accel = (valid_start && (spi_message[1] == y_accel_req));
         valid_heading = (valid_start && (spi_message[1] == heading_req));
+        valid_desired_heading = (valid_start && (spi_message[1] == desired_heading) && pos < 7);
     }
 
-    switch(spi_char) {
-        case start_byte:
-            //start byte
-            //send ack
-            byte_to_send = ack_byte;
-            break;
-        case linear_accel_req:
-            //linear acceleration value requested
-            if(valid_start && pos == 2) {
-                byte_to_send  = sys_calib;
-            }  else {
+    if(valid_desired_heading) {
+        switch(desired_heading_byte_num) {
+            case 0:
+                desired_heading_num.bytes.first = spi_char;
+                desired_heading_byte_num += 1;
+                byte_to_send = spi_char;
+                break;
+            case 1:
+                desired_heading_num.bytes.second = spi_char;
+                desired_heading_byte_num += 1;
+                byte_to_send = spi_char;
+                break;
+            case 2:
+                desired_heading_num.bytes.third = spi_char;
+                desired_heading_byte_num += 1;
+                byte_to_send = spi_char;
+                break;
+            case 3:
+                desired_heading_num.bytes.fourth = spi_char;
+                desired_heading_byte_num = 0;
+                byte_to_send = spi_char;
+                break;
+            default:
+                desired_heading_byte_num = -1;
                 byte_to_send = err_byte;
-            }          
-            break;
-        case y_accel_req: 
-            //y acceleration value requested
-            if(valid_start && pos == 2) {
-                byte_to_send  = sys_calib;
-            }  else {
-                byte_to_send = err_byte;
-            }          
-            break;
-        case heading_req: 
-            //heading value requested
-            if(valid_start && pos == 2) {
-                byte_to_send  = sys_calib;
-            }  else {
-                byte_to_send = err_byte;
-            } 
-            break;
-        case first_byte: 
-            if(pos == 3 && valid_lin_accel) {
-                byte_to_send  = lin_accel.bytes.first;
-            } else if(pos == 3 && valid_y_accel) {
-                byte_to_send = y_accel.bytes.first;
-            } else if(pos == 3 && valid_heading) {
-                byte_to_send = heading.bytes.first;
-            }
-            else {
-                byte_to_send = err_byte;
-            } 
-            break;
-        case second_byte: 
-            if(pos == 4 && valid_lin_accel) {
-                byte_to_send  = lin_accel.bytes.second;
-            } else if(pos == 4 && valid_y_accel) {
-                byte_to_send = y_accel.bytes.second;
-            } else if(pos == 4 && valid_heading) {
-                byte_to_send = heading.bytes.second;
-            }
-            else {
-                byte_to_send = err_byte;
-            } 
-            break;
-        case third_byte: 
-            if(pos == 5 && valid_lin_accel) {
-                byte_to_send  = lin_accel.bytes.third;
-            } else if(pos == 5 && valid_y_accel) {
-                byte_to_send = y_accel.bytes.third;
-            } else if(pos == 5 && valid_heading) {
-                byte_to_send = heading.bytes.third;
-            }
-            else {
-                byte_to_send = err_byte;
-            } 
-            break;
-        case fourth_byte: 
-            if(pos == 6 && valid_lin_accel) {
-                byte_to_send  = lin_accel.bytes.fourth;
-            } else if(pos == 6 && valid_y_accel) {
-                byte_to_send = y_accel.bytes.fourth;
-            } else if(pos == 6 && valid_heading) {
-                byte_to_send = heading.bytes.fourth;
-            }
-            else {
-                byte_to_send = err_byte;
-            } 
-            break;
-        case left_ir_req:
-            //left ir sensor requested
-            if(valid_start && pos == 2) {
-                byte_to_send  = (uint8_t) IRleftVal;
-            }else {
-                byte_to_send = err_byte;
-            }
-            break;
-        case right_ir_req:
-            //left ir sensor requested
-            if(valid_start && pos == 3) {
-                byte_to_send  = (uint8_t) IRrightVal;
-            }else {
-                byte_to_send = err_byte;
-            }
-            break;
-        case command_req:
-            // master sending motor command
-            // send ack byte back
-            if (valid_start && pos == 2) {
+                break;
+
+        }
+
+    }
+    else {
+        switch(spi_char) {
+            case start_byte:
+                //start byte
+                //send ack
                 byte_to_send = ack_byte;
-            } else {
+                break;
+            case linear_accel_req:
+                //linear acceleration value requested
+                if(valid_start && pos == 2) {
+                    byte_to_send  = sys_calib;
+                }  else {
+                    byte_to_send = err_byte;
+                }          
+                break;
+            case y_accel_req: 
+                //y acceleration value requested
+                if(valid_start && pos == 2) {
+                    byte_to_send  = sys_calib;
+                }  else {
+                    byte_to_send = err_byte;
+                }          
+                break;
+            case heading_req: 
+                //heading value requested
+                if(valid_start && pos == 2) {
+                    byte_to_send  = sys_calib;
+                }  else {
+                    byte_to_send = err_byte;
+                } 
+                break;
+            case desired_heading:
+                //about to receive desired heading
+                if(valid_start && pos == 2) {
+                    byte_to_send = ack_byte;
+                } else {
+                    byte_to_send = err_byte;
+                }
+            case first_byte: 
+                if(pos == 3 && valid_lin_accel) {
+                    byte_to_send  = lin_accel.bytes.first;
+                } else if(pos == 3 && valid_y_accel) {
+                    byte_to_send = y_accel.bytes.first;
+                } else if(pos == 3 && valid_heading) {
+                    byte_to_send = heading.bytes.first;
+                }
+                else {
+                    byte_to_send = err_byte;
+                } 
+                break;
+            case second_byte: 
+                if(pos == 4 && valid_lin_accel) {
+                    byte_to_send  = lin_accel.bytes.second;
+                } else if(pos == 4 && valid_y_accel) {
+                    byte_to_send = y_accel.bytes.second;
+                } else if(pos == 4 && valid_heading) {
+                    byte_to_send = heading.bytes.second;
+                }
+                else {
+                    byte_to_send = err_byte;
+                } 
+                break;
+            case third_byte: 
+                if(pos == 5 && valid_lin_accel) {
+                    byte_to_send  = lin_accel.bytes.third;
+                } else if(pos == 5 && valid_y_accel) {
+                    byte_to_send = y_accel.bytes.third;
+                } else if(pos == 5 && valid_heading) {
+                    byte_to_send = heading.bytes.third;
+                }
+                else {
+                    byte_to_send = err_byte;
+                } 
+                break;
+            case fourth_byte: 
+                if(pos == 6 && valid_lin_accel) {
+                    byte_to_send  = lin_accel.bytes.fourth;
+                } else if(pos == 6 && valid_y_accel) {
+                    byte_to_send = y_accel.bytes.fourth;
+                } else if(pos == 6 && valid_heading) {
+                    byte_to_send = heading.bytes.fourth;
+                }
+                else {
+                    byte_to_send = err_byte;
+                } 
+                break;
+            case left_ir_req:
+                //left ir sensor requested
+                if(valid_start && pos == 2) {
+                    byte_to_send  = (uint8_t) IRleftVal;
+                }else {
+                    byte_to_send = err_byte;
+                }
+                break;
+            case right_ir_req:
+                //left ir sensor requested
+                if(valid_start && pos == 3) {
+                    byte_to_send  = (uint8_t) IRrightVal;
+                }else {
+                    byte_to_send = err_byte;
+                }
+                break;
+            case command_req:
+                // master sending motor command
+                // send ack byte back
+                if (valid_start && pos == 2) {
+                    byte_to_send = ack_byte;
+                } else {
+                    byte_to_send = err_byte;
+                }
+                break;
+            case forward_req:
+                // forward command
+                // echo back command to comfirm to master
+                if(valid_command && pos == 3) {
+                    byte_to_send  = forward_req;
+                    master_motor_command = FORWARD;
+                }  else {
+                    byte_to_send = err_byte;
+                }          
+                break;
+            case backward_req:
+                // forward command
+                // echo back command to comfirm to master
+                if(valid_command && pos == 3) {
+                    byte_to_send  = backward_req;
+                    master_motor_command = BACKWARD;
+                }  else {
+                    byte_to_send = err_byte;
+                }          
+                break;
+            case halt_req:
+                // halt command
+                // echo back command to comfirm to master
+                if(valid_command && pos == 3) {
+                    byte_to_send  = halt_req;
+                    master_motor_command = STOP;
+                }  else {
+                    byte_to_send = err_byte;
+                }          
+                break;
+            case rot_left_req:
+                // rotate left command
+                // echo back command to comfirm to master
+                if(valid_command && pos == 3) {
+                    byte_to_send  = rot_left_req;
+                    master_motor_command = LEFT;
+                }  else {
+                    byte_to_send = err_byte;
+                }          
+                break;
+            case rot_right_req:
+                // right command
+                // echo back command to comfirm to master
+                if(valid_command && pos == 3) {
+                    byte_to_send  = rot_right_req;
+                    master_motor_command = RIGHT;
+                }  else {
+                    byte_to_send = err_byte;
+                }          
+                break;
+            case stop_byte:
+                //send stop ack
+                if ((valid_start && pos == 7)
+                    || (valid_start && pos == 4))
+                {
+                    byte_to_send = ack_byte_stop;
+                } else {
+                    byte_to_send = err_byte;
+                }
+                break;
+            case dummy_byte:
+                //do nothing
+                byte_to_send = dummy_byte;
+                break;
+            default:
                 byte_to_send = err_byte;
-            }
-            break;
-        case forward_req:
-            // forward command
-            // echo back command to comfirm to master
-            if(valid_command && pos == 3) {
-                byte_to_send  = forward_req;
-                master_motor_command = FORWARD;
-            }  else {
-                byte_to_send = err_byte;
-            }          
-            break;
-        case backward_req:
-            // forward command
-            // echo back command to comfirm to master
-            if(valid_command && pos == 3) {
-                byte_to_send  = backward_req;
-                master_motor_command = BACKWARD;
-            }  else {
-                byte_to_send = err_byte;
-            }          
-            break;
-        case halt_req:
-            // halt command
-            // echo back command to comfirm to master
-            if(valid_command && pos == 3) {
-                byte_to_send  = halt_req;
-                master_motor_command = STOP;
-            }  else {
-                byte_to_send = err_byte;
-            }          
-            break;
-        case rot_left_req:
-            // rotate left command
-            // echo back command to comfirm to master
-            if(valid_command && pos == 3) {
-                byte_to_send  = rot_left_req;
-                master_motor_command = LEFT;
-            }  else {
-                byte_to_send = err_byte;
-            }          
-            break;
-        case rot_right_req:
-            // right command
-            // echo back command to comfirm to master
-            if(valid_command && pos == 3) {
-                byte_to_send  = rot_right_req;
-                master_motor_command = RIGHT;
-            }  else {
-                byte_to_send = err_byte;
-            }          
-            break;
-        case stop_byte:
-            //send stop ack
-            if ((valid_start && pos == 7)
-                || (valid_start && pos == 4))
-            {
-                byte_to_send = ack_byte_stop;
-            } else {
-                byte_to_send = err_byte;
-            }
-            break;
-        case dummy_byte:
-            //do nothing
-            byte_to_send = dummy_byte;
-            break;
-        default:
-            byte_to_send = err_byte;
-            break;
+                break;
+        }
     }
 
     SPDR = byte_to_send;
