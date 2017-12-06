@@ -102,7 +102,6 @@ void setup_mic_base()
 
 void setup_speaker_base()
 {
-	const char* base_speaker_device = "hw:0,0";
 	int err;
 	snd_pcm_hw_params_t *hw_params;
 
@@ -252,7 +251,6 @@ void setup_mic_robot()
 
 void setup_speaker_robot()
 {
-	const char* robot_speaker_device = "hw:0,0";
 	int err;
 	snd_pcm_hw_params_t *hw_params;
 
@@ -318,8 +316,8 @@ void setup_speaker_robot()
 void base_playback(uint16_t* buf, int buf_frame)
 {
 	int err;
-	if ((err = snd_pcm_readi (base_playback_handle, buf, buf_frame)) != buf_frame) {
-		fprintf (stderr, "read from audio interface failed (%s)\n",
+	if ((err = snd_pcm_writei (base_playback_handle, buf, buf_frame)) != buf_frame) {
+		fprintf (stderr, "write to audio interface failed (%s)\n",
 			 snd_strerror (err));
 		exit(1);
 	}
@@ -338,8 +336,8 @@ void base_capture(uint16_t* buf, int buf_frame)
 void robot_playback(uint16_t* buf, int buf_frame)
 {
 	int err;
-	if ((err = snd_pcm_readi (robot_playback_handle, buf, buf_frame)) != buf_frame) {
-		fprintf (stderr, "read from audio interface failed (%s)\n",
+	if ((err = snd_pcm_writei (robot_playback_handle, buf, buf_frame)) != buf_frame) {
+		fprintf (stderr, "write to  audio interface failed (%s)\n",
 			 snd_strerror (err));
 		exit(1);
 	}
