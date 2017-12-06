@@ -112,6 +112,12 @@ void enable_motors(void) {
     TCCR3A |= _BV(COM3A1);
 }
 
+void disable_motors(void) {
+    TCCR4A &= ~(_BV(COM4A1)) & ~(_BV(COM4B1));
+    TCCR4C &= ~(_BV(COM4D1));
+    TCCR3A &=  ~(_BV(COM3A1));
+}
+
 void update_speed(void) {
     OCR4D = speedFR;
     OCR4B = speedBR;
@@ -120,10 +126,7 @@ void update_speed(void) {
 }
 
 void stop_bot(void) {
-    TCCR4A &= ~(_BV(COM4A1)) & ~(_BV(COM4B1));
-    TCCR4C &= ~(_BV(COM4D1));
-    TCCR3A &=  ~(_BV(COM3A1));
-
+    disable_motors();
     motor_run(0, speedFR, STOP);
     motor_run(1, speedBR, STOP);
     motor_run(2, speedFL, STOP);

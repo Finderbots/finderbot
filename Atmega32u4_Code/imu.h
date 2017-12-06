@@ -10,21 +10,33 @@
 //extern FreeSixIMU sixDOF;
 extern Adafruit_BNO055 bno;
 
-/* odometry data read from IMU. Updated by IMURead. Sent via SPI to XU4 */
-extern uint8_t roll;
-extern uint8_t pitch;
-extern uint8_t yaw;
-
-
 extern float angles[5];
+
+typedef union {
+	float num_float;
+	struct {
+		uint8_t first : 8;
+		uint8_t second : 8;
+		uint8_t third : 8;
+		uint8_t fourth : 8;
+	} bytes;
+
+} float_bytes;
+
+
+/* odometry data read from IMU. Updated by IMURead. Sent via SPI to XU4 */
+extern float_bytes lin_accel;
+extern float_bytes y_accel;
+extern float_bytes heading;
+extern uint8_t sys_calib;
 
 
 //Location PID CONTROL 
-extern float Kp;
-extern float Ki;
-extern float Kd;
+extern float_bytes Kp;
+extern float_bytes Ki;
+extern float_bytes Kd;
 
-void updateAngle(void);
+void update_vals(void);
 void init_imu();
 
 #endif

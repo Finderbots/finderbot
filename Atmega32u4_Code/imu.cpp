@@ -6,25 +6,20 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 float angles[5];
 
 /* odometry data read from IMU. Updated by IMURead. Sent via SPI to XU4 */
-uint8_t roll = 0;
-uint8_t pitch = 0;
-uint8_t yaw = 0;
+float_bytes lin_accel;
+float_bytes y_accel;
+float_bytes heading;
+uint8_t sys_calib;
+
 
 //Location PID CONTROL 
- float Kp = 0.5;
- float Ki = 0.05;
- float Kd = 0.4;
+float_bytes Kp;
+float_bytes Ki;
+float_bytes Kd;
 
 
 void init_imu() {
     
-    //Wire.begin();
-    //i2c_init();
-    
-    // delay(1); //1 ms
-    // sixDOF.init(); //Begin the IMU
-    // delay(1); //1 ms 
-
     bno.begin();
     
      delay(1000);
@@ -33,21 +28,15 @@ void init_imu() {
     bno.setExtCrystalUse(true);
 }
 
-void updateAngle(void) {
-    //PORTD |= _BV(PD2); //debugging
-    // sixDOF.getYawPitchRoll(angles);
-    // prevAngles[prevAngleI] = angles[1];
-    // prevAngleI = (prevAngleI + 1) % AvgAngles;
-    // float sum = 0;
-    // for (int i = 0; i < AvgAngles; i++)
-    //     sum += prevAngles[i];
-    // currAngle = sum / AvgAngles;
-    // prevAngle = currAngle;
-    //PORTD &= ~(_BV(PD2)); //debugging
+void update_vals(void) {
 
     sensors_event_t event;
     bno.getEvent(&event);
-    roll = event.orientation.x;
-    pitch = event.orientation.y;
-    yaw = event.orientation.z;
+    heading.num_float = event.orientation.x;
+
+
+    /* Also send calibration data for each sensor. */
+    uint8_t sys, gyro, accel, mag = 0;
+    bno.getCalibration(&sys, &gyro, &accel, &mag);
+    sys_calib = sys;
 }

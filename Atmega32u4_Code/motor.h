@@ -10,11 +10,11 @@ extern volatile int speedBL;
 extern volatile int speedBR;
 
 
-/* Motor enable pins */
-#define EN1  PD7
-#define EN2  PB6
-#define EN3  PC7
-#define EN4  PF7
+// /* Motor enable pins */
+// #define EN1  PD7
+// #define EN2  PB6
+// #define EN3  PC7
+// #define EN4  PF7
 
 /* motor commands */
 #define STOP  'S'
@@ -24,7 +24,6 @@ extern volatile int speedBR;
 #define LEFT 'L'
 
 extern volatile char command_state;
-
 
 void init_pwm();
 
@@ -43,6 +42,8 @@ void right(void);
 void left(void);
 
 void enable_motors(void);
+
+void disable_motors(void);
 
 void update_speed(void);
 
