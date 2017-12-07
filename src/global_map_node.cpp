@@ -67,8 +67,6 @@ int main(int argc, char** argv)
     // ROS_INFO("LOCAL MAP length: %d", default_local_cells);
 
     nh.param<int>("global_map_width", global_map_width, default_global_cells);
-    nh.param<int>("global_map_height", global_map_height, default_global_cells);
-    nh.param<int>("local_map_height", local_map_height, default_local_cells);
     nh.param<int>("local_map_width", local_map_width, default_local_cells);
 
     nh.param<double>("map_resolution", map_resolution_param, map_resolution);
@@ -76,9 +74,9 @@ int main(int argc, char** argv)
 
     ROS_INFO("GLOBAL MAP: width = %d", global_map_width);
     global_map_builder = new global_mapping::GlobalMapBuilder(global_map_width, 
-                                                              global_map_height,
+                                                              global_map_width,
                                                               local_map_width,
-                                                              local_map_height, 
+                                                              local_map_width, 
                                                               map_resolution_param, 
                                                               local_frame_id);
 

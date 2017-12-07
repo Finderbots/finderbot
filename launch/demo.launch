@@ -1,9 +1,15 @@
 <launch>
 
-    <node pkg="gazebo_ros" name="gazebo_launch" type="gzserver" args="/home/jon/catkin_ws/src/finderbot/FinderBot_Gazebo/demo.world"/>
+    <node pkg="gazebo_ros" name="gazebo_launch" type="gzserver" args="/home/jon/catkin_ws/src/finderbot/FinderBot_Gazebo/loops.world"/>
 
     <node pkg="finderbot" name="exploration" type="path_execution_node" output="screen" />
 
     <node pkg="finderbot" name="global_mapping" type="global_map_node" output="screen" />
+
+    <param name="simulated_env" type="bool" value="true" />
+
+    <param name="global_map_width" type="int" value="600" />
+
+    <param name="local_map_width" type="int" value="85" />
 
 </launch>

@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 
+#include <geometry_msgs/Twist.h>
+
 #include <finderbot/wiringPi.h>
 #include <finderbot/wiringPiSPI.h>
 
@@ -210,11 +212,14 @@ void readWriteHeading(float heading)
 
 
 
-void readWriteMotor(unsigned char *buf)
+void readWriteMotor(char cmd)
 {
     int channel = 0;
     
+    unsigned char buf[6] = "sC0e_";
     //send start bit
+    buf[2] = cmd;
+
     int ret = wiringPiSPIDataRW (channel, buf, 1);
     if (ret < 0)
     {
@@ -264,6 +269,24 @@ void readWriteMotor(unsigned char *buf)
     if(buf[4] != 'd') ROS_ERROR("No end ACK");
 
 }
+
+void handleCommandVel(const geometry_msgs::Twist new_cmd)
+{
+    if (new_cmd.linear.x != 0)
+    {
+        readWriteMotor('f');
+    }
+    else if (new_cmd.angular.z != 0)
+    {
+        if(new_cmd.angular.z > 0) readWriteMotor('L');
+        else readWriteMotor('R');
+    }
+
+    else readWriteMotor('h');
+
+    return;
+}
+
 int main(int argc, char** argv)
 {   
     ros::init(argc, argv, "SPI_Transmitter");
@@ -275,25 +298,12 @@ int main(int argc, char** argv)
     //run at 100Hz
     ros::Rate loop_rate(1);
 
-    while (ros::ok())
-    {
-        unsigned char buf[9] = "sX1234e_";
+    //TODO service to get Pose from SLAM 
+    //TODO subscribe to SLAM pose
 
-        //ROS_INFO("lin accel(x) = %f", readWriteAccelPCB(buf));
-        //printBuf(buf, 9);
-	readWriteHeading(30.257);
-        // memcpy(buf,"sy1234e_", 9);
+    ros::Subscriber cmd_handler = nh.subscribe<geometry_msgs::Twist>("finderbot_cmd_vel", 1, handleCommandVel);
 
-       // memcpy(buf,"sy1234e_", 9);
-
-        //ROS_INFO("lin accel(x) = %f", readWriteAccelPCB(buf));
-
-        //memcpy(buf,"sT1234e_", 9);
-
-        //ROS_INFO("lin accel(x) = %f", readWriteAccelPCB(buf));        
-
-        loop_rate.sleep();   
-    }
+    ros::spin();
 
     return 0;
 }
