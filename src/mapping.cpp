@@ -22,69 +22,6 @@ namespace mapping
         return 2*std::atan2(q.z(), q.w());
     }
 
-    std::string getWorldFrame(const tf::Transformer& tf_transformer, const std::string& child)
-    {
-        std::string last_parent = child;
-        std::string parent;
-        bool has_parent = tf_transformer.getParent(child, ros::Time(0), parent);
-        while (has_parent)
-        { 
-            last_parent = parent;
-            has_parent = tf_transformer.getParent(parent, ros::Time(0), parent);
-        }
-        return last_parent;
-    }
-
-
-
-    template <typename T>
-    void adjustMapForMovement(int fill, int dx, int dy, unsigned int ncol, std::vector<T>& map)
-    {
-        if (dx ==0 && dy ==0) return;
-
-        const unsigned int nrow = map.size() / ncol;
-        int row_start = 0;
-        int row_end = nrow;
-        int row_increment = 1;
-        if (dy < 0)
-        {
-            row_start = nrow - 1;
-            row_end = -1;
-            row_increment = -1;
-        }
-        int col_start = 0;
-        int col_steps = ncol;
-        int col_increment = 1;
-        if (dx < 0)
-        {
-            col_start = ncol - 1;
-            col_steps = -ncol;
-            col_increment = -1;
-        }
-        for (int new_row = row_start; new_row != row_end; new_row += row_increment)
-        {
-            const int new_idx_start = offsetRowCol(new_row, col_start, ncol); //idx of pt (new_row,col_start)
-            const int row = new_row + dy;  // row in old map, can be outside old map
-            int idx = offsetRowCol(row, col_start + dx, ncol); //idx of (new_row+dy, col_start+d)
-            const int min_idx = std::max(0, offsetRowCol(row, 0, ncol));
-            const int max_idx = std::min(static_cast<int>(map.size()) - 1, offsetRowCol(row, ncol - 1, ncol));
-            const int new_idx_end = new_idx_start + col_steps;
-            for (int new_idx = new_idx_start; new_idx != new_idx_end;)
-            {
-                if (min_idx <= idx && idx <= max_idx)
-                {
-                    map[new_idx] = map[idx];
-                }
-                else
-                {
-                    map[new_idx] = fill;
-                }
-                new_idx += col_increment;
-                idx += col_increment;
-            }
-        }
-    }
-
 
 
     MiniMapper::MiniMapper(int width, int height, double resolution, std::string local_frame_id) :
@@ -128,77 +65,30 @@ namespace mapping
         {
         // Wait for a parent.
             // ROS_INFO("enter no frame_id block");
-            std::string parent;
-            bool has_parent = tf_listener_.getParent(local_frame_id_, ros::Time(0), parent);  
-            if (!has_parent)
-            {
-              ROS_INFO_STREAM("No worldframe");
-              ROS_DEBUG_STREAM("Frame " << local_frame_id_ << " has no parent");
-              return;
-            }
-            // ROS_INFO("parent is %s", parent.c_str());
-            world_frame_id_ = getWorldFrame(tf_listener_, local_frame_id_);
-            // ROS_INFO_STREAM("Found world frame " << world_frame_id_);
-            // ROS_INFO("world_frame_id_ = %s", world_frame_id_.c_str());
-            has_frame_id_ = true;
+         
+            x_init_ = map_.info.height /2;
+            y_init_ = map_.info.width /2;
 
-            // Initialize saved positions.
-            tf::StampedTransform transform;
-            try
-            {
-                // tf_listener_.waitForTransform(world_frame_id_, local_frame_id_,
-                //   ros::Time(0), ros::Duration(1.0));
-                tf_listener_.lookupTransform(world_frame_id_, local_frame_id_,
-                  ros::Time(0), transform);
-            }
-            catch (tf::TransformException ex)
-            {
-                ROS_ERROR("%s", ex.what());
-                has_frame_id_ = false;
-            }
-            x_init_ = transform.getOrigin().x();
-            y_init_ = transform.getOrigin().y();
-            prev_map_x_ = lround(x_init_ / map_.info.resolution);
-            prev_map_y_ = lround(y_init_ / map_.info.resolution);
+            // map_x_ = lround(x_init_ / map_.info.resolution);
+            // map_y_ = lround(y_init_ / map_.info.resolution);
 
-            
-        }
-
-        // Get the displacement.
-        tf::StampedTransform new_tr;
-        try
-        {
-            // tf_listener_.waitForTransform(world_frame_id_, local_frame_id_,
-            //     ros::Time::now(), ros::Duration(0.2));
-            tf_listener_.lookupTransform(world_frame_id_, local_frame_id_,
-                ros::Time(0), new_tr);
-        }
-        catch (tf::TransformException ex)
-        {
-            ROS_ERROR("%s", ex.what());
-            return;
         }
 
         // Map position relative to initialization.
-        const double x = new_tr.getOrigin().x() - x_init_;
-        const double y = new_tr.getOrigin().y() - y_init_;
-        const double theta = convertQuatToAngle(new_tr.getRotation());
+     
+        const double theta = 0;
 
         // Get the pixel displacement of the map.
-        const long int xmap = lround(x / map_.info.resolution);
-        const long int ymap = lround(y / map_.info.resolution);
-        const long int map_dx = xmap - prev_map_x_;
-        const long int map_dy = ymap - prev_map_y_;
 
         // Update the map
-        const bool move = updateMap(scan, map_dy, map_dx, theta);
-        if (move)
-        {
-            // ROS_INFO("Displacement: %ld, %ld pixels", map_dx, map_dy);
-        // Record the position only if the map moves.
-            prev_map_x_ = xmap;
-            prev_map_y_ = ymap;
-        }
+        const bool move = updateMap(scan, 0, 0, theta);
+        // if (move)
+        // {
+        //     // ROS_INFO("Displacement: %ld, %ld pixels", map_dx, map_dy);
+        // // Record the position only if the map moves.
+        //     prev_map_x_ = xmap;
+        //     prev_map_y_ = ymap;
+        // }
         // Update the map frame, so that it's oriented like frame named "world_frame_id_".
         // tf::Transform map_transform;
         // map_transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
@@ -292,13 +182,7 @@ namespace mapping
     bool MiniMapper::updateMap(const sensor_msgs::LaserScan& scan, long int dx, long int dy, double theta)
     {
         // ROS_INFO("UPDATE Map");
-        const bool has_moved = (dx != 0 || dy != 0);
-        const int ncol = map_.info.width;
-        if (has_moved)
-        {
-            //generate new map
-            map_.data.assign(map_.info.width * map_.info.height, -1);
-        }
+      
 
         // Update occupancy.
         for (size_t i = 0; i < scan.ranges.size(); ++i)
@@ -325,7 +209,7 @@ namespace mapping
             // The remaining points are in free space.
             vec_fakeupdate(false, pts, map_.data);
         }
-        return has_moved;
+        return false;
     }
 
 }

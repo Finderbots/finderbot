@@ -12,36 +12,36 @@ namespace ray_caster
     }
 
     //TODO: Nothing uses this! get rid of it
-    void RayCaster::laserScanCast(const nav_msgs::OccupancyGrid& map, sensor_msgs::LaserScan& scan)
-    {
-        scan.ranges.clear(); //why???? I think we would want to use this
-        for (double angle = scan.angle_min; angle <= scan.angle_max; angle += scan.angle_increment){
+    // void RayCaster::laserScanCast(const nav_msgs::OccupancyGrid& map, sensor_msgs::LaserScan& scan)
+    // {
+    //     scan.ranges.clear(); //why???? I think we would want to use this
+    //     for (double angle = scan.angle_min; angle <= scan.angle_max; angle += scan.angle_increment){
 
-            const size_t pixel_range = lround(scan.range_max / map.info.resolution) + 1;
-            const std::vector<size_t>& ray_indices = getRayCastToMapBorder(
-                                                        angle,
-                                                        map.info.height,
-                                                        map.info.width,
-                                                        scan.angle_increment/2);
-            const size_t max_pixel_range = std::min(ray_indices.size(), pixel_range);
-            geometry_msgs::Point32 pt;
-            indexToReal(map, ray_indices.back(), pt); //pt is RW coords of end of ray
-            //range is min of scan.range_max and distance to edge of map
-            double range  = std::min(0.99*scan.range_max, (double) std::sqrt(pt.x*pt.x + pt.y*pt.y));
-            for (size_t i = 0; i < max_pixel_range; i++)
-            {
-                const size_t idx = ray_indices[i];
-                if(pointOccupied(map, idx, occupied_threshold_))
-                {
-                    indexToReal(map, idx, pt);
-                    range = std::sqrt(pt.x*pt.x + pt.y*pt.y);
-                    break;
-                }
-            }
-            scan.ranges.push_back(range);
+    //         const size_t pixel_range = lround(scan.range_max / map.info.resolution) + 1;
+    //         const std::vector<size_t>& ray_indices = getRayCastToMapBorder(
+    //                                                     angle,
+    //                                                     map.info.height,
+    //                                                     map.info.width,
+    //                                                     scan.angle_increment/2);
+    //         const size_t max_pixel_range = std::min(ray_indices.size(), pixel_range);
+    //         geometry_msgs::Point32 pt;
+    //         indexToReal(map, ray_indices.back(), pt); //pt is RW coords of end of ray
+    //         //range is min of scan.range_max and distance to edge of map
+    //         double range  = std::min(0.99*scan.range_max, (double) std::sqrt(pt.x*pt.x + pt.y*pt.y));
+    //         for (size_t i = 0; i < max_pixel_range; i++)
+    //         {
+    //             const size_t idx = ray_indices[i];
+    //             if(pointOccupied(map, idx, occupied_threshold_))
+    //             {
+    //                 indexToReal(map, idx, pt);
+    //                 range = std::sqrt(pt.x*pt.x + pt.y*pt.y);
+    //                 break;
+    //             }
+    //         }
+    //         scan.ranges.push_back(range);
             
-        }
-    }
+    //     }
+    // }
 
     //function returns vector of pixel indices from map center to border of map given an angle
     //TODO adjust x0 and y0 so that starting position is wherever position is.
@@ -67,11 +67,11 @@ namespace ray_caster
         const double r = std::sqrt((double) nrow * nrow + ncol*ncol);
 
         //assumption that origin is at map center
-        int x0 = ncol / 2;
-        int y0 = nrow / 2;
+        int x0 = nrow / 2;
+        int y0 = ncol / 2;
 
-        int x1 = (int) round(x0 + r*std::cos(angle));
-        int y1 = (int) round(y0 + r*std::sin(angle));
+        int x1 = (int) round(x0 + r*std::sin(angle));
+        int y1 = (int) round(y0 + r*std::cos(angle));
 
         int dx = x1 - x0;
         int dy = y1 - y0;
@@ -115,9 +115,9 @@ namespace ray_caster
                 yDraw = y;
             }
 
-            if (pointInMap(yDraw, xDraw, nrow, ncol))
+            if (map_utils::pointInMap(yDraw, xDraw, nrow, ncol))
             {
-                pts.push_back(offsetFromRowCol(yDraw, xDraw, ncol));
+                pts.push_back(map_utils::getOffsetRowCol(yDraw, xDraw, ncol));
             }
             else
             {
