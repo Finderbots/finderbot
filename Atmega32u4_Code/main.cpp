@@ -1,6 +1,7 @@
 #include <util/delay.h>
 
 #include "Arduino_FreeRTOS.h"
+#include "semphr.h"
 
 #include "timing.h"
 #include "PID_v1.h"
@@ -18,11 +19,10 @@ volatile uint8_t desired_heading_byte_num = 0;
 
 // const char recv_index = 0;
 const char start_byte = 's';
-const char calib_req = 'v'; 
 const char desired_heading = 'H';
-const char linear_accel_req = 'X'; //r = I want roll
-const char y_accel_req = 'y'; //p = I want pitch
-const char heading_req = 'T'; //y = I want yaw
+const char linear_accel_req = 'X'; //r = I want linear acceleration in the x direction
+// const char y_accel_req = 'y'; //p = I want pitch
+const char heading_req = 'T'; //y = I want heading
 const char first_byte = '1';
 const char second_byte = '2';
 const char third_byte = '3';
@@ -42,6 +42,8 @@ const char ack_byte = '!';
 const char err_byte = 'b';
 const char ack_byte_stop = 'd'; 
 
+SemaphoreHandle_t xHeadingSemaphore;
+float_bytes desired_heading_temp;
 
 // void vApplicationStackOverflowHook( TaskHandle_t xTask,
 //                                     signed char *pcTaskName ) {
@@ -56,7 +58,6 @@ void TaskIMURead(void *pvParameters);
 void TaskPIDController(void *pvParameters);
 
 void TaskTestTimers(void *pvParameters);
-
 
 #define F_CPU 16000000
 
@@ -78,6 +79,13 @@ int main(void)
 
     reset_speeds();
 
+    if ( xHeadingSemaphore == NULL )  // Check to confirm that the Serial Semaphore has not already been created.
+    {
+        xHeadingSemaphore = xSemaphoreCreateBinary();  // Create a mutex semaphore we will use to manage the Serial Port
+    if ( ( xHeadingSemaphore ) != NULL )
+          xSemaphoreGive( ( xHeadingSemaphore ) );  // Make the Serial Port available for use, by "Giving" the Semaphore.
+    }
+
     xTaskCreate(
     TaskIRSensorRead
     ,  (const portCHAR *)"IRSensorRead"  // A name just for humans
@@ -86,14 +94,21 @@ int main(void)
     ,  3  // Priority (low num = low priority)
     ,  NULL );
 
+    xTaskCreate(
+    TaskIMURead
+    ,  (const portCHAR *)"IMURead"  // A name just for humans
+    ,  256  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  3  // Priority (low num = low priority)
+    ,  NULL );
 
-    // xTaskCreate(
-    // TaskPIDController
-    // ,  (const portCHAR *)"PIDController"  // A name just for humans
-    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    // ,  NULL
-    // ,  1  // Priority (low num = low priority)
-    // ,  NULL );
+    xTaskCreate(
+    TaskPIDController
+    ,  (const portCHAR *)"PIDController"  // A name just for humans
+    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    ,  NULL
+    ,  1  // Priority (low num = low priority)
+    ,  NULL );
 
 
    vTaskStartScheduler();
@@ -127,9 +142,13 @@ void TaskIMURead(void *pvParameters) {
     init_imu();
 
     for(;;) {
-        PORTD |= _BV(PD2);
-        update_vals();
-        PORTD &= ~(_BV(PD2));
+        if(xSemaphoreTake(xHeadingSemaphore, ( TickType_t ) 2) == pdTRUE) {
+            PORTD |= _BV(PD2);
+
+            update_vals();
+            xSemaphoreGive(xHeadingSemaphore);
+            PORTD &= ~(_BV(PD2));
+        }
         vTaskDelay(pdMS_TO_TICKS(BNO055_SAMPLERATE_DELAY_MS));
     }
 }
@@ -139,24 +158,36 @@ void TaskPIDController(void *pvParameters) {
     init_pid();
 
     for(;;) {
-        if(heading.num_float) {
-            Input = (double) heading.num_float;
-        }
-        else {
-            Input = 0;
-        }
-        myPID.Compute();
+        if ( xSemaphoreTake( xHeadingSemaphore, ( TickType_t ) 2 ) == pdTRUE )
+        {
+            PORTE |= _BV(PE6);
 
-        speedFL += Output;
-        speedBL += Output;
-        speedFR -= Output;
-        speedBR -= Output;
+            if(heading.num_float) {
+                Input = (double) heading.num_float;
+            }
+            else {
+                Input = 0;
+            }
+            myPID.Compute();
 
-        limit_speeds();
+            PORTE &= ~(_BV(PE6));
+            xSemaphoreGive( xHeadingSemaphore ); // Now free or "Give" the Serial Port for others.  
+        }
 
         cli();
-        update_speed();
+        if(command_state == FORWARD) {
+            speedFL += Output;
+            speedBL += Output;
+            speedFR -= Output;
+            speedBR -= Output;
+
+            limit_speeds();
+
+            update_speed();
+        }
         sei();
+        vTaskDelay(pdMS_TO_TICKS(BNO055_SAMPLERATE_DELAY_MS + 17));
+
     }
     
 }
@@ -198,7 +229,7 @@ ISR(ADC_vect)
 // SPI Transmission/reception complete ISR
 ISR(SPI_STC_vect)
 {
-    PORTE |= _BV(PE6); //debugging
+    //PORTE |= _BV(PE6); //debugging
 
     char master_motor_command = '\0';
 
@@ -229,7 +260,7 @@ ISR(SPI_STC_vect)
     if(pos >1) {
         valid_command = (valid_start && (spi_message[1] == command_req));
         valid_lin_accel = (valid_start && (spi_message[1] == linear_accel_req));
-        valid_y_accel = (valid_start && (spi_message[1] == y_accel_req));
+        // valid_y_accel = (valid_start && (spi_message[1] == y_accel_req));
         valid_heading = (valid_start && (spi_message[1] == heading_req));
         valid_desired_heading = (valid_start && (spi_message[1] == desired_heading) && (pos < 7) && (pos > 2));
     }
@@ -237,30 +268,33 @@ ISR(SPI_STC_vect)
     if(valid_desired_heading) {
         switch(desired_heading_byte_num) {
             case 0:
-                desired_heading_num.bytes.first = spi_char;
+                desired_heading_temp.bytes.first = spi_char;
                 desired_heading_byte_num += 1;
                 byte_to_send = spi_char;
                 break;
             case 1:
-                desired_heading_num.bytes.second = spi_char;
+                desired_heading_temp.bytes.second = spi_char;
                 desired_heading_byte_num += 1;
                 byte_to_send = spi_char;
                 break;
             case 2:
-                desired_heading_num.bytes.third = spi_char;
+                desired_heading_temp.bytes.third = spi_char;
                 desired_heading_byte_num += 1;
                 byte_to_send = spi_char;
                 break;
             case 3:
-                desired_heading_num.bytes.fourth = spi_char;
+                desired_heading_temp.bytes.fourth = spi_char;
                 desired_heading_byte_num = 0;
                 byte_to_send = spi_char;
+
+                desired_heading_num.num_float = desired_heading_temp.num_float;
+                Setpoint = desired_heading_num.num_float;
                 break;
             default:
                 desired_heading_byte_num = 0;
+                desired_heading_temp.num_float = 0;
                 byte_to_send = err_byte;
                 break;
-
         }
 
     }
@@ -274,23 +308,23 @@ ISR(SPI_STC_vect)
             case linear_accel_req:
                 //linear acceleration value requested
                 if(valid_start && pos == 2) {
-                    byte_to_send  = sys_calib;
+                    byte_to_send  = accel_calib;
                 }  else {
                     byte_to_send = err_byte;
                 }          
                 break;
-            case y_accel_req: 
-                //y acceleration value requested
-                if(valid_start && pos == 2) {
-                    byte_to_send  = sys_calib;
-                }  else {
-                    byte_to_send = err_byte;
-                }          
-                break;
+            // case y_accel_req: 
+            //     //y acceleration value requested
+            //     if(valid_start && pos == 2) {
+            //         byte_to_send  = sys_calib;
+            //     }  else {
+            //         byte_to_send = err_byte;
+            //     }          
+            //     break;
             case heading_req: 
                 //heading value requested
                 if(valid_start && pos == 2) {
-                    byte_to_send  = sys_calib;
+                    byte_to_send  = mag_calib;
                 }  else {
                     byte_to_send = err_byte;
                 } 
@@ -462,7 +496,7 @@ ISR(SPI_STC_vect)
         pos = 0;
     }
 
-   PORTE &= ~(_BV(PE6));
+   //PORTE &= ~(_BV(PE6));
 
       
 }
