@@ -90,7 +90,7 @@ float readWriteAccelPCB(unsigned char* buf)
         ROS_ERROR("SPI: ret = %i\n", ret);
         exit(1);
     }
-    if(buf[7] != '!') ROS_ERROR("No Ack from PCB");
+    if(buf[7] != 'd') ROS_ERROR("No Ack from PCB");
 
     return bytes_to_float.data;
 }
@@ -157,7 +157,7 @@ void readWriteHeading(float heading)
     }
     if((uint8_t)buf[3] != bytes_to_float.bytes.zero)
     {
-        ROS_ERROR("Incorrect byte 1");
+        ROS_ERROR("sent %d got %d");
     }
 
     //send data 3
@@ -205,7 +205,7 @@ void readWriteHeading(float heading)
     }
     if(buf[7] != 'd')
     {
-        ROS_ERROR("Incorrect byte 4");
+        ROS_ERROR("No end ACK");
     }
 
 }
@@ -296,7 +296,7 @@ int main(int argc, char** argv)
     wiringPiSPISetup(channel, 4000000);
 
     //run at 100Hz
-    ros::Rate loop_rate(100);
+    ros::Rate loop_rate(1);
 
     //TODO service to get Pose from SLAM 
     //TODO subscribe to SLAM pose
