@@ -152,7 +152,9 @@ void Executor::pathExecution(std::vector<size_t>& path) {
 
         goToNextNodeInPath(goal_row, goal_col);
         if (count >= max_path_length) 
-        {   
+        {
+            ROS_INFO("Scan UWB");
+            // call UWB service here
             ROS_INFO("Get New Path");
             return; 
         }
