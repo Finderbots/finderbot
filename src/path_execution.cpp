@@ -88,7 +88,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         double angle_error = angle_diff(goal_theta, current_theta_);
         
       
-        // ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
+        ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
         
         // getPose();
         if (print_count > 5000)
