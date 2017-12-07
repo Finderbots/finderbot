@@ -4,6 +4,7 @@
 #include <finderbot/map_utils.h>
 #include <finderbot/PF_Input.h>
 #include <finderbot/Pose.h>
+#include <finderbot/getImuPose.h>
 
 #include <sensor_msgs/LaserScan.h>
 #include <gazebo_msgs/GetModelState.h>
@@ -46,8 +47,11 @@ class SLAM
     bool simulated_env_;
     std::vector<finderbot::Pose> particles_;
 
-    ros::ServiceClient client_;
+    ros::ServiceClient gazebo_client_;
+    ros::ServiceClient IMU_client_;
+
     gazebo_msgs::GetModelState model_state_;
+    finderbot::getImuPose imu_pose_;
 
     ros::Publisher pose_publisher_;
 
@@ -67,10 +71,10 @@ public:
         /////////GET MODEL STATE ///////////
         if (simulated_env_)
         {
-            client_ = nh.serviceClient<gazebo_msgs::GetModelState>("/gazebo_launch/get_model_state");
+            gazebo_client_ = nh.serviceClient<gazebo_msgs::GetModelState>("/gazebo_launch/get_model_state");
             model_state_.request.model_name = model_name;
 
-            while(!client_.call(model_state_));
+            while(!gazebo_client_.call(model_state_));
 
             ///////SET MODEL STATE//////////
             geometry_msgs::Pose start_pose;
@@ -94,7 +98,7 @@ public:
             setmodelstate.request.model_state = modelstate;
             while(!client.call(setmodelstate));
 
-            if (!client_.call(model_state_))
+            if (!gazebo_client_.call(model_state_))
             {
                 ROS_ERROR("fuck you gazebo");
             }
@@ -110,9 +114,11 @@ public:
         }
         
         else {
-            pose_.x = 0;
-            pose_.y = 0;
-            pose_.theta = 0;
+            IMU_client_ = nh.serviceClient<finderbot::getImuPose>("finderbot_IMU_pose"); 
+            if (IMU_client_.call(imu_pose_))
+            {
+                pose_ = imu_pose_.response.pose;
+            }
         }
 
         ROS_INFO("SLAM_NODE: initial pose = (%f, %f, %f)",pose_.x, 
@@ -185,7 +191,7 @@ public:
         if(simulated_env_)
         {
             geometry_msgs::Pose pose;
-            if (client_.call(model_state_))
+            if (gazebo_client_.call(model_state_))
             {
                  pose = model_state_.response.pose;
                  pose_.x = pose.position.x;
@@ -195,7 +201,13 @@ public:
             }
             else ROS_ERROR("boooo gazebo");
         }
-         //else pose_ is updated by callback
+        else
+        {
+            if(IMU_client_.call(imu_pose_))
+            {
+                pose_ = imu_pose_.response.pose;
+            }
+        }
         
         //fill particles vector by sampling num_particles times from N(pose, std_dev)
         generateParticles();

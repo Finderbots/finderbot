@@ -36,7 +36,8 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
     FILES
-    GetMap.srv
+    getImuPose.srv
+#    GetMap.srv
 #   Service2.srv
 )
 
@@ -129,6 +130,8 @@ add_executable(spi_node src/spi_node.cpp)
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
 add_dependencies(SLAM_node finderbot_generate_messages_cpp)
 add_dependencies(path_execution_node finderbot_generate_messages_cpp)
+add_dependencies(spi_node finderbot_generate_messages_cpp finderbot_gencpp)
+
 
 
 ## Rename C++ executable without prefix
