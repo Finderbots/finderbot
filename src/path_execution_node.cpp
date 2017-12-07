@@ -9,11 +9,22 @@
 
 //   gets the pose from slam
 //   gets the destination from the explore node
+XeThru::Uwb * uwb_;
+ros::Publisher uwb_publisher;
+
 
 //assumes can overwrite global map in planner
 int main(int argc, char** argv) {
     ros::init(argc, argv, "path_execution");
     ros::NodeHandle nh;
+    // // UWB init stuff copied from main() function in uwb_main.cpp
+    // const std::string device_name = "/dev/ttySAC0";
+    // const unsigned int log_level = 0;
+
+    // XeThru::ModuleConnector mc(device_name, log_level);
+    // //X4M300 &x4m300 = mc.get_x4m300();
+    // uwb_ = new XeThru::Uwb(mc);
+    // uwb_->uwb_setup();
 
     Executor path_executor("world", "laser_frame");
 
@@ -59,7 +70,7 @@ int main(int argc, char** argv) {
 
         if (frontiers.empty())
         {
-            uwb_.uwb_stop();
+            // uwb_->uwb_stop();
             continue;
         }
 
@@ -78,9 +89,9 @@ int main(int argc, char** argv) {
 
         // call UWB service here (how to get uwb object thru to service?)
         ROS_INFO("Scan UWB");
-        path_executor.srv.request.current_row = path_executor.current_row_;
-        path_executor.srv.request.current_col = path_executor.current_col_;
-        while (!client_.call(path_executor.srv));
+        path_executor.srv.request.current_row = path_executor.getCurrRow();
+        path_executor.srv.request.current_col = path_executor.getCurrCol();
+        while (!path_executor.client_.call(path_executor.srv));
 
 
     }

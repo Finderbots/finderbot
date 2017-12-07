@@ -12,7 +12,7 @@
 #include <ctime>
 #include <iostream>
 #include <unistd.h>
-#include <servo.h>
+#include <finderbot/UWBScan.h>
 
 #include <math.h>
 #include <string>
@@ -40,11 +40,9 @@ class Executor
     geometry_msgs::Twist cmd_;
     std::string world_frame_id_;
     std::string local_frame_id_;
-    finderbot::UWBScan srv;
 
     ros::NodeHandle nh;
     ros::Publisher command_velocities_pub_;
-    ros::ServiceClient client_;
 
     bool turnTheta(double goal_theta);
     void drive();
@@ -54,7 +52,9 @@ class Executor
     bool closeEnoughToGoal(double radius, int goal_row, int goal_col);
 
   public:
-	Executor(std::string world_frame, std::string local_frame);
+    ros::ServiceClient client_;
+    finderbot::UWBScan srv;
+    Executor(std::string world_frame, std::string local_frame);
 
     void pathExecution(std::vector<size_t>& path);
     void handleGlobalMap(const nav_msgs::OccupancyGrid);
@@ -62,6 +62,8 @@ class Executor
 
     Planner& getPlanner() {return *planner_;}
     bool initialized() {return pose_initialized_;}
+    size_t getCurrRow() {return current_row_;}
+    size_t getCurrCol() {return current_col_;}
 	// ~Executor();
 	
 };

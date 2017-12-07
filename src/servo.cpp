@@ -23,7 +23,7 @@
  ***********************************************************************
  */
 
-#include <servo.h>
+#include <finderbot/servo.h>
 
 int servo_setup()
 {

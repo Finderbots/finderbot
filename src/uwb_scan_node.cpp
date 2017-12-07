@@ -2,31 +2,32 @@
 #include <ros/console.h>
 #include <finderbot/uwb.h>
 #include <finderbot/UWB/ModuleConnector.hpp>
-#include <finderbot/path_execution.h>
+// #include <finderbot/path_execution_node.h>
 #include <ctime>
 #include <iostream>
 #include <unistd.h>
-#include <servo.h>
+#include <finderbot/servo.h>
 
-void scanUWB() {
+XeThru::Uwb * uwb_;
+ros::Publisher uwb_publisher;
+
+void scanUWB(XeThru::Uwb * uwb_) {
 	// Copied from main() function in uwb_main.cpp
 	// Does it need to call uwb_get_data thrice?
 	uwb_->uwb_get_data();
 	sleep(5);
 	// publish 1 (vital detected) or 0 (not)
-	uwb_publisher.publish(uwb_->state);
-	ros::spinOnce();
+	// uwb_publisher.publish(uwb_->state);
+	// ros::spinOnce();
 	return;
 }
 
-bool rotateAndScan(finderbot::UWBScan::Request &request,
-				   finderbot::UWBScan::Response &response) {
+bool rotateAndScan() {
 
 	// Servo init stuff copied from servo.c
 	servo_setup();
-	delay(2000);
 
-	response.person_found = 0; // worry about this later
+	// response.person_found = 0; // worry about this later
 
 	// 1. Rotate the servo to 0 degrees (absolute-90)
 	// 		** make sure it blocks the scan function
@@ -66,17 +67,27 @@ bool rotateAndScan(finderbot::UWBScan::Request &request,
 	return true;
 }
 
-int main(int argc, char const *argv[])
+int main(int argc, char** argv)
 {
 	// 0. Init
 	// 		Get absolute current row, col, theta
-	ros::init(argc, argv, "add_two_ints_server");
+	ros::init(argc, argv, "UWB_Scan");
 	ros::NodeHandle nh;
+    // UWB init stuff copied from main() function in uwb_main.cpp
+    const std::string device_name = "/dev/ttySAC0";
+    const unsigned int log_level = 0;
 
-	ros::ServiceServer service = nh.advertiseService("UWB_Scan", rotateAndScan);
+    XeThru::ModuleConnector mc(device_name, log_level);
+    //X4M300 &x4m300 = mc.get_x4m300();
+    uwb_ = new XeThru::Uwb(mc);
+    uwb_->uwb_setup();
+
+	// ros::ServiceServer service = nh.advertiseService("UWB_Scan", rotateAndScan);
 	ROS_INFO("Ready to scan UWB for people.");
-
-	ros::spin();
+	while (ros::ok()){
+		rotateAndScan();
+	}
+	// ros::spin();
 
 	return 0;
 }
