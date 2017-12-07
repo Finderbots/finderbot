@@ -3,289 +3,130 @@
 
 #include <geometry_msgs/Twist.h>
 
-#include <finderbot/wiringPi.h>
-#include <finderbot/wiringPiSPI.h>
+#include <finderbot/spi.h>
+#include <finderbot/Pose.h>
+#include <finderbot/getImuPose.h>
+#include <inttypes.h>
 
-typedef struct {
-    uint8_t zero : 8;
-    uint8_t one : 8;
-    uint8_t two : 8;
-    uint8_t three : 8; 
-}Bytes;
+//class to synchronize communication with PCB over SPI
+//spi functions in spi.h
+class SpiSync{
 
-typedef union {
-    float data;
-    Bytes bytes;
-}float_bytes; 
+    ros::Time prev_command_time_;
+    ros::Time prev_IMU_time_;
 
+    finderbot::Pose pose_;
+    uint64_t spi_delay_;
 
-float readWriteAccelPCB(unsigned char* buf)
-{
-    int channel = 0;
-    
-    float_bytes bytes_to_float;
-    //send start bit
-    int ret = wiringPiSPIDataRW (channel, buf, 1);
-    if (ret < 0)
+    uint64_t IMU_delay_;
+
+    double v_x_;
+    double v_y_;
+
+    void spiDelay()
     {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
+        uint64_t time_since_prev = ros::Time::now().toNSec() - prev_command_time_.toNSec();
+        
+        if(time_since_prev > spi_delay_)
+        {
+            ros::Duration(0, spi_delay_ - time_since_prev).sleep();
+        }
     }
 
-    //send desired axis
-    ret = wiringPiSPIDataRW(channel, buf+1, 1);
-    if (ret < 0)
+public:
+
+    SpiSync(uint64_t spi_delay, uint64_t IMU_delay)
     {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    //check that start bit returned ack
-    if(buf[1] != '!') ROS_ERROR("No Ack from PCB");
+        pose_.x = 0.0;
+        pose_.y = 0.0;
+        pose_.theta = 0.0;
 
-    //request first data byte, read calibration byte
-    ret = wiringPiSPIDataRW(channel, buf+2, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    ROS_INFO("calib = %i", buf[2]);
-
-    //request second data byte read first data byte
-    ret = wiringPiSPIDataRW(channel, buf+3, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    bytes_to_float.bytes.zero = buf[3];
-
-    ret = wiringPiSPIDataRW(channel, buf+4, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    bytes_to_float.bytes.one = buf[4];
-
-    ret = wiringPiSPIDataRW(channel, buf+5, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    bytes_to_float.bytes.two = buf[5];
-
-    ret = wiringPiSPIDataRW(channel, buf+6, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    bytes_to_float.bytes.three = buf[6];
-    
-    ret = wiringPiSPIDataRW(channel, buf+7, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[7] != 'd') ROS_ERROR("No Ack from PCB");
-
-    return bytes_to_float.data;
-}
-
-void printBuf(unsigned char* buf, int size)
-{
-    for (int i = 0; i < size; i++)
-    {
-        ROS_INFO("SPI: %c  %i", buf[i], (uint8_t)buf[i]);
-    }
-}
-
-
-void readWriteHeading(float heading)
-{
-    int channel = 0;
-
-    float_bytes bytes_to_float;
-    bytes_to_float.data = heading;
-
-    unsigned char buf[9] = "sH0000e_";
-
-    buf[2] = bytes_to_float.bytes.zero;
-    buf[3] = bytes_to_float.bytes.one;
-    buf[4] = bytes_to_float.bytes.two;
-    buf[5] = bytes_to_float.bytes.three;
-    
-    //send s
-    int ret = wiringPiSPIDataRW (channel, buf, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
+        spi_delay_ = spi_delay;
+        IMU_delay_ = IMU_delay;
+        prev_command_time_ = ros::Time::now();
+        prev_IMU_time_ = prev_command_time_;
     }
 
-    //send C
-    ret = wiringPiSPIDataRW(channel, buf+1, 1);
-    if (ret < 0)
+    //updates pose data 
+    void getImuData()
     {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    //check that start bit returned ack
-    if(buf[1] != '!') ROS_ERROR("No Ack to start");
+        spiDelay();
+        float accel = readAccel('X');
+        spiDelay();
+        //IMU returns absolute orientation
+        //TODO initial offset
+        pose_.theta = readAccel('T');
 
-    //send data1
-    ret = wiringPiSPIDataRW(channel, buf+2, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[2] != '!')
-    {
-        ROS_ERROR("No Ack to H");
-    }
+        double a_x = accel * std::cos(pose_.theta);
+        double a_y = accel * std::sin(pose_.theta);
+        double dt = ros::Time::now().toSec() - prev_IMU_time_.toSec();
 
-    //send data 2
-    ret = wiringPiSPIDataRW(channel, buf+3, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if((uint8_t)buf[3] != bytes_to_float.bytes.zero)
-    {
-        ROS_ERROR("sent %d got %d");
+        prev_IMU_time_ = ros::Time::now();
+        prev_command_time_ = prev_IMU_time_;
+
+        v_x_ = v_x_ + a_x*dt;
+        v_y_ = v_y_ + a_y*dt;
+
+        pose_.x = pose_.x + v_x_*dt;
+        pose_.y = pose_.y + v_y_*dt;
+
     }
 
-    //send data 3
-    ret = wiringPiSPIDataRW(channel, buf+4, 1);
-    if (ret < 0)
+    //TODO dont do all this in the handler?
+    void handleCommandVel(const geometry_msgs::Twist new_cmd)
     {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[4] != bytes_to_float.bytes.one)
-    {
-        ROS_ERROR("Incorrect byte 2");
-    }
+        spiDelay();
+        if (new_cmd.linear.x != 0)
+        {
+            readWriteHeading(pose_.theta);
+            prev_command_time_ = ros::Time::now();
 
-    //send data 4
-    ret = wiringPiSPIDataRW(channel, buf+5, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[5] != bytes_to_float.bytes.two)
-    {
-        ROS_ERROR("Incorrect byte 3");
-    }
+            spiDelay();
+            readWriteMotor('f');
+        }
 
-    //send end
-    ret = wiringPiSPIDataRW(channel, buf+6, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[6] != bytes_to_float.bytes.three)
-    {
-        ROS_ERROR("Incorrect byte 4");
+        else if (new_cmd.angular.z != 0)
+        {
+            if(new_cmd.angular.z > 0) readWriteMotor('L');
+            else readWriteMotor('R');
+        }
+
+        else readWriteMotor('h');
+
+        prev_command_time_ = ros::Time::now();
+
+        return;
     }
 
-    //send _
-    ret = wiringPiSPIDataRW(channel, buf+7, 1);
-    if (ret < 0)
+    //subscribe to pose data corrected by SLAM
+    void handleSLAMPose(const finderbot::Pose slam_pose)
     {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[7] != 'd')
-    {
-        ROS_ERROR("No end ACK");
+        pose_ = slam_pose;
     }
 
-}
-
-
-
-void readWriteMotor(char cmd)
-{
-    int channel = 0;
-    
-    unsigned char buf[6] = "sC0e_";
-    //send start bit
-    buf[2] = cmd;
-
-    int ret = wiringPiSPIDataRW (channel, buf, 1);
-    if (ret < 0)
+    //service called by SLAM node
+    //TODO make this a srv and add to SLAM
+    bool sendIMUPose(finderbot::getImuPose::Request& req, 
+                     finderbot::getImuPose::Response& res)
     {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
+        //return whatever is in Pose
+        res.pose = pose_;
+        return true;
     }
 
-    //send C
-    ret = wiringPiSPIDataRW(channel, buf+1, 1);
-    if (ret < 0)
+    //this needs to be public since IMU reads need to be done regularly 
+    //and aren't controlled by a callback
+    bool IMU_delay_elapsed()
     {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
+        return (ros::Time::now().toNSec() - prev_IMU_time_.toNSec()) > IMU_delay_;
     }
-    //check that start bit returned ack
-    if(buf[1] != '!') ROS_ERROR("No Ack to start");
+};
 
-    //send fBhLR
-    unsigned char cmd = buf[2];
-    ret = wiringPiSPIDataRW(channel, buf+2, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[2] != '!')
-    {
-        ROS_ERROR("No Ack to C");
-    }
 
-    //send end byte
-    ret = wiringPiSPIDataRW(channel, buf+3, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[3] != cmd) ROS_ERROR("SPI: sent: %c, got %c back", cmd, buf[3]); 
-
-    //send empty
-    ret = wiringPiSPIDataRW(channel, buf+4, 1);
-    if (ret < 0)
-    {
-        ROS_ERROR("SPI: ret = %i\n", ret);
-        exit(1);
-    }
-    if(buf[4] != 'd') ROS_ERROR("No end ACK");
-
-}
-
-void handleCommandVel(const geometry_msgs::Twist new_cmd)
-{
-    if (new_cmd.linear.x != 0)
-    {
-        readWriteMotor('f');
-    }
-    else if (new_cmd.angular.z != 0)
-    {
-        if(new_cmd.angular.z > 0) readWriteMotor('L');
-        else readWriteMotor('R');
-    }
-
-    else readWriteMotor('h');
-
-    return;
-}
+//receive command velocities
+//take in slam poses
+//read from IMU
+//send pose to SLAM
 
 int main(int argc, char** argv)
 {   
@@ -295,15 +136,36 @@ int main(int argc, char** argv)
     int channel = 0;
     wiringPiSPISetup(channel, 4000000);
 
-    //run at 100Hz
-    ros::Rate loop_rate(1);
+    bool simulated;
+    int spi_delay_ms;
+    int IMU_delay_ms;
 
+    nh.param<bool>("simulated_env", simulated, true);
+    nh.param<int>("spi_delay_ms", spi_delay_ms, 5);
+    nh.param<int>("IMU_delay_ms", IMU_delay_ms, 100);
+
+    uint64_t spi_delay_ns = spi_delay_ms*1e6;
+    uint64_t IMU_delay_ns = IMU_delay_ms*1e6;
+
+    SpiSync spi_sync(spi_delay_ms, IMU_delay_ms);
     //TODO service to get Pose from SLAM 
     //TODO subscribe to SLAM pose
+    ros::Subscriber cmd_handler = nh.subscribe<geometry_msgs::Twist>("finderbot_cmd_vel", 1, &SpiSync::handleCommandVel, &spi_sync);
+    ros::Subscriber slam_handler = nh.subscribe<finderbot::Pose>("finderbot_pose", 1, &SpiSync::handleSLAMPose, &spi_sync);
 
-    ros::Subscriber cmd_handler = nh.subscribe<geometry_msgs::Twist>("finderbot_cmd_vel", 1, handleCommandVel);
+    ros::ServiceServer service = nh.advertiseService("finderbot_IMU_pose", &SpiSync::sendIMUPose, &spi_sync);
+    while (ros::ok())
+    {
+        //only read from IMU if enough time elapsed
+        //also if its not simulated, cus then it doesnt exist
+        if (spi_sync.IMU_delay_elapsed() && !simulated)
+        {
+            spi_sync.getImuData();
+        }
 
-    ros::spin();
+        ros::spinOnce();
+    }
+    
 
     return 0;
 }

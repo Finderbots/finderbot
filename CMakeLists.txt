@@ -37,7 +37,9 @@ add_message_files(
 add_service_files(
     FILES
     GetMap.srv
-    UWBScan.srv
+#    UWBScan.srv
+    getImuPose.srv
+#    GetMap.srv
 #   Service2.srv
 )
 
@@ -137,6 +139,9 @@ add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencp
 add_dependencies(SLAM_node finderbot_generate_messages_cpp)
 add_dependencies(path_execution_node finderbot_generate_messages_cpp)
 add_dependencies(UWB_scan_node finderbot_generate_messages_cpp)
+add_dependencies(spi_node finderbot_generate_messages_cpp finderbot_gencpp)
+
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
