@@ -89,6 +89,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         double angle_error = angle_diff(goal_theta, current_theta_);
         
       
+        // ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
         
         cmd_.linear.x = 0;
         cmd_.angular.z = 0;
@@ -152,7 +153,7 @@ void Executor::pathExecution(std::vector<size_t>& path) {
 
         goToNextNodeInPath(goal_row, goal_col);
         if (count >= max_path_length) 
-        {   
+        {
             ROS_INFO("Get New Path");
             return; 
         }
@@ -228,4 +229,5 @@ Executor::Executor(std::string world_frame, std::string local_frame)
     : world_frame_id_(world_frame), local_frame_id_(local_frame)
 {
     command_velocities_pub_ = nh.advertise<geometry_msgs::Twist>("finderbot_cmd_vel", 1, true);
+    client_ = nh.serviceClient<finderbot::UWBScan>("UWB_scan");
 }

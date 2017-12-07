@@ -7,9 +7,16 @@
 #include <finderbot/map_utils.h>
 #include <finderbot/Pose.h>
 #include <geometry_msgs/Twist.h>
+#include <finderbot/uwb.h>
+#include <finderbot/UWB/ModuleConnector.hpp>
+#include <ctime>
+#include <iostream>
+#include <unistd.h>
+#include <finderbot/UWBScan.h>
 
 #include <math.h>
 #include <string>
+
 
 class Executor
 {
@@ -35,7 +42,7 @@ class Executor
     std::string local_frame_id_;
 
     ros::NodeHandle nh;
-    ros::Publisher command_velocities_pub_; 
+    ros::Publisher command_velocities_pub_;
 
     bool turnTheta(double goal_theta);
     void drive();
@@ -45,7 +52,9 @@ class Executor
     bool closeEnoughToGoal(double radius, int goal_row, int goal_col);
 
   public:
-	Executor(std::string world_frame, std::string local_frame);
+    ros::ServiceClient client_;
+    finderbot::UWBScan srv;
+    Executor(std::string world_frame, std::string local_frame);
 
     void pathExecution(std::vector<size_t>& path);
     void handleGlobalMap(const nav_msgs::OccupancyGrid);
@@ -53,6 +62,8 @@ class Executor
 
     Planner& getPlanner() {return *planner_;}
     bool initialized() {return pose_initialized_;}
+    size_t getCurrRow() {return current_row_;}
+    size_t getCurrCol() {return current_col_;}
 	// ~Executor();
 	
 };

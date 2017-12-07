@@ -255,7 +255,6 @@ int main(int argc, char** argv)
     int num_particles;
     double std_dev;
     bool simulated_env;
-
     nh.param<std::string>("world_frame_id", world_frame_id, "world");
     nh.param<std::string>("laser_frame_id", laser_frame_id, "laser_frame");
     nh.param<std::string>("model_name", model_name, "Finderbot_Lidar");

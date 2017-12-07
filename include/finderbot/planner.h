@@ -22,7 +22,6 @@
 #include <finderbot/DistanceGrid.h>
 
 
-
 class Compare {
   public:
     bool operator() (const Node * node1, const Node * node2) {
@@ -36,8 +35,8 @@ class Planner {
 
     // Nodes each representing a coordinate in the map
     std::vector<Node> nodes_;
-    
     // set of pointers to nodes. Needs to be sorted by f_scores
+
     std::priority_queue<Node*, std::vector<Node*>, Compare> visit_queue_;
 
     // A 2-D vector with the coordinates of each point in the map to visit
@@ -93,6 +92,7 @@ class Planner {
         return &global_map_;
     }
 };
+
 
 
 #endif

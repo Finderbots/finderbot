@@ -23,14 +23,7 @@
  ***********************************************************************
  */
 
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-
-#include <wiringPi.h>
-#include <softPwm.h>
-#define pwmpin  0
-#define pwrpin  3
+#include <finderbot/servo.h>
 
 int servo_setup()
 {
@@ -50,26 +43,34 @@ int servo_turn0(){
   delay(1200);
   digitalWrite(pwrpin, HIGH);
   return 0;
-  }
-  
+}
+
+int servo_turn90(){
+  digitalWrite(pwrpin, LOW);
+  softPwmWrite (pwmpin, 16);
+  delay(1200);
+  digitalWrite(pwrpin, HIGH);
+  return 0;
+}
+
 int servo_turn180(){
   digitalWrite(pwrpin, LOW);
   softPwmWrite (pwmpin, 25);
   delay(1200);
   digitalWrite(pwrpin, HIGH);
   return 0;
-  }
-
-int main(){
-	servo_setup();
-	delay(2000);
-	servo_turn0();
-	delay(2000);
-	servo_turn180();
-	delay(2000);
-	servo_turn0();
-	delay(2000);
-	servo_turn180();
-	return 0;
 }
+
+// int main(){
+// 	servo_setup();
+// 	delay(2000);
+// 	servo_turn0();
+// 	delay(2000);
+// 	servo_turn180();
+// 	delay(2000);
+// 	servo_turn0();
+// 	delay(2000);
+// 	servo_turn180();
+// 	return 0;
+// }
 
