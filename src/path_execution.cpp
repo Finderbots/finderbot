@@ -7,7 +7,7 @@
 inline double angle_diff(double leftAngle, double rightAngle)
 {
     double diff = leftAngle - rightAngle;
-    ROS_INFO("init diff = %f", diff);
+    // ROS_INFO("init diff = %f", diff);
     if(fabs(diff) > PI)
     {
         diff -= (diff > 0) ? PI*2 : PI*-2;
@@ -126,6 +126,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
 
     moving_to_point_ = false;
 
+    //TODO test only stopping at end of path??
     cmd_.linear.x = 0;
     cmd_.linear.y = 0;
     command_velocities_pub_.publish(cmd_);
