@@ -157,7 +157,7 @@ void readWriteHeading(float heading)
     }
     if((uint8_t)buf[3] != bytes_to_float.bytes.zero)
     {
-        ROS_ERROR("sent %d got %d");
+        ROS_ERROR("Incorrect byte 1");
     }
 
     //send data 3
@@ -212,13 +212,13 @@ void readWriteHeading(float heading)
 
 
 
-void readWriteMotor(char cmd)
+void readWriteMotor(unsigned char new_cmd)
 {
     int channel = 0;
     
     unsigned char buf[6] = "sC0e_";
     //send start bit
-    buf[2] = cmd;
+    buf[2] = new_cmd;
 
     int ret = wiringPiSPIDataRW (channel, buf, 1);
     if (ret < 0)
@@ -268,6 +268,7 @@ void readWriteMotor(char cmd)
     }
     if(buf[4] != 'd') ROS_ERROR("No end ACK");
 
+    printBuf(buf,5);
 }
 
 void handleCommandVel(const geometry_msgs::Twist new_cmd)

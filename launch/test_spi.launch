@@ -1,5 +1,5 @@
 <launch> 
-    <node pkg="finderbot" name="SPI" type="spi_node" />
+    <node pkg="finderbot" name="SPI" type="spi_node" output="screen" />
 
     <node pkg="finderbot" name="controller" type="simple_motion_node" />
 </launch>
