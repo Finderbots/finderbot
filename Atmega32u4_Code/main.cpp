@@ -42,6 +42,8 @@ const char ack_byte = '!';
 const char err_byte = 'b';
 const char ack_byte_stop = 'd'; 
 
+char master_motor_command = '\0';
+
 SemaphoreHandle_t xHeadingSemaphore;
 float_bytes desired_heading_temp;
 
@@ -58,6 +60,7 @@ void TaskIMURead(void *pvParameters);
 void TaskPIDController(void *pvParameters);
 
 void TaskTestTimers(void *pvParameters);
+void TaskMotorCommand(void *pvParameters);
 
 #define F_CPU 16000000
 
@@ -77,7 +80,7 @@ int main(void)
 
     init_motor_pins();
 
-    reset_speeds();
+    //reset_speeds();
 
     if ( xHeadingSemaphore == NULL )  // Check to confirm that the Serial Semaphore has not already been created.
     {
@@ -85,6 +88,14 @@ int main(void)
     if ( ( xHeadingSemaphore ) != NULL )
           xSemaphoreGive( ( xHeadingSemaphore ) );  // Make the Serial Port available for use, by "Giving" the Semaphore.
     }
+
+    // xTaskCreate(
+    // TaskMotorCommand
+    // ,  (const portCHAR *)"MotorCommand"  // A name just for humans
+    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // ,  NULL
+    // ,  5  // Priority (low num = low priority)
+    // ,  NULL );
 
     xTaskCreate(
     TaskIRSensorRead
@@ -102,13 +113,13 @@ int main(void)
     ,  3  // Priority (low num = low priority)
     ,  NULL );
 
-    xTaskCreate(
-    TaskPIDController
-    ,  (const portCHAR *)"PIDController"  // A name just for humans
-    ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
-    ,  NULL
-    ,  1  // Priority (low num = low priority)
-    ,  NULL );
+    // xTaskCreate(
+    // TaskPIDController
+    // ,  (const portCHAR *)"PIDController"  // A name just for humans
+    // ,  128  // This stack size can be checked & adjusted by reading the Stack Highwater
+    // ,  NULL
+    // ,  1  // Priority (low num = low priority)
+    // ,  NULL );
 
 
    vTaskStartScheduler();
@@ -116,18 +127,49 @@ int main(void)
     return 0;               /* never reached */
 }
 
+// void TaskMotorCommand( void *pvParameters)  // This is a Task.
+//  {
+//      init_pwm();
+ 
+//      init_motor_pins();
+ 
+//      reset_speeds();
+ 
+//      for (;;) // A Task shall never return or exit. 
+//      {
+//          //for testing
+//         PORTD |= _BV(PD3);
+//          moveRobot(FORWARD);
+//          vTaskDelay(pdMS_TO_TICKS(500));
+ 
+//          moveRobot(STOP);
+//          vTaskDelay(pdMS_TO_TICKS(500));
+ 
+//          reset_speeds();
+ 
+//          moveRobot(BACKWARD);
+//          vTaskDelay(pdMS_TO_TICKS(500));
+ 
+//          moveRobot(STOP);
+//          vTaskDelay(pdMS_TO_TICKS(500));
+ 
+//          reset_speeds();
+//         PORTD &= ~(_BV(PD3));
+//      }
+//  }
+
 
 void TaskIRSensorRead(void *pvParameters) {
     init_IR_pins();
     for(;;) {
-        PORTD |= _BV(PD3);
+        //PORTD |= _BV(PD3);
         left_IR_read();
         right_IR_read();
-        PORTD &= ~(_BV(PD3));
+        //PORTD &= ~(_BV(PD3));
         if(IRrightVal > 90) {
-            cli(); //disable interrupts
-            stop_bot();
-            sei(); //enable interrupts
+            // cli(); //disable interrupts
+            // moveRobot(STOP);
+            // sei(); //enable interrupts
         }
         else
         {}
@@ -230,8 +272,6 @@ ISR(ADC_vect)
 ISR(SPI_STC_vect)
 {
     //PORTE |= _BV(PE6); //debugging
-
-    char master_motor_command = '\0';
 
     spi_char = SPDR;  // grab byte from SPI Data Register
     
@@ -482,13 +522,14 @@ ISR(SPI_STC_vect)
 
     SPDR = byte_to_send;
 
-    if (master_motor_command != '\0' && master_motor_command != command_state)
+    if ((spi_char == stop_byte) && (master_motor_command != '\0') && (master_motor_command != command_state))
     {
         cli();
-        stop_bot();
-        delay(100);
+        moveRobot(STOP);
+        delay(1000);
         reset_speeds();
         moveRobot(master_motor_command);
+        master_motor_command = '\0';
         sei();
     }
 

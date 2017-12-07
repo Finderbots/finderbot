@@ -107,9 +107,11 @@ void motor_run(int motor, uint8_t speed, int movement) {
 }
 
 void enable_motors(void) {
+    update_speed();
     TCCR4A |= _BV(COM4A1) | _BV(COM4B1);
     TCCR4C |= _BV(COM4D1);
     TCCR3A |= _BV(COM3A1);
+
 }
 
 void disable_motors(void) {
@@ -202,5 +204,5 @@ void reset_speeds(void) {
     speedBR = 0x7F; //set initial 50% duty cycle
     speedFL = 0x7F; //set initial 50% duty cycle 
     speedBL = 0x7F; //set initial 50% duty cycle
-    update_speed();
+    //update_speed();
 }
