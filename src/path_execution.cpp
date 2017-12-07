@@ -4,6 +4,9 @@
 #define DIST_THRESH 2
 // Applies command velocities until you are within a threshold of desired angle
 
+XeThru::Uwb * uwb_;
+ros::Publisher uwb_publisher;
+
 inline double angle_diff(double leftAngle, double rightAngle)
 {
     double diff = leftAngle - rightAngle;
@@ -154,8 +157,6 @@ void Executor::pathExecution(std::vector<size_t>& path) {
         goToNextNodeInPath(goal_row, goal_col);
         if (count >= max_path_length) 
         {
-            ROS_INFO("Scan UWB");
-            // call UWB service here
             ROS_INFO("Get New Path");
             return; 
         }
@@ -231,4 +232,15 @@ Executor::Executor(std::string world_frame, std::string local_frame)
     : world_frame_id_(world_frame), local_frame_id_(local_frame)
 {
     command_velocities_pub_ = nh.advertise<geometry_msgs::Twist>("finderbot_cmd_vel", 1, true);
+    client_ = nh.serviceClient<finderbot::UWBScan>("UWB_scan");
+
+    // UWB init stuff copied from main() function in uwb_main.cpp
+    const std::string device_name = "/dev/ttySAC0";
+    const unsigned int log_level = 0;
+
+    XeThru::ModuleConnector mc(device_name, log_level);
+    //X4M300 &x4m300 = mc.get_x4m300();
+    uwb_ = new XeThru::Uwb(mc);
+    uwb_->uwb_setup();
+
 }

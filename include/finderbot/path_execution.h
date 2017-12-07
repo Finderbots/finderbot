@@ -7,9 +7,16 @@
 #include <finderbot/map_utils.h>
 #include <finderbot/Pose.h>
 #include <geometry_msgs/Twist.h>
+#include <finderbot/uwb.h>
+#include <finderbot/UWB/ModuleConnector.hpp>
+#include <ctime>
+#include <iostream>
+#include <unistd.h>
+#include <servo.h>
 
 #include <math.h>
 #include <string>
+
 
 class Executor
 {
@@ -33,9 +40,11 @@ class Executor
     geometry_msgs::Twist cmd_;
     std::string world_frame_id_;
     std::string local_frame_id_;
+    finderbot::UWBScan srv;
 
     ros::NodeHandle nh;
-    ros::Publisher command_velocities_pub_; 
+    ros::Publisher command_velocities_pub_;
+    ros::ServiceClient client_;
 
     bool turnTheta(double goal_theta);
     void drive();
