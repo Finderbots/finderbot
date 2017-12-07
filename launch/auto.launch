@@ -5,11 +5,6 @@
     <node pkg="finderbot" name="exploration" type="path_execution_node" output="screen" />
 
     <node pkg="finderbot" name="global_mapping" type="global_map_node" output="screen" />
-
-    <!-- 
-    <param name="global_map_width" type="int" value="500" />
-    <param name="global_map_height" type="int" value="500" />
-    -->
  
     <param name="simulated_env" type="bool" value="true" />
 

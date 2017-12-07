@@ -37,7 +37,7 @@ class Executor
     ros::NodeHandle nh;
     ros::Publisher command_velocities_pub_; 
 
-    void turnTheta(double goal_theta);
+    bool turnTheta(double goal_theta);
     void drive();
 
     bool thetaCloseEnough(double threshold, double goal_theta);
