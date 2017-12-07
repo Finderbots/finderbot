@@ -123,14 +123,14 @@ add_executable(a_star_test src/a_star_test.cpp src/planner.cpp src/DistanceGrid.
 
 add_executable(path_execution_node src/path_execution_node.cpp src/path_execution.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
-##add_executable(spi_node src/spi_node.cpp)
+add_executable(spi_node src/spi_node.cpp)
 
 ##(test_path_exec_node src/test_path_exec_node.cpp src/path_execution_node.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
 ## add_executable(dummy_map_node src/dummy_map_node.cpp src/mapping.cpp src/ray_caster.cpp)
 
-add_executable(UWB_scan_node src/uwb_scan_node.cpp src/uwb.cpp src/servo.cpp)
-set_source_files_properties(src/uwb_scan_node.cpp PROPERTIES COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -std=gnu++11")
+#add_executable(UWB_scan_node src/uwb_scan_node.cpp src/uwb.cpp src/servo.cpp)
+#set_source_files_properties(src/uwb_scan_node.cpp PROPERTIES COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -std=gnu++11")
 
 #set_source_files_properties(src/uwb.cpp PROPERTIES COMPILE_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=0 -std=gnu++11")
 
@@ -138,7 +138,7 @@ set_source_files_properties(src/uwb_scan_node.cpp PROPERTIES COMPILE_FLAGS "-D_G
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
 add_dependencies(SLAM_node finderbot_generate_messages_cpp)
 add_dependencies(path_execution_node finderbot_generate_messages_cpp)
-add_dependencies(UWB_scan_node finderbot_generate_messages_cpp)
+#add_dependencies(UWB_scan_node finderbot_generate_messages_cpp)
 add_dependencies(spi_node finderbot_generate_messages_cpp finderbot_gencpp)
 
 
@@ -211,12 +211,12 @@ target_link_libraries(
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(
-  UWB_scan_node
-  ${catkin_LIBRARIES}
-  ~/catkin_ws/src/finderbot/lib/libModuleConnector.so
-  wiringPi
-)
+#target_link_libraries(
+#  UWB_scan_node
+#  ${catkin_LIBRARIES}
+#  ~/catkin_ws/src/finderbot/lib/libModuleConnector.so
+#  wiringPi
+#)
 
 ## target_link_libraries(
 ##   test_path_exec_node
