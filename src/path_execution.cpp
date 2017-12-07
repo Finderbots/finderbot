@@ -89,10 +89,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         double angle_error = angle_diff(goal_theta, current_theta_);
         
       
-<<<<<<< HEAD
-        ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
-=======
->>>>>>> 43786c259930fad380f6df898a913af3803a2ad0
+        // ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
         
         cmd_.linear.x = 0;
         cmd_.angular.z = 0;
