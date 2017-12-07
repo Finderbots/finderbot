@@ -347,7 +347,7 @@ int robot_init_audio_out()
         base_audio_in_addr.sin_port = htons(BASE_PORT_AUDIO_IN);
           
         // Convert IPv4 and IPv6 addresses from text to binary form
-        if(inet_pton(AF_INET, IP_ROBOT, &base_audio_in_addr.sin_addr)<=0)
+        if(inet_pton(AF_INET, IP_BASE, &base_audio_in_addr.sin_addr)<=0)
         {
                 printf("Invalid address/ Address not supported \n");
                 return -1;
