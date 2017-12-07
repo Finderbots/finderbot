@@ -92,8 +92,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         
         cmd_.linear.x = 0;
         cmd_.angular.z = 0;
-        // ROS_INFO("Goal pos (%zd, %zd, %f)", goal_row, goal_col, goal_theta);
-        // ROS_INFO("Curr pos (%zd, %zd, %f)", current_row_, current_col_, current_theta_);
+
         // We rotate to aim straight at the next point in the path then go straight to it
         // Do we need to wait till you finish turning? Or does it queue commands?
         // Is there a way to have it queue instead of one at a time?
@@ -107,12 +106,14 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
         }
 
 
-        if (left) ROS_INFO("TURN LEFT theta = %f, goal = %f, error = %f", current_theta_, goal_theta, angle_error);
-        else ROS_INFO("TURN RIGHT theta = %f, goal = %f, error = %f", current_theta_, goal_theta, angle_error);
-
-        ros::Duration(0.2).sleep();
+        // if (left) ROS_INFO("TURN LEFT theta = %f, goal = %f, error = %f", current_theta_, goal_theta, angle_error);
+        // else ROS_INFO("TURN RIGHT theta = %f, goal = %f, error = %f", current_theta_, goal_theta, angle_error);
         // ROS_INFO("GOAL (%zd,%zd, %f), CURR(%zd, %zd, %f) , error = %f, dist = %f", goal_row, goal_col, goal_theta, current_row_, current_col_,current_theta_, angle_error, dist);
 
+        ros::Duration(0.2).sleep();
+
+        ROS_INFO("execute next Node spin");
+        //should only update Pose
         ros::spinOnce();
 
     }
@@ -123,7 +124,7 @@ void Executor::goToNextNodeInPath(size_t goal_row, size_t goal_col) {
     // }
 
     moving_to_point_ = false;
-    ros::spinOnce();
+
     cmd_.linear.x = 0;
     cmd_.linear.y = 0;
     command_velocities_pub_.publish(cmd_);
@@ -140,7 +141,7 @@ void Executor::pathExecution(std::vector<size_t>& path) {
 
     ROS_INFO("PATH TO POINT (%zd, %zd)", map_utils::rowFromOffset(path.front(), map_width), map_utils::colFromOffset(path.front(), map_width));
     
-    // int max_path_length = 10;
+    int max_path_length = 25;
     int count = 0;
 
     while (!path.empty() && ros::ok()) {
@@ -149,18 +150,18 @@ void Executor::pathExecution(std::vector<size_t>& path) {
         path.pop_back();
 
         goToNextNodeInPath(goal_row, goal_col);
-        // if (count >= max_path_length) 
-        // {   
-        //     ROS_INFO("Get New Path");
-        //     return; 
-        // }
+        if (count >= max_path_length) 
+        {   
+            ROS_INFO("Get New Path");
+            return; 
+        }
 
         count++;
+        //update Map
         ros::spinOnce();
     }
 
     ROS_INFO("Get New Path");
-    ros::spinOnce();
     return;
 }
 
@@ -177,18 +178,13 @@ void Executor::handleGlobalMap(const nav_msgs::OccupancyGrid map)
         // x_init_ = transform.getOrigin().x();
         // y_init_ = transform.getOrigin().y(); 
 
-        // ROS_INFO("init = (%f, %f)", x_init_, y_init_);      
         init_map_x_ = map.info.height/2;
         init_map_y_ = map.info.width/2;
               
-        // return;
     }
 
     ROS_INFO("UPDATE MAP");
-    // for (size_t i = 0; i < map.data.size(); i++)
-    // {
-    //     std::coutca << (int)map.data[i] << std::endl;
-    // }
+    
 
     planner_->updateMap(map);
 

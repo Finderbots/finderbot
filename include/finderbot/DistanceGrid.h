@@ -43,10 +43,10 @@ class DistanceGrid
                 // int delta_x = (x_cell == x_obs) ? 0 : std::max(std::abs(x_cell - x_obs) - 1, 0);
                 // int delta_y = (y_cell == y_obs) ? 0 : std::max(std::abs(y_cell - y_obs) - 1, 0);
                 distance = map_utils::distance(x_cell, y_cell, x_obs, y_obs);
-                if(distance > global_width)
-                {
-                    ROS_INFO("distance from (%zd, %zd) to (%zd,%zd) = %f", x_obs, y_obs, x_cell, y_cell, distance);
-                }
+                // if(distance > global_width)
+                // {
+                //     ROS_INFO("distance from (%zd, %zd) to (%zd,%zd) = %f", x_obs, y_obs, x_cell, y_cell, distance);
+                // }
             }
         }
     };

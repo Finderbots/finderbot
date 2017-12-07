@@ -8,4 +8,8 @@
 
     <param name="simulated_env" type="bool" value="true" />
 
+    <param name="global_map_width" type="int" value="600" />
+
+    <param name="local_map_width" type="int" value="85" />
+
 </launch>

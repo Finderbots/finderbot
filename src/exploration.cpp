@@ -117,8 +117,6 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
                 return planner.distAt(lhs) > planner.distAt(rhs); 
               });
 
-    std::cout << "distAt front = " << planner.distAt(frontier.idxs.front()) << std::endl; 
-    std::cout << "distAt back = "<< planner.distAt(frontier.idxs.back()) << std::endl;
     //go through vector return first valid path
     for (size_t i = 0; i < frontier.idxs.size(); i++)
     {
@@ -130,7 +128,7 @@ std::vector<size_t>* pathToFrontier(frontier_t& frontier,
 
         if (path != nullptr)
         {
-            ROS_INFO("LENGTH of path is %zd", path->size());
+            // ROS_INFO("LENGTH of path is %zd", path->size());
             return path;
         }
     }
@@ -143,13 +141,9 @@ void findMapFrontiers(const Planner& planner,
                  std::vector<frontier_t>& frontiers,
                  double min_frontier_len)
 {
-    // std::cout << "ENTER findMapFrontiers" << std::endl;
+    std::cout << "FindMapFrontiers" << std::endl;
     const nav_msgs::OccupancyGrid* map = planner.getMapPtr();
-    // G_FRONTIER_MAP.info = map->info;
 
-    // assert(G_FRONTIER_MAP.info.width = map->info.width);
-    // G_FRONTIER_MAP.data.assign(G_FRONTIER_MAP.info.width* G_FRONTIER_MAP.info.height, -1);
-    // std::cout << (int)G_FRONTIER_MAP.data[0] << std::endl;
     if (map == nullptr)
     {
         ROS_ERROR("EXPLORE: growFrontier map is null");
@@ -171,8 +165,6 @@ void findMapFrontiers(const Planner& planner,
     size_t x = map_utils::rowFromOffset(robot_pose_idx, map->info.width);
     size_t y = map_utils::colFromOffset(robot_pose_idx, map->info.width);
 
-    // std::cout << "EXPLORE: growFRontierstart cell (" << x << ", " << y << ")" << std::endl;
-
     while (!cellQueue.empty())
     {
         size_t next_idx = cellQueue.front();
@@ -182,15 +174,12 @@ void findMapFrontiers(const Planner& planner,
         size_t x = map_utils::rowFromOffset(next_idx, map->info.width);
         size_t y = map_utils::colFromOffset(next_idx, map->info.width);
 
-        // std::cout << "next cell (" << x << ", " << y << ")" << std::endl;
-
         for (int i = 0; i < num_neighbors; ++i)
         {
             size_t neighbor_x = x + x_deltas[i];
             size_t neighbor_y = y + y_deltas[i];
 
             size_t neighbor_idx = map_utils::getOffsetRowCol(neighbor_x, neighbor_y, map->info.width);
-            // std::cout << "map[" << x << ", " << y << "] = " << (int)map->data[neighbor_idx] << std::endl;
             
             //continue if neighbor already visited or if not in map
             if (visited_idxs.find(neighbor_idx) != visited_idxs.end() 
@@ -231,8 +220,6 @@ void findMapFrontiers(const Planner& planner,
 // if no valid path, returns its own pose
 std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& frontiers, size_t min_dist_to_frontier)
 {
-    //TODO actual min_dist_to_frontier
-    // std::cout << "exploreFrontiers" << std::endl;
     size_t robot_pose_idx = planner.getPoseIdx();
     size_t global_width = planner.getMapPtr()->info.width;
     if (frontiers.empty())
@@ -250,40 +237,14 @@ std::vector<size_t> exploreFrontiers(Planner& planner, std::vector<frontier_t>& 
     std::transform(frontiers.begin(), frontiers.end(), std::back_inserter(paths),
         [&planner](frontier_t& frontier) {return *pathToFrontier(frontier, planner);});
 
-    // std::cout << "global_width = " << global_width << std::endl;
-    // std::cout << "GENERATED " << paths.size() << " PATHS" << std::endl;
 
-    for (size_t i = 0; i < paths[0].size(); i++)
-    {
-        size_t x = map_utils::rowFromOffset(paths[0][i], global_width);
-        size_t y = map_utils::colFromOffset(paths[0][i], global_width);
-    }
-
-    // return *std::min_element(paths.begin(), paths.end(), 
-    //         [](const std::vector<size_t>& lhs, const std::vector<size_t>& rhs)
-    //         {
-    //             return lhs.size() < rhs.size();
-    //         });
-
-    // std::sort(frontier.idxs.begin(), 
-    //           frontier.idxs.end(),
-    //           [&planner](size_t lhs, size_t rhs) -> 
-    //           bool {
-    //             return planner.distAt(lhs) > planner.distAt(rhs); 
-    //           });
-
-    ROS_INFO("FRONT PATH LEN = %zd", paths.front().size());
-    ROS_INFO("BACK PATH LEN = %zd", paths.back().size());
-
+    //sort paths so closest one is in front
     std::sort(paths.begin(), paths.end(),
             [](const std::vector<size_t>& lhs, const std::vector<size_t>& rhs) -> bool{
                 return lhs.size() < rhs.size();
             });
 
-   
-    ROS_INFO("FRONT PATH LEN = %zd", paths.front().size());
-    ROS_INFO("BACK PATH LEN = %zd", paths.back().size());
-    
+    //return first path of size greater than some min length
     for (auto path_it = paths.begin(); path_it != paths.end(); path_it++)
     {
         if (path_it->size() >= min_dist_to_frontier)

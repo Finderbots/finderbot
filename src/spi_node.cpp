@@ -1,6 +1,8 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 
+#include <geometry_msgs/Twist.h>
+
 #include <finderbot/wiringPi.h>
 #include <finderbot/wiringPiSPI.h>
 
