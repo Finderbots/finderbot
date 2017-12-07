@@ -30,17 +30,17 @@ int main(int argc, char** argv) {
     while (ros::ok())
     {
         if (!path_executor.initialized()) {
-            // ROS_INFO("Map Uninitialized: Continue");
+            // ROS_INFO("UNINITIALIZED EXECUTOR");
             ros::spinOnce();
             continue;
         }
-        // ROS_INFO("INITIALIZED");
+        
+        ROS_INFO("EXECUTE MAIN LOOP: spin");
         ros::spinOnce();
         front_map.info = path_executor.getPlanner().getMapPtr()->info;
 
         frontiers.clear();
         findMapFrontiers(path_executor.getPlanner(), frontiers, 3);
-        std::cout << "done with frontiers" << std::endl;
 
 
         front_map.data.assign(front_map.info.width*front_map.info.height, -1);
