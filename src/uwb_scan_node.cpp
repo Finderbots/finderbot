@@ -53,7 +53,7 @@ bool rotateAndScan() {
 	}
 	// 5. Rotate the servo to 180 degrees (absolute+90)
 	// 		** make sure it blocks the scan function (series not parallel)
-	servo_turn0();
+	servo_turn180();
 	// 6. Once it finishes rotating, scan new uwb data
 	// 		use functions as in uwb_main.cpp
 	// 		uwb_->state says if there is a person
@@ -63,6 +63,18 @@ bool rotateAndScan() {
 		std::cout<<"Vital signal found on the right!"<<std::endl;
 	}
 
+	// Middle again
+	servo_turn90();
+	if (uwb_->state == 1) {
+		ROS_INFO("Vital signal found straight ahead!");
+	}
+
+	// Left again
+	servo_turn0();
+	scanUWB(uwb_);
+	if (uwb_->state == 1) {
+		ROS_INFO("Vital signal found on the left!");
+	}
 
 	return true;
 }
