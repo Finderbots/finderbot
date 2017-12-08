@@ -1,5 +1,5 @@
-#include <ros/ros.h>
-#include <ros/console.h>
+//#include <ros/ros.h>
+//#include <ros/console.h>
 #include <finderbot/uwb.h>
 #include <finderbot/UWB/ModuleConnector.hpp>
 // #include <finderbot/path_execution_node.h>
@@ -9,7 +9,7 @@
 #include <finderbot/servo.h>
 
 XeThru::Uwb * uwb_;
-ros::Publisher uwb_publisher;
+//ros::Publisher uwb_publisher;
 
 void scanUWB(XeThru::Uwb * uwb_) {
 	// Copied from main() function in uwb_main.cpp
@@ -38,7 +38,7 @@ bool rotateAndScan() {
 	// 		block task 3 until you have finished scanning
 	scanUWB(uwb_);
 	if (uwb_->state == 1) {
-		ROS_INFO("Vital signal found on the left!");
+		std::cout <<"Vital signal found on the left!"<< std::endl;
 	}
 	// 3. Rotate the servo to 90 degrees (absolute)
 	// 		** make sure it blocks the scan function (series not parallel)
@@ -49,7 +49,7 @@ bool rotateAndScan() {
 	// 		block task 3 until you have finished scanning
 	scanUWB(uwb_);
 	if (uwb_->state == 1) {
-		ROS_INFO("Vital signal found straight ahead!");
+		std::cout << "Vital signal found straight ahead!" << std::endl;
 	}
 	// 5. Rotate the servo to 180 degrees (absolute+90)
 	// 		** make sure it blocks the scan function (series not parallel)
@@ -60,7 +60,7 @@ bool rotateAndScan() {
 	// 		block task 3 until you have finished scanning
 	scanUWB(uwb_);
 	if (uwb_->state == 1) {
-		ROS_INFO("Vital signal found on the right!");
+		std::cout<<"Vital signal found on the right!"<<std::endl;
 	}
 
 
@@ -71,8 +71,8 @@ int main(int argc, char** argv)
 {
 	// 0. Init
 	// 		Get absolute current row, col, theta
-	ros::init(argc, argv, "UWB_Scan");
-	ros::NodeHandle nh;
+    //ros::init(argc, argv, "UWB_Scan");
+    //ros::NodeHandle nh;
     // UWB init stuff copied from main() function in uwb_main.cpp
     const std::string device_name = "/dev/ttySAC0";
     const unsigned int log_level = 0;
@@ -83,8 +83,8 @@ int main(int argc, char** argv)
     uwb_->uwb_setup();
 
 	// ros::ServiceServer service = nh.advertiseService("UWB_Scan", rotateAndScan);
-	ROS_INFO("Ready to scan UWB for people.");
-	while (ros::ok()){
+    std::cout << "Ready to scan UWB for people." << std::endl;
+	while (1){
 		rotateAndScan();
 	}
 	// ros::spin();

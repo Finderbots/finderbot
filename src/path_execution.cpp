@@ -229,5 +229,5 @@ Executor::Executor(std::string world_frame, std::string local_frame)
     : world_frame_id_(world_frame), local_frame_id_(local_frame)
 {
     command_velocities_pub_ = nh.advertise<geometry_msgs::Twist>("finderbot_cmd_vel", 1, true);
-    client_ = nh.serviceClient<finderbot::UWBScan>("UWB_scan");
+    //client_ = nh.serviceClient<finderbot::UWBScan>("UWB_scan");
 }

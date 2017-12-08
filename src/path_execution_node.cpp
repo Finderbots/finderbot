@@ -9,8 +9,8 @@
 
 //   gets the pose from slam
 //   gets the destination from the explore node
-XeThru::Uwb * uwb_;
-ros::Publisher uwb_publisher;
+//XeThru::Uwb * uwb_;
+//ros::Publisher uwb_publisher;
 
 
 //assumes can overwrite global map in planner
@@ -89,9 +89,9 @@ int main(int argc, char** argv) {
 
         // call UWB service here (how to get uwb object thru to service?)
         ROS_INFO("Scan UWB");
-        path_executor.srv.request.current_row = path_executor.getCurrRow();
-        path_executor.srv.request.current_col = path_executor.getCurrCol();
-        while (!path_executor.client_.call(path_executor.srv));
+        //path_executor.srv.request.current_row = path_executor.getCurrRow();
+        //path_executor.srv.request.current_col = path_executor.getCurrCol();
+        //while (!path_executor.client_.call(path_executor.srv));
 
 
     }

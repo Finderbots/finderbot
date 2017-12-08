@@ -123,7 +123,7 @@ add_executable(a_star_test src/a_star_test.cpp src/planner.cpp src/DistanceGrid.
 
 add_executable(path_execution_node src/path_execution_node.cpp src/path_execution.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
-##add_executable(spi_node src/spi_node.cpp)
+add_executable(spi_node src/spi_node.cpp)
 
 ##(test_path_exec_node src/test_path_exec_node.cpp src/path_execution_node.cpp src/exploration.cpp src/planner.cpp src/DistanceGrid.cpp)
 
@@ -181,11 +181,11 @@ target_link_libraries(
    ${catkin_LIBRARIES}
 )
 
-##target_link_libraries(
-##  spi_node
-##  ${catkin_LIBRARIES}
-##  wiringPi
-##)
+target_link_libraries(
+  spi_node
+  ${catkin_LIBRARIES}
+  wiringPi
+)
 
 target_link_libraries(
    mini_mapping_node
