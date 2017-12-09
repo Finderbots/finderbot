@@ -117,7 +117,7 @@ add_executable(path_execution_node src/path_execution_node.cpp src/path_executio
 
 add_executable(spi_node src/spi_node.cpp)
 
-add_executable(UWB_scan_node src/uwb_scan_node.cpp src/uwb.cpp src/servo.cpp)
+add_executable(UWB_scan_node src/uwb_scan_node.cpp src/servo.cpp)
 
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
@@ -186,7 +186,6 @@ target_link_libraries(
 target_link_libraries(
   UWB_scan_node
   ${catkin_LIBRARIES}
-  ~/catkin_ws/src/finderbot/lib/libModuleConnector.so
   wiringPi
 )
 
