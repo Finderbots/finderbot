@@ -1,5 +1,5 @@
-// #include <ros/ros.h>
-// #include <ros/console.h>
+#include <ros/ros.h>
+#include <ros/console.h>
 #include <finderbot/uwb.h>
 #include <finderbot/UWB/ModuleConnector.hpp>
 // #include <finderbot/path_execution_node.h>
@@ -34,7 +34,7 @@ string getLastLine(fstream file) {
 			file.seekg(-2,ios_base::cur)
 		}
 	}
-	string last_line;
+	std::string last_line;
 	getline(file, last_line);
 	return last_line;
 }
