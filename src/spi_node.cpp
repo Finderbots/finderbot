@@ -118,6 +118,8 @@ public:
     //and aren't controlled by a callback
     bool IMU_delay_elapsed()
     {
+	ROS_INFO("delay ns = %llu, diff_t = %llu",IMU_delay_,  ros::Time::now().toNSec() - prev_IMU_time_.toNSec());
+
         return (ros::Time::now().toNSec() - prev_IMU_time_.toNSec()) > IMU_delay_;
     }
 };
@@ -160,6 +162,7 @@ int main(int argc, char** argv)
         //also if its not simulated, cus then it doesnt exist
         if (spi_sync.IMU_delay_elapsed() && !simulated)
         {
+	    ROS_INFO("Get IMU data");
             spi_sync.getImuData();
         }
 

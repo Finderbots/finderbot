@@ -31,6 +31,7 @@ add_message_files(
    FILES
    PF_Input.msg
    Pose.msg
+   UWB_data.msg
  )
 
 ## Generate services in the 'srv' folder

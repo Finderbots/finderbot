@@ -21,6 +21,13 @@ void writeHeading(float heading);
 void writeMotor(unsigned char new_cmd);
 
 
+void printBuf(unsigned char* buf, int size)
+{
+    for (int i = 0; i < size; i++)
+    {
+        ROS_INFO("SPI: %c  %i", buf[i], (uint8_t)buf[i]);
+    }
+}
 //TODO fix this
 float readAccel(char axis)
 {
@@ -97,17 +104,12 @@ float readAccel(char axis)
         exit(1);
     }
     if(buf[7] != 'd') ROS_ERROR("No Ack from PCB");
+	
+    printBuf(buf, 8);
 
     return bytes_to_float.data;
 }
 
-void printBuf(unsigned char* buf, int size)
-{
-    for (int i = 0; i < size; i++)
-    {
-        ROS_INFO("SPI: %c  %i", buf[i], (uint8_t)buf[i]);
-    }
-}
 
 
 void readWriteHeading(float heading)

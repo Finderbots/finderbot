@@ -84,8 +84,8 @@ void robot_audio_out()
 int main()
 {
 	// call func for device running on
-	base_audio_out();
-
+//	robot_audio_in();
+connect_robot();
 
     return 0;
 }
