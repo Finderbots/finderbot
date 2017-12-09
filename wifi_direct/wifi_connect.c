@@ -7,23 +7,23 @@
 
 #include "wifi_connect.h"
 
-const char* base_mac = "00:13:ef:70:07:3b";
+const char* base_mac = "0c:8b:fd:75:7b:dc";
 const char* robot_mac = "00:c0:ca:96:cb:94";
 
 const char* kill_wpa_supplicant = "sudo killall wpa_supplicant";
 const char* start_wpa_supplicant = "sudo wpa_supplicant -i %s -D %s -c %s -Bd";
 const char* start_wpa_cli = "sudo wpa_cli -i %s";
-const char* start_network = "sudo ifconfig %s %s up";
+const char* start_network = "sudo ifconfig p2p-%s-0 %s up";
 
-const char* base_interface = "wlx0013ef70073b";
+const char* base_interface = "wlp2s0";
 const char* base_driver = "nl80211";
 const char* base_conf = "/etc/eecs473/wpa_supplicant.conf";
-const char* base_p2p = "p2p-0";
+//const char* base_p2p = "p2p-0";
 
 const char* robot_interface = "wlan0";
 const char* robot_driver = "nl80211";
 const char* robot_conf = "/etc/eecs473/wpa_supplicant.conf";
-const char* robot_p2p = "p2p-wlan0-0";
+//const char* robot_p2p = "p2p-wlan0-0";
 
 int buf_len = 4096;
 char read_buf[4096];
@@ -176,7 +176,7 @@ void connect_base()
 	sleep(1);
 	printf("quit wpa_cli\n");
 
-	sprintf(exec_str, start_network, base_p2p, IP_BASE);
+	sprintf(exec_str, start_network, base_interface, IP_BASE);
 	system(exec_str);
 	sleep(1);
 	printf("p2p up on IP_BASE %s\n", IP_BASE);
@@ -272,7 +272,7 @@ void connect_robot()
 	sleep(1);
 	printf("quit wpa_cli\n");
 
-	sprintf(exec_str, start_network, robot_p2p, IP_ROBOT);
+	sprintf(exec_str, start_network, robot_interface, IP_ROBOT);
 	system(exec_str);
 	sleep(1);
 	printf("p2p up on IP_ROBOT %s\n", IP_ROBOT);
