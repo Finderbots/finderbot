@@ -53,11 +53,8 @@ class Executor
 
   public:
     ros::ServiceClient client_;
-<<<<<<< HEAD
     // finderbot::UWBScan srv;
-=======
-    //finderbot::UWBScan srv;
->>>>>>> 848cddc64cd668e13c80dbc32871471f6c08d619
+
     Executor(std::string world_frame, std::string local_frame);
 
     void pathExecution(std::vector<size_t>& path);
