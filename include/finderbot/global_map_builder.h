@@ -66,7 +66,6 @@ class GlobalMapBuilder
     void vec_updateLocalOccupancy(bool occupied, std::vector<size_t>& ray);
     void addLocalMapToGlobal();
     void createNewLocalMap(const sensor_msgs::LaserScan& scan);
-    bool castRayToObstacle(double angle, double range, std::vector<size_t>& raycast);
 
 
 public:
@@ -75,8 +74,14 @@ public:
                     int local_width, int local_height, 
                     double resolution, std::string laser_frame_id);
 
+    bool castRayToObstacle(double angle, double range, std::vector<size_t>& raycast);
+
     void buildMapFromScan(const sensor_msgs::LaserScan& scan);
 
+    void add_uwb(size_t pt)
+    {
+        global_map_.data[pt] = 101;
+    }
     void updatePose(const finderbot::Pose& new_pose);
 
     bool initialized() {return pose_initialized_; }

@@ -4,6 +4,7 @@
 #include <tf/transform_listener.h>
 
 #include <finderbot/global_map_builder.h>
+#include <finderbot/UWB_data.h>
 #include <finderbot/PF_Input.h>
 #include <finderbot/Pose.h>
 #include <finderbot/GetMap.h>
@@ -18,6 +19,20 @@ ros::Publisher pf_publisher;
 
 global_mapping::GlobalMapBuilder* global_map_builder;
 
+void handleUWB(const finderbot::UWB_data uwb)
+{
+    if (uwb.vital)
+    {
+        std::vector<size_t> uwb_ray;
+
+        bool ret = global_map_builder->castRayToObstacle(uwb.angle, uwb.distance, uwb_ray);
+        
+        if (ret)
+        {
+            global_map_builder->add_ubw(uwb_ray.back());
+        }
+    }
+}
 
 void handleLaserScan(const sensor_msgs::LaserScan scan)
 {
@@ -82,6 +97,8 @@ int main(int argc, char** argv)
 
 
     ros::Subscriber local_map_handler = nh.subscribe<sensor_msgs::LaserScan>("hokuyo_data", 1, handleLaserScan);
+
+    ros::Subscriber uwb_handler = nh.subscribe<finderbot::UWB_data> ("UWB_data", 1, handleUWB);
 
     ros::Subscriber pose_handler = nh.subscribe<finderbot::Pose>("finderbot_pose", 1, handlePose);
     global_map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("global_map", 1, true);
