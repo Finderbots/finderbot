@@ -31,6 +31,7 @@ add_message_files(
    FILES
    PF_Input.msg
    Pose.msg
+   UWB_data.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -210,21 +211,12 @@ target_link_libraries(
   ${catkin_LIBRARIES}
 )
 
-<<<<<<< HEAD
-#target_link_libraries(
-#  UWB_scan_node
-#  ${catkin_LIBRARIES}
-#  ~/catkin_ws/src/finderbot/lib/libModuleConnector.so
-#  wiringPi
-#)
-=======
 ##target_link_libraries(
 ##  UWB_scan_node
 ##  ${catkin_LIBRARIES}
 ##  ~/catkin_ws/src/finderbot/lib/libModuleConnector.so
 ##  wiringPi
 ##)
->>>>>>> 079614f59183d5ed3a4de0cbc76a2c327b687291
 
 ## target_link_libraries(
 ##   test_path_exec_node

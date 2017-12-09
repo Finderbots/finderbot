@@ -7,7 +7,7 @@
 
 #include "wifi_connect.h"
 
-const char* base_mac = "0c:8b:fd:75:7b:dc";
+const char* base_mac = "0c:8b:fd:75:7b:dd";
 const char* robot_mac = "00:c0:ca:96:cb:94";
 
 const char* kill_wpa_supplicant = "sudo killall wpa_supplicant";
