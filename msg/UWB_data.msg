@@ -1,2 +1,2 @@
-Int8 vital
+int8 vital
 float32 distance

@@ -89,15 +89,9 @@ int main(int argc, char** argv) {
 
         // call UWB service here (how to get uwb object thru to service?)
         ROS_INFO("Scan UWB");
-<<<<<<< HEAD
         // path_executor.srv.request.current_row = path_executor.getCurrRow();
         // path_executor.srv.request.current_col = path_executor.getCurrCol();
         // while (!path_executor.client_.call(path_executor.srv));
-=======
-        //path_executor.srv.request.current_row = path_executor.getCurrRow();
-        //path_executor.srv.request.current_col = path_executor.getCurrCol();
-        //while (!path_executor.client_.call(path_executor.srv));
->>>>>>> 848cddc64cd668e13c80dbc32871471f6c08d619
 
 
     }
