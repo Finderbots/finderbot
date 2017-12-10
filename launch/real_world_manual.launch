@@ -1,5 +1,6 @@
 <launch>
 
+    node name="urg_node" pkg="urg_node" type="urg_node" output="screen" />
     <node pkg="finderbot" name="global_mapping" type="global_map_node" output="screen" />
 
     <node pkg="finderbot" name="controller" type="simple_motion_node" />

@@ -1,5 +1,7 @@
 <launch>
 
+    node name="urg_node" pkg="urg_node" type="urg_node" output="screen"/>
+
     <node pkg="finderbot" name="global_mapping" type="global_map_node" output="screen" />
 
     <node pkg="finderbot" name="exploration" type="path_execution_node" output="screen" />
