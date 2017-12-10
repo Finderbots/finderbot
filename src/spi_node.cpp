@@ -58,6 +58,8 @@ public:
         //TODO initial offset
         pose_.theta = readAccel('T');
 
+        ROS_INFO("accel = %f, theta = %f", accel, pose_.theta);
+
         double a_x = accel * std::cos(pose_.theta);
         double a_y = accel * std::sin(pose_.theta);
         double dt = ros::Time::now().toSec() - prev_IMU_time_.toSec();
@@ -70,6 +72,8 @@ public:
 
         pose_.x = pose_.x + v_x_*dt;
         pose_.y = pose_.y + v_y_*dt;
+
+        ROS_INFO("calculated Pose = (%f,%f,%f)", pose_.x, pose_.y, pose_.theta);
 
     }
 
