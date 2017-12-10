@@ -1,0 +1,11 @@
+<launch>
+
+    <node pkg="finderbot" name="global_mapping" type="global_map_node" output="screen" />
+
+    <node pkg="finderbot" name="controller" type="simple_motion_node" />
+
+    <node pkg="finderbot" name="SPI" type="spi_node" output="screen" />
+
+    <param name="simulated_env" type="bool" value="true" /> 
+
+</launch>
