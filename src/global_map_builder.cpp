@@ -189,6 +189,7 @@ namespace global_mapping
     void GlobalMapBuilder::updateProbOccupied(bool occupied,  size_t idx)
     {
         double p;
+        if (global_map_.data[idx] == 101) return;
         if (occupied) p  = p_occupied_laser_;
         else p = p_occupied_no_laser_;
         log_odds_map_[idx] += std::log(p / (1-p));
