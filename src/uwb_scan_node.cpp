@@ -15,24 +15,11 @@ finderbot::UWB_data uwb_data;
 ros::Publisher uwb_publisher;
 
 std::string getLastLine(std::fstream &file) {
-	bool keep_looping = true;
-	file.seekg(-1,std::ios_base::end);
-	while (!keep_looping) {
-		char ch;
-		file.get(ch);
-		if ((int)file.tellg() <= 1) {
-			file.seekg(0);
-			keep_looping = false;
-		}
-		else if (ch == '\n') {
-			keep_looping = false;
-		}
-		else {
-			file.seekg(-2,std::ios_base::cur);
-		}
-	}
+
 	std::string last_line;
-	getline(file, last_line);
+
+	while (file >> std::ws &&std::getline(file, last_line));
+	
 	return last_line;
 }
 
@@ -56,7 +43,7 @@ void scanUWB(float servo_angle) {
 	// Read from last line of file
 
 	std::fstream file;
-	file.open("/home/parallels/catkin_ws/src/finderbot/src/test.txt"); // Change this to correct filename
+	file.open("/home/jon/catkin_ws/src/finderbot/src/test.txt"); // Change this to correct filename
 	if (file.fail()) std::cout << "FILE FAILED\n";
 	else std::cout << "FILE SUCCEEDED\n";
 	std::string last_line = getLastLine(file);
@@ -130,13 +117,13 @@ int main(int argc, char** argv)
 	// 		Get absolute current row, col, theta
     ros::init(argc, argv, "UWB_Scan");
 	ros::NodeHandle nh;
-	ros::Publisher uwb_publisher = nh.advertise<finderbot::UWB_data>("/UWB_data", 1, true);
+	uwb_publisher = nh.advertise<finderbot::UWB_data>("/UWB_data", 1, true);
 
 	// ros::ServiceServer service = nh.advertiseService("UWB_Scan", rotateAndScan);
     std::cout << "Ready to scan UWB for people." << std::endl;
-	// while (1){
+	while (1){
 		rotateAndScan();
-	// }
+	}
 	// ros::spin();
 
 	return 0;

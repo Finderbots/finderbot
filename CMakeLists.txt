@@ -29,6 +29,7 @@ find_package(gazebo REQUIRED)
 ## Generate messages in the 'msg' folder
 add_message_files(
    FILES
+   Ir.msg
    PF_Input.msg
    Pose.msg
    UWB_data.msg

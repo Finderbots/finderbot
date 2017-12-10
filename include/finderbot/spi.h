@@ -28,7 +28,69 @@ void printBuf(unsigned char* buf, int size)
         ROS_INFO("SPI: %c  %i", buf[i], (uint8_t)buf[i]);
     }
 }
-//TODO fix this
+
+// 'slre_'
+void readIrSensors(uint8_t* data)
+{
+    int channel = 0;
+
+    unsigned char buf[6] = "slre_";
+    data[0] = 0;
+    data[1] = 0;
+    // send s
+    int ret = wiringPiSPIDataRW (channel, buf, 1);
+    if (ret < 0)
+    {
+        ROS_ERROR("SPI: ret = %i\n", ret);
+        exit(1);
+    }
+    //send l check s ack
+    ret = wiringPiSPIDataRW (channel, buf+1, 1);
+    if (ret < 0)
+    {
+        ROS_ERROR("SPI: ret = %i\n", ret);
+        exit(1);
+    }
+
+    if (buf[1] != '!')
+    {
+        ROS_ERROR("IR: No ACK to start");
+    }
+
+    //send r get l value
+    ret = wiringPiSPIDataRW (channel, buf+2, 1);
+    if (ret < 0)
+    {
+        ROS_ERROR("SPI: ret = %i\n", ret);
+        exit(1);
+    }
+    data[0] = (uint8_t) buf[2];
+
+    //send e get r value
+    ret = wiringPiSPIDataRW (channel, buf+3, 1);
+    if (ret < 0)
+    {
+        ROS_ERROR("SPI: ret = %i\n", ret);
+        exit(1);
+    }
+    data[1] = (uint8_t) buf[3];
+
+    //send _ check end ack
+    ret = wiringPiSPIDataRW (channel, buf+4, 1);
+    if (ret < 0)
+    {
+        ROS_ERROR("SPI: ret = %i\n", ret);
+        exit(1);
+    }
+
+    if (buf[4] != 'd')
+    {
+        ROS_ERROR("IR: No ACK to start");
+    }
+
+    return;
+    
+}
 float readAccel(char axis)
 {
     int channel = 0;
@@ -112,7 +174,7 @@ float readAccel(char axis)
 
 
 
-void readWriteHeading(float heading)
+void writeHeading(float heading)
 {
     int channel = 0;
 
@@ -218,7 +280,7 @@ void readWriteHeading(float heading)
 }
 
 
-void readWriteMotor(unsigned char new_cmd)
+void writeMotor(unsigned char new_cmd)
 {
     int channel = 0;
     

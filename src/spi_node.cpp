@@ -5,6 +5,7 @@
 
 #include <finderbot/spi.h>
 #include <finderbot/Pose.h>
+#include <finderbot/Ir.h>
 #include <finderbot/getImuPose.h>
 #include <inttypes.h>
 
@@ -78,20 +79,20 @@ public:
         spiDelay();
         if (new_cmd.linear.x != 0)
         {
-            readWriteHeading(pose_.theta);
+            writeHeading(pose_.theta);
             prev_command_time_ = ros::Time::now();
 
             spiDelay();
-            readWriteMotor('f');
+            writeMotor('f');
         }
 
         else if (new_cmd.angular.z != 0)
         {
-            if(new_cmd.angular.z > 0) readWriteMotor('L');
-            else readWriteMotor('R');
+            if(new_cmd.angular.z > 0) writeMotor('L');
+            else writeMotor('R');
         }
 
-        else readWriteMotor('h');
+        else writeMotor('h');
 
         prev_command_time_ = ros::Time::now();
 
@@ -114,11 +115,21 @@ public:
         return true;
     }
 
+    void getIRData()
+    {
+        uint8_t ir_data[2];
+
+        readIrSensors(ir_data);
+
+        if (ir_data[0] > 90 || ir_data[1] > 90)
+        {
+
+        }
+    }
     //this needs to be public since IMU reads need to be done regularly 
     //and aren't controlled by a callback
     bool IMU_delay_elapsed()
     {
-	ROS_INFO("delay ns = %llu, diff_t = %llu",IMU_delay_,  ros::Time::now().toNSec() - prev_IMU_time_.toNSec());
 
         return (ros::Time::now().toNSec() - prev_IMU_time_.toNSec()) > IMU_delay_;
     }
