@@ -120,6 +120,7 @@ add_executable(spi_node src/spi_node.cpp)
 
 add_executable(UWB_scan_node src/uwb_scan_node.cpp src/servo.cpp)
 
+add_executable(UWB_scan_client_node src/uwb_scan_client_node.cpp)
 
 add_dependencies(global_map_node finderbot_generate_messages_cpp finderbot_gencpp)
 add_dependencies(SLAM_node finderbot_generate_messages_cpp)
@@ -190,6 +191,10 @@ target_link_libraries(
   wiringPi
 )
 
+target_link_libraries(
+  UWB_scan_client_node
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

@@ -39,12 +39,12 @@ void scanUWB(float servo_angle) {
 	// Copied from main() function in uwb_main.cpp
 	// 6 second wait when you try to get uwb data
 	std::cout << "Waiting 12 seconds...\n";
-	sleep(12000); // change this to 12 seconds later
+	sleep(12); // change this to 12 seconds later
 	// Read from last line of file
 
 	std::fstream file;
 	// Change this to correct filename
-	string filename = "/home/parallels/catkin_ws/src/finderbot/src/test.txt";
+	std::string filename = "/home/parallels/catkin_ws/src/finderbot/src/test.txt";
 	file.open(filename); 
 	if (file.fail()) std::cout << "FILE FAILED\n";
 	else std::cout << "FILE SUCCEEDED\n";
