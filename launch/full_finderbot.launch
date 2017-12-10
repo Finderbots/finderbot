@@ -10,6 +10,6 @@
 
     <node pkg="finderbot" name="uwb" type="UWB_scan_node" output="screen" />
 
-    <param name="simulated_env" type="bool" value="true" /> 
+    <param name="simulated_env" type="bool" value="false" /> 
 
 </launch>

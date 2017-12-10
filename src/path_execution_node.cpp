@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <finderbot/map_utils.h>
+#include <finderbot/UWBScan.h>
 #include <iostream>
 // subscribes to both the slam and the explore nodes
 // might as well just have this be the explorer
@@ -17,17 +18,11 @@
 int main(int argc, char** argv) {
     ros::init(argc, argv, "path_execution");
     ros::NodeHandle nh;
-    // // UWB init stuff copied from main() function in uwb_main.cpp
-    // const std::string device_name = "/dev/ttySAC0";
-    // const unsigned int log_level = 0;
-
-    // XeThru::ModuleConnector mc(device_name, log_level);
-    // //X4M300 &x4m300 = mc.get_x4m300();
-    // uwb_ = new XeThru::Uwb(mc);
-    // uwb_->uwb_setup();
 
     Executor path_executor("world", "laser_frame");
 
+    ros::ServiceClient uwb_scan_client = nh.serviceClient<finderbot::UWBScan>("UWB_Scan");
+    finderbot::UWBScan uwb_scan_srv;
     ros::Subscriber global_map_handler = nh.subscribe<nav_msgs::OccupancyGrid>("global_map", 1, &Executor::handleGlobalMap, &path_executor);
     ros::Subscriber pose_handler = nh.subscribe<finderbot::Pose>("finderbot_pose", 1, &Executor::handlePose, &path_executor);
     ros::Publisher front_pub = nh.advertise<nav_msgs::OccupancyGrid>("frontier_map", 1, true);
@@ -88,7 +83,14 @@ int main(int argc, char** argv) {
         path_executor.pathExecution(path);
 
         // call UWB service here (how to get uwb object thru to service?)
-        ROS_INFO("Scan UWB");
+        if (uwb_scan_client.call(uwb_scan_srv)) {
+            ROS_INFO("Called UWB Scan Service");
+        }
+        else {
+            ROS_ERROR("Failed to call UWB Scan Service");
+            return 1;
+        }
+
         // path_executor.srv.request.current_row = path_executor.getCurrRow();
         // path_executor.srv.request.current_col = path_executor.getCurrCol();
         // while (!path_executor.client_.call(path_executor.srv));

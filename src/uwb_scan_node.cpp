@@ -9,6 +9,7 @@
 #include <stdlib.h>     /* atoi */
 #include <unistd.h>
 #include <finderbot/UWB_data.h>
+#include <finderbot/UWBScan.h>
 #include <finderbot/servo.h>
 
 finderbot::UWB_data uwb_data;
@@ -19,7 +20,6 @@ std::string getLastLine(std::fstream &file) {
 	std::string last_line;
 
 	while (file >> std::ws &&std::getline(file, last_line));
-	
 	return last_line;
 }
 
@@ -39,11 +39,13 @@ void scanUWB(float servo_angle) {
 	// Copied from main() function in uwb_main.cpp
 	// 6 second wait when you try to get uwb data
 	std::cout << "Waiting 12 seconds...\n";
-	sleep(1);
+	sleep(12000); // change this to 12 seconds later
 	// Read from last line of file
 
 	std::fstream file;
-	file.open("/home/jon/catkin_ws/src/finderbot/src/test.txt"); // Change this to correct filename
+	// Change this to correct filename
+	string filename = "/home/parallels/catkin_ws/src/finderbot/src/test.txt";
+	file.open(filename); 
 	if (file.fail()) std::cout << "FILE FAILED\n";
 	else std::cout << "FILE SUCCEEDED\n";
 	std::string last_line = getLastLine(file);
@@ -60,7 +62,7 @@ void scanUWB(float servo_angle) {
 	uwb_data.angle = servo_angle;
 	uwb_publisher.publish(uwb_data);
 	ROS_INFO("Just published [ Person Detected: %i, Distance: %f ]",
-			 uwb_data.vital, uwb_data.distance);
+			 (int)uwb_data.vital, (float)uwb_data.distance);
 	ros::spinOnce();
 
 	return;
@@ -68,16 +70,17 @@ void scanUWB(float servo_angle) {
 
 // V:i D:f \n
 
-bool rotateAndScan() {
+bool rotateAndScan(finderbot::UWBScan::Request  &req,
+				   finderbot::UWBScan::Response &res) {
 
 	// Servo init stuff copied from servo.c
-	// servo_setup();
+	servo_setup();
 
 	// response.person_found = 0; // worry about this later
 
 	// 1. Rotate the servo to 0 degrees (absolute-90)
 	// 		** make sure it blocks the scan function
-	// servo_turn0();
+	servo_turn0();
 	// 2. Once it finishes rotating, scan new uwb data
 	// 		use functions as in uwb_main.cpp
 	// 		uwb_->state says if there is a person
@@ -85,7 +88,7 @@ bool rotateAndScan() {
 	scanUWB(0);
 	// 3. Rotate the servo to 90 degrees (absolute)
 	// 		** make sure it blocks the scan function (series not parallel)
-	// servo_turn90();
+	servo_turn90();
 	// 4. Once it finishes rotating, scan new uwb data
 	// 		use functions as in uwb_main.cpp
 	// 		uwb_->state says if there is a person
@@ -93,7 +96,7 @@ bool rotateAndScan() {
 	scanUWB(90);
 	// 5. Rotate the servo to 180 degrees (absolute+90)
 	// 		** make sure it blocks the scan function (series not parallel)
-	// servo_turn180();
+	servo_turn180();
 	// 6. Once it finishes rotating, scan new uwb data
 	// 		use functions as in uwb_main.cpp
 	// 		uwb_->state says if there is a person
@@ -101,11 +104,11 @@ bool rotateAndScan() {
 	scanUWB(180);
 
 	// Middle again
-	// servo_turn90();
+	servo_turn90();
 	scanUWB(90);
 
 	// Left again
-	// servo_turn0();
+	servo_turn0();
 	scanUWB(0);
 
 	return true;
@@ -119,12 +122,13 @@ int main(int argc, char** argv)
 	ros::NodeHandle nh;
 	uwb_publisher = nh.advertise<finderbot::UWB_data>("/UWB_data", 1, true);
 
-	// ros::ServiceServer service = nh.advertiseService("UWB_Scan", rotateAndScan);
+	ros::ServiceServer service = nh.advertiseService("UWB_Scan", rotateAndScan);
     std::cout << "Ready to scan UWB for people." << std::endl;
-	while (1){
-		rotateAndScan();
-	}
-	// ros::spin();
+    ROS_INFO("Ready to scan UWB for people.");
+	// while (1){
+	// 	rotateAndScan();
+	// }
+	ros::spin();
 
 	return 0;
 }

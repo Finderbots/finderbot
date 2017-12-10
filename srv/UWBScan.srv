@@ -1,4 +1,1 @@
-int32 current_row
-int32 current_col
 ---
-int32 person_found
